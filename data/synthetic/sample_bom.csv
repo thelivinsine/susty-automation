@@ -1,0 +1,8 @@
+line_item,quantity,unit
+"Aluminium, primary production",0.00025,tonne
+Average plastics,0.0001,tonne
+Paper and board,5e-05,tonne
+"Electricity generated, UK grid",3.5,kwh
+"Diesel, average biofuel blend",0.4,litre
+Water supply,0.02,cubic metre
+Proprietary sealant compound (custom),2e-05,tonne

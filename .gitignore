@@ -1,0 +1,23 @@
+# Real DEFRA data is large and licensed-by-source — never commit it.
+# Synthetic demo data IS committed (see scripts/make_synthetic_data.py output),
+# so we ignore only the real-file names.
+data/defra_2025.xlsx
+data/defra_2026.xlsx
+data/defra_changes_2026.pdf
+data/real_*.xlsx
+data/real_*.pdf
+
+# Generated reports
+reports/
+*.report.md
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+
+# Secrets
+.env

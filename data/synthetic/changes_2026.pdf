@@ -1,0 +1,80 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 1269 >>
+stream
+BT
+/F1 11 Tf
+50 780 Td
+14 TL
+(DEFRA / DESNZ GHG Conversion Factors 2026) Tj
+T*
+(Major changes report \(SYNTHETIC ? for testing only\)) Tj
+T*
+() Tj
+T*
+(This document summarises the most significant changes to conversion) Tj
+T*
+(factors for the 2026 update relative to 2025.) Tj
+T*
+() Tj
+T*
+(Change: Electricity generated) Tj
+T*
+(The UK grid average electricity factor increased by around 9%. The 2026 update reflects a) Tj
+T*
+(higher share of natural gas generation in the 2024 generation mix used as the basis for) Tj
+T*
+(the factor, together with a methodology refresh aligning transmission and distribution) Tj
+T*
+(losses with the latest DUKES data.) Tj
+T*
+() Tj
+T*
+(Change: Diesel \(average biofuel blend\)) Tj
+T*
+(The diesel factor rose by about 6%. This reflects a reduction in the average biofuel) Tj
+T*
+(content of forecourt diesel under the revised Renewable Transport Fuel Obligation blend) Tj
+T*
+(for the reporting year, which raises the fossil carbon intensity per litre.) Tj
+T*
+() Tj
+T*
+(Change: Aluminium) Tj
+T*
+(Primary aluminium increased by roughly 14% following an update to the upstream electricity) Tj
+T*
+(intensity used for smelting in the underlying life cycle inventory, reflecting a less) Tj
+T*
+(decarbonised assumed power mix.) Tj
+T*
+() Tj
+T*
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000001562 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1632
+%%EOF
