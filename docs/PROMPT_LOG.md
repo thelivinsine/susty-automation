@@ -159,3 +159,24 @@ clean, demo runs end-to-end on real data.
 **Artifacts:** src/relabel.py, tests/test_relabel.py, src/pipeline.py,
 src/report.py, app.py, run_demo.py, scripts/make_synthetic_data.py,
 data/synthetic/*, docs/DECISIONS.md, docs/STATUS.md, docs/PROMPT_LOG.md.
+
+Note: P8 to P10 were done on branch `claude/whats-next-syd3jf` (not the
+`claude/project-setup-i1gyff` named at the top of this file), each auto-shipped
+to `main` via a squash-merged PR (#1 microcopy gate, #2 relabel matching).
+
+---
+
+### 2026-07-07 · P10
+**Prompt (verbatim):** "document the session"
+
+**Response summary:** Confirmed the session was already documented incrementally:
+STATUS.md (handoffs H3, H4), this log (P8, P9), and DECISIONS D9 all shipped with
+PRs #1 and #2 and are on `main`. Added this P10 entry to keep the append-only log
+one-per-prompt, and recorded that P8 to P10 ran on `claude/whats-next-syd3jf`.
+Session summary: (1) shipped the microcopy CI gate; (2) after the owner
+challenged the priority, pivoted to and built relabel matching with a leaf guard
+that blocks fuel-swap false positives; (3) documented the pivot and its
+boundaries. Gates at session end: 17 tests green, microcopy linter clean, demo
+runs end-to-end on real DEFRA data.
+
+**Artifacts:** docs/PROMPT_LOG.md.
