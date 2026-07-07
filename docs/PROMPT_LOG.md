@@ -180,3 +180,29 @@ boundaries. Gates at session end: 17 tests green, microcopy linter clean, demo
 runs end-to-end on real DEFRA data.
 
 **Artifacts:** docs/PROMPT_LOG.md.
+
+---
+
+### 2026-07-07 · P11
+**Prompt (verbatim):** "What's the next task?" then "yes"
+
+**Response summary:** Realigned the stale dev branch onto `main` (it was 3 commits
+behind: the microcopy gate, relabel matching, and the P10 log entry were already
+merged). Recommended the D9 follow-up (explain renamed-and-moved factors) over a
+retrieval-quality harness because a material change shown without a reason is the
+more urgent hole in the wedge, then built it. Added `diff.is_material(pct, scope)`
+as the single shared materiality rule and refactored the `flagged` column onto it.
+In the pipeline, routed every material relabel pair through the same grounded
+explainer as the flagged factors, retrieving on both the old and new name and
+keeping the stronger hit (empty passage still yields the honest "no reason"). New
+`relabel_explanations` output surfaced in the report (⚠ marker + a "Why the
+renamed factors also moved" section), the app, and run_demo. Made the synthetic
+Fuel-oil relabel material (+6.9% Scope 1) and grounded it with a changes note so
+the path runs offline and is tested. Added an `is_material` unit test and a
+pipeline test. Verified: 19 tests green, microcopy linter clean, demo runs
+end-to-end on real DEFRA data (real material relabels explained). Documented in
+DECISIONS D10 and STATUS handoff H5. Branch `claude/next-task-ydh8wl`.
+
+**Artifacts:** src/diff.py, src/pipeline.py, src/report.py, app.py, run_demo.py,
+scripts/make_synthetic_data.py, data/synthetic/*, tests/test_relabel.py,
+docs/DECISIONS.md, docs/STATUS.md, docs/PROMPT_LOG.md.

@@ -40,12 +40,14 @@ SHEETS = [
             ("Gaseous fuels", "Natural gas", "kwh", [0.18320], [0.18210]),
             ("Liquid fuels", "Diesel (average biofuel blend)", "litre", [2.5100], [2.6620]),  # +6.1% flagged S1
             ("Liquid fuels", "Petrol (average biofuel blend)", "litre", [2.3400], [2.3490]),
-            # A DEFRA-style relabel: same factor, renamed in 2026 (a qualifier
-            # added). vals=None means "not present that year", so it shows up as
-            # removed (old name) + added (new name) and the relabel detector
-            # should pair them instead of counting two spurious movers.
+            # A DEFRA-style relabel that ALSO moved: same factor, renamed in 2026
+            # (a qualifier added) AND its value crossed the Scope-1 threshold
+            # (3.18 -> 3.40 = +6.9%). vals=None means "not present that year", so
+            # it shows up as removed (old name) + added (new name); the relabel
+            # detector pairs them, and because the paired value is material it is
+            # routed through the grounded explainer (renamed-and-moved).
             ("Liquid fuels", "Fuel oil", "litre", [3.1800], None),                 # removed in 2026
-            ("Liquid fuels", "Fuel oil (mineral)", "litre", None, [3.2050]),        # added in 2026
+            ("Liquid fuels", "Fuel oil (mineral)", "litre", None, [3.4000]),        # added in 2026, +6.9%
         ],
     },
     {
@@ -94,6 +96,12 @@ CHANGE_REASONS = {
         "average biofuel content of forecourt diesel under the revised Renewable "
         "Transport Fuel Obligation blend for the reporting year, which raises the "
         "fossil carbon intensity per litre."
+    ),
+    "Fuel oil (mineral)": (
+        "The liquid fuel oil factor rose by about 7% in 2026. DEFRA relabelled "
+        "this line to add the 'mineral' qualifier and refreshed the underlying "
+        "carbon content of the fuel to the latest specification, which raises the "
+        "kg CO2e per litre. The rename and the value update landed together."
     ),
     "Aluminium": (
         "Primary aluminium increased by roughly 14% following an update to the "

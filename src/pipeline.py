@@ -9,7 +9,7 @@ from __future__ import annotations
 import pandas as pd
 
 from loader import load_defra
-from diff import diff_versions
+from diff import diff_versions, is_material
 from relabel import detect_relabels
 from matching import match_bom, coverage_summary
 from recompute import recompute, top_delta_lines
@@ -86,6 +86,44 @@ def run_pipeline(
             }
         )
 
+    # A relabel is a SAME factor, renamed. Most renames barely move the value, but
+    # some cross DEFRA's materiality threshold too (renamed AND moved). Those were
+    # shown in the relabels table with their delta but never explained. Explain
+    # them here, grounded the same way as the flagged factors, so no material
+    # change escapes the "explain the delta" promise just because it was renamed.
+    relabel_explanations = []
+    for _, rel in relabels_df.iterrows():
+        if not is_material(rel["pct_change"], rel["scope"]):
+            continue
+        # The change note may sit under either the old or the new name; retrieve
+        # on both and keep the stronger hit. Empty passage -> honest "no reason".
+        passage, score = "", 0.0
+        if chunks:
+            for name in (rel["new_activity"], rel["old_activity"]):
+                p, s = retrieve_passage(chunks, name)
+                if s > score:
+                    passage, score = p, s
+        result = explain_change(
+            material=f"{rel['old_activity']} → {rel['new_activity']}",
+            old=rel["kg_co2e_old"],
+            new=rel["kg_co2e_new"],
+            pct=rel["pct_change"],
+            retrieved_text=passage,
+            context=context,
+        )
+        relabel_explanations.append(
+            {
+                "old_activity": rel["old_activity"],
+                "new_activity": rel["new_activity"],
+                "scope": rel["scope"],
+                "kg_co2e_old": rel["kg_co2e_old"],
+                "kg_co2e_new": rel["kg_co2e_new"],
+                "pct_change": rel["pct_change"],
+                "retrieval_score": score,
+                **result,
+            }
+        )
+
     added_raw = int((diff_df["status"] == "added").sum())
     removed_raw = int((diff_df["status"] == "removed").sum())
     n_relabels = len(relabels_df)
@@ -112,6 +150,7 @@ def run_pipeline(
         "summary": summary,
         "top_delta": top_delta_lines(line_table),
         "explanations": explanations,
+        "relabel_explanations": relabel_explanations,
         "context": context,
         "labels": {"old": old_label, "new": new_label},
     }

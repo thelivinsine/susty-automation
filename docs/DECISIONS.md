@@ -91,4 +91,32 @@ Boundaries (deliberate, honest):
   so a mispaired relabel cannot corrupt the carbon number.
 - A relabel whose factor value ALSO moved past threshold is shown in the relabel
   table with its delta, but is not yet routed through the AI explainer. That
-  (explaining renamed-and-moved factors) is the natural follow-up.
+  (explaining renamed-and-moved factors) is the natural follow-up. (Done in D10.)
+
+## D10. Explain renamed-and-moved factors (the D9 follow-up)
+A relabel is the SAME factor under a new name. Most renames barely move the value,
+but some cross DEFRA's materiality threshold too (renamed AND moved). Before this,
+those were shown in the relabel table with a delta but never explained, so a
+material change could slip past the tool's whole "explain the delta" promise just
+because DEFRA also renamed it. Now the pipeline routes every material relabel pair
+through the same grounded explainer the flagged factors use.
+
+How it works (`src/pipeline.py`):
+- Materiality is decided by one shared rule, `diff.is_material(pct, scope)` (the
+  same >5% Scope 1/2, >10% Scope 3 test the `flagged` column uses), so the diff
+  and the relabel path can never disagree on what "material" means.
+- Grounding: the change note may sit under the old OR the new name, so retrieval
+  runs on both and keeps the stronger hit. An empty passage still yields the
+  honest "No official reason found in the DEFRA changes report" (D2 holds here
+  too, enforced in `explain._finalize`).
+- Output: a new `relabel_explanations` list in the pipeline result. The report
+  marks material rows in the relabel table (⚠ material) and adds a "Why the
+  renamed factors also moved" subsection; the app mirrors it; run_demo prints it.
+- Not footprint-gated (unlike the flagged-factor explanations, which only cover
+  factors in THIS product's BOM). Relabels are a review-only grouping, so every
+  material rename is explained regardless of whether this BOM uses it. The set is
+  small (bounded by the relabel count), so this is cheap.
+
+Demo: the synthetic "Fuel oil" -> "Fuel oil (mineral)" relabel was made material
+(+6.9% on Scope 1) and given a changes-note reason, so the whole path runs
+offline and is covered by a test.

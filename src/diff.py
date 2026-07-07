@@ -40,6 +40,19 @@ def _threshold_for_scope(scope) -> float:
     return SCOPE12_THRESHOLD
 
 
+def is_material(pct, scope) -> bool:
+    """True when |pct_change| exceeds DEFRA's materiality threshold for the scope.
+
+    Single source of truth for "is this change material": used both here for the
+    `flagged` column and by the pipeline when deciding whether a renamed factor
+    (a relabel) also moved enough to deserve a grounded explanation. A missing
+    percent (added/removed, or a change from zero) is never material.
+    """
+    if pct is None or pd.isna(pct):
+        return False
+    return abs(pct) > _threshold_for_scope(scope)
+
+
 def diff_versions(df_old: pd.DataFrame, df_new: pd.DataFrame) -> pd.DataFrame:
     """Join two normalized tables on (activity, unit) and flag material movers."""
     key = ["activity", "unit"]
@@ -72,12 +85,7 @@ def diff_versions(df_old: pd.DataFrame, df_new: pd.DataFrame) -> pd.DataFrame:
         # Added / removed factors are reported separately (many are DEFRA
         # relabels, e.g. "Incineration with energy recovery" -> "Combustion");
         # lumping them in here would wildly overstate the count of real movers.
-        flagged = bool(
-            has_old
-            and has_new
-            and not pd.isna(pct)
-            and abs(pct) > _threshold_for_scope(r["scope"])
-        )
+        flagged = bool(has_old and has_new and is_material(pct, r["scope"]))
 
         rows.append(
             {
