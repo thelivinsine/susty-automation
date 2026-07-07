@@ -155,3 +155,30 @@ Boundary: the gate asserts a PERFECT synthetic gold set (precision, recall, and
 refusal accuracy all 1.0, zero wrong hits). Real-data retrieval is not asserted
 case-by-case (the "What's new" text has no ground-truth labels), but the real
 electricity retrieval stays covered by the existing real-workbook test.
+
+## D12. Golden-vector tests for the loader and diff
+The loader is the foundation: it parses the fiddly real DEFRA layout, and a silent
+regression there corrupts every downstream carbon number. It was only covered
+indirectly (a real-workbook smoke test that skips when the big files are absent,
+plus assertions on synthetic data that changes as the demo is tweaked). So a
+golden-vector gate was added (`tests/test_golden_loader.py`) that pins the EXACT
+normalized output for a small, frozen fixture.
+
+Design choices:
+- The fixture is built in code (openpyxl), not committed as an opaque binary, so a
+  non-developer can read what is tested. It is an INDEPENDENT oracle: it lays out
+  cells like the real workbook WITHOUT reusing `make_synthetic_data.py`, so a bug
+  in that generator cannot mask a loader bug.
+- One tiny two-sheet workbook exercises every tricky path in one place: scope read
+  from a "Scope:" metadata cell, a messy scope ("Scope 3 (indirect)") normalized
+  to "Scope 3", forward-filled descriptors (a blank Activity cell), a "Year"
+  column that must be ignored, unit normalization (litres->litre, tonnes->tonne),
+  a duplicate (activity, unit) row dropped keeping the first, and a repeated
+  "kg CO2e" block expanded into two activities via the super-header.
+- The diff is pinned on the same fixture across two "years": exact pct_change,
+  status, and flagged for a Scope-1 mover (>5%), a Scope-3 mover (>10%), a
+  sub-threshold change, an equal (unchanged) factor, and an added / removed pair.
+
+Runs in the existing pytest CI step (no data files needed), so it gates every PR.
+It does not replace the real-workbook smoke test; the two are complementary
+(frozen-truth correctness here, real-shape sanity there).
