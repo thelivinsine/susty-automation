@@ -232,3 +232,27 @@ clean. Documented in DECISIONS D11 and STATUS handoff H6. Branch
 **Artifacts:** src/changes_pdf.py, scripts/eval_retrieval.py,
 tests/test_retrieval_quality.py, .github/workflows/ci.yml, docs/DECISIONS.md,
 docs/STATUS.md, docs/PROMPT_LOG.md.
+
+---
+
+### 2026-07-07 · P13
+**Prompt (verbatim):** "go ahead"
+
+**Response summary:** Added loader/diff golden-vector tests, the next CI gate the
+owner liked. Chose this over a dependency-audit gate (higher value: the loader is
+the fragile foundation and a silent parsing regression corrupts every carbon
+number) and over semantic relabels (needs unavailable DEFRA notes, risks the
+no-guess rule). Built `tests/test_golden_loader.py`: a small two-sheet fixture
+written in code (an INDEPENDENT oracle, not reusing make_synthetic_data.py) that
+exercises every tricky loader path (scope-from-metadata, "Scope 3 (indirect)"
+normalization, forward-filled descriptors, an ignored Year column, unit
+normalization, (activity, unit) dedup, and super-header block expansion). It pins
+the EXACT normalized loader output and the EXACT diff results (pct_change, status,
+flagged across a Scope-1 mover, a Scope-3 mover, a sub-threshold change, an equal
+factor, and an added/removed pair). Runs in the existing pytest CI step, so it
+gates every PR without the big data files. 26 tests green, both existing gates
+clean. Documented in DECISIONS D12 and STATUS handoff H7. Branch
+`claude/next-task-ydh8wl`.
+
+**Artifacts:** tests/test_golden_loader.py, docs/DECISIONS.md, docs/STATUS.md,
+docs/PROMPT_LOG.md.
