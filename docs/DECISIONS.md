@@ -120,3 +120,38 @@ How it works (`src/pipeline.py`):
 Demo: the synthetic "Fuel oil" -> "Fuel oil (mineral)" relabel was made material
 (+6.9% on Scope 1) and given a changes-note reason, so the whole path runs
 offline and is covered by a test.
+
+## D11. Retrieval-quality harness, and the precision fix it surfaced
+The grounding step (`changes_pdf.retrieve_passage`) is the tool's wedge: it picks
+which official DEFRA note explains a factor change. It was only thinly tested (one
+hit, one miss), so a harness was built to measure it against a labelled gold set
+(`scripts/eval_retrieval.py`, gated by `tests/test_retrieval_quality.py` and a CI
+step).
+
+Why precision, not a hit-count: the two failure modes are not equal. A MISS (says
+"no reason found" when a note exists) is honest but weak. A WRONG HIT (returns a
+DIFFERENT factor's note) is the unacceptable one, because the model then explains
+a change with the wrong official text, the exact failure D2 exists to prevent. A
+hit-count cannot see a wrong hit (it still counts as "a hit"), so the gold set
+labels each query with the note that SHOULD ground it (a distinctive substring),
+or None for queries the report does not explain, and the gate fails on ANY wrong
+hit.
+
+The harness immediately found a real defect. The scoring was
+`max(keyword_overlap, title_fuzz)`, so a fuzzy TITLE match could fire a hit on its
+own. On shared boilerplate that misgrounds: "Petrol (average biofuel blend)"
+scored ~0.87 against the DIESEL note (shared "(average biofuel blend)") though
+petrol is unexplained; on real data, generic "Plug-in Hybrid" car/van factors
+matched a "Calculating emissions" methodology heading at ~0.55. Fix: keyword
+overlap is now the GATE, and the title only refines a passage whose overlap
+already clears the bar (`score = max(overlap, title_fuzz) if overlap >= min_score
+else overlap`). Effect: petrol is correctly refused, and on the real "What's new"
+data 7 title-only false positives (all the "Calculating emissions" mismatches)
+became honest "no reason found" with zero genuine hits lost. Same leaf/identity
+principle as the relabel guard (D9): agree on the distinctive token, not the
+boilerplate.
+
+Boundary: the gate asserts a PERFECT synthetic gold set (precision, recall, and
+refusal accuracy all 1.0, zero wrong hits). Real-data retrieval is not asserted
+case-by-case (the "What's new" text has no ground-truth labels), but the real
+electricity retrieval stays covered by the existing real-workbook test.

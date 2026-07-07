@@ -14,14 +14,15 @@ explainer, so no material change slips past just because DEFRA renamed it.
 Explanation backend is Gemini (or Claude, or offline), selected by API key loaded
 from a git-ignored `.env`.
 
-Gates: `pytest` green (19 tests, including the grounding trap, a real-workbook
-test, the microcopy gate, the relabel suite, and the material-relabel explanation
-path). First CI gate is live: a microcopy linter that enforces the no-em-dash
-house rule, wired into pytest and a GitHub Actions workflow. Streamlit app boots
-clean. Demo footprint on the sample product: 2.344 to 2.305 kg CO2e, with the UK
-electricity change explained from the real DEFRA text. On real data, relabel
-pairing collapses ~500/500 added/removed to 76 genuinely new and 54 genuinely
-removed.
+Gates: `pytest` green (22 tests, including the grounding trap, a real-workbook
+test, the microcopy gate, the relabel suite, the material-relabel explanation
+path, and the retrieval-quality gold set). Two CI gates are live: the microcopy
+linter (no-em-dash house rule) and a retrieval-quality gate that fails the build
+on any WRONG grounding note, both wired into pytest and the GitHub Actions
+workflow. Streamlit app boots clean. Demo footprint on the sample product: 2.344
+to 2.305 kg CO2e, with the UK electricity change explained from the real DEFRA
+text. On real data, relabel pairing collapses ~500/500 added/removed to 76
+genuinely new and 54 genuinely removed.
 
 ## What shipped
 - Pipeline: loader, diff, matching, recompute, changes retrieval, explain,
@@ -30,19 +31,20 @@ removed.
 - Provider-agnostic explanation backend (Gemini / Claude / offline) with `.env`
   auto-load.
 - Synthetic real-format demo data generator.
-- First CI quality gate: microcopy linter (`scripts/lint_microcopy.py`) run by
-  pytest and by `.github/workflows/ci.yml` on every PR into `main`.
+- CI quality gates (`.github/workflows/ci.yml`, on every PR into `main`): the
+  microcopy linter (`scripts/lint_microcopy.py`) and the retrieval-quality gate
+  (`scripts/eval_retrieval.py`), both also run by pytest.
 - Relabel matching (`src/relabel.py`): pairs DEFRA renames across years with a
   leaf-substitution guard, surfaced as a review-only section (DECISIONS D9).
 - Renamed-and-moved explanations: material relabels routed through the grounded
   explainer, with one shared `diff.is_material` rule; surfaced in report, app,
   and run_demo (DECISIONS D10).
+- Retrieval-quality harness (`scripts/eval_retrieval.py`): precision/recall over a
+  labelled gold set; found and fixed a wrong-grounding defect where a fuzzy title
+  match on shared boilerplate fired a hit on the wrong note (DECISIONS D11).
 - Docs: WORKING_PREFERENCES, DECISIONS, PROMPT_LOG, this file.
 
 ## Known gaps / next candidates
-- Retrieval quality: `changes_pdf.retrieve_passage` grounds explanations but is
-  thinly tested (one hit, one miss). A precision/recall harness would guard the
-  wedge directly.
 - Semantic relabels with low string overlap (Incineration -> Combustion) still
   read as added/removed; would need DEFRA's own relabel notes.
 - More CI gates: golden-vector tests for the loader and diff, a dependency-audit
@@ -55,21 +57,22 @@ removed.
 ## Resume here
 Two most recent handoffs:
 
+- H6 (2026-07-07): Built the retrieval-quality harness (DECISIONS D11). Scores
+  `retrieve_passage` against a labelled gold set for precision/recall/refusal, and
+  gates on any WRONG grounding note (the failure a hit-count can't see). It found
+  a real defect: a fuzzy TITLE match on shared boilerplate could fire a hit on the
+  wrong note (petrol -> the diesel note; real "Plug-in Hybrid" factors -> a
+  "Calculating emissions" heading). Fixed by making keyword overlap the gate so
+  the title only refines an already-supported passage; 7 real-data false positives
+  became honest "no reason found" with no genuine hits lost. Added the harness
+  (`scripts/eval_retrieval.py`), a 3-test gate, and a CI step. 22 tests green.
 - H5 (2026-07-07): Explained renamed-and-moved factors (the D9 follow-up, now
   DECISIONS D10). Added one shared materiality rule (`diff.is_material`) and used
   it to route every material relabel pair through the grounded explainer;
   retrieval tries both the old and new name and keeps the stronger hit. Surfaced
   in the report (⚠ marker + "Why the renamed factors also moved" section), the
-  app, and run_demo. Made the synthetic Fuel-oil relabel material and grounded so
-  the path runs offline; added an `is_material` unit test and a pipeline test.
-  19 tests green, linter clean, demo runs end-to-end on real DEFRA data.
-- H4 (2026-07-07): Built relabel matching (`src/relabel.py`), chosen over another
-  CI gate after the owner challenged the priority (reasoning in DECISIONS D9).
-  Pairs DEFRA renames under unit+scope gates, name similarity, and a leaf guard
-  that blocks fuel-swap false positives (petrol->diesel, cng->lpg) while keeping
-  genuine synonym renames (propylene->propene). Wired into pipeline, report, app;
-  added a synthetic relabel pair and a 7-case test suite. 17 tests green.
+  app, and run_demo. 19 tests green, demo runs end-to-end on real DEFRA data.
 
-Next likely task: a retrieval-quality harness for `changes_pdf.retrieve_passage`
-(guards the wedge directly), or loader/diff golden-vector tests as the next CI
-gate.
+Next likely task: loader/diff golden-vector tests as the next CI gate, or a
+dependency-audit gate; alternatively, tackle semantic relabels (low string
+overlap) using DEFRA's own relabel notes.
