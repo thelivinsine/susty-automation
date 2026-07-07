@@ -128,3 +128,34 @@ a planted em dash, and `pytest` green at 8 passed.
 **Artifacts:** scripts/lint_microcopy.py, tests/test_microcopy.py,
 .github/workflows/ci.yml, src/recompute.py, README.md, CLAUDE.md, docs/STATUS.md,
 docs/PROMPT_LOG.md.
+
+---
+
+### 2026-07-07 · P9
+**Prompt (verbatim):** "before you implement this - are you sure these lint gates
+or golden vector tests are the most effective solutions for the problems or are
+you just doing it becuase it was mentioned as best practices from previus
+projects?" then "alright then, go ahead with the revised recommendation and
+document this decision".
+
+**Response summary:** Owner challenged the priority. Agreed the microcopy linter
+was cosmetic (cheap, already shipped) and that loader golden-vectors would be
+incremental, since the real-workbook test already covers the loader. Reframed
+around the wedge (the explanation): its weak spots are retrieval quality and the
+added/removed clutter. Recommended and then built RELABEL MATCHING as the highest
+visible product value. `src/relabel.py::detect_relabels` pairs removed<->added
+under hard gates (same unit, same scope) + name similarity (token_set_ratio >=90)
++ a leaf-substitution guard: the identifying leaf (last " - " segment, the fuel/
+variant) must not be swapped, so petrol->diesel and cng->lpg false positives are
+blocked while a genuine synonym rename (propylene->propene) passes. Greedy
+one-to-one; below the bar stays added/removed (no-guess). Wired into pipeline,
+report (a review-only "Relabels" section), app, and run_demo; added a synthetic
+relabel pair. On the owner's real data: 460 of ~525 added/removed paired, leaving
+76 genuinely new and 54 removed. Relabels are NOT used in the footprint math, so
+a mispair cannot corrupt the carbon number. Documented the decision and its
+boundaries in DECISIONS D9 (and updated D4). Verified: 17 tests green, linter
+clean, demo runs end-to-end on real data.
+
+**Artifacts:** src/relabel.py, tests/test_relabel.py, src/pipeline.py,
+src/report.py, app.py, run_demo.py, scripts/make_synthetic_data.py,
+data/synthetic/*, docs/DECISIONS.md, docs/STATUS.md, docs/PROMPT_LOG.md.

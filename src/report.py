@@ -59,13 +59,47 @@ def build_markdown_report(results: dict) -> str:
 
     ds = results.get("diff_stats")
     if ds:
+        relabels_n = ds.get("relabels", 0)
+        added_net = ds.get("added_net", ds["added"])
+        removed_net = ds.get("removed_net", ds["removed"])
+        relabel_note = (
+            f" {relabels_n} of the added/removed were paired as DEFRA relabels "
+            f"(same factor, renamed), leaving {added_net} genuinely new and "
+            f"{removed_net} genuinely removed."
+            if relabels_n
+            else ""
+        )
         lines.append(
             f"- Version scan: **{ds['flagged']}** factors moved past DEFRA's "
             f"materiality thresholds across {ds['joined']} factors present in both "
             f"years; {ds['added']} added and {ds['removed']} removed "
-            f"(added/removed include DEFRA relabels and are not counted as movers)."
+            f"(not counted as movers).{relabel_note}"
         )
     lines.append("")
+
+    # Relabels (renamed factors, paired)
+    relabels = results.get("relabels")
+    if relabels is not None and not relabels.empty:
+        lines.append("## Relabels (renamed factors, paired)")
+        lines.append("")
+        lines.append(
+            "These appeared as one activity removed and another added, but are the "
+            "same factor renamed. They are paired here so they do not read as real "
+            "movement. Only high-confidence name matches (same unit and scope) are "
+            "paired; anything unclear is left as added/removed rather than guessed."
+        )
+        lines.append("")
+        lines.append("| Old name → new name | Unit | Scope | kg CO₂e (old → new) | Δ |")
+        lines.append("|---|---|---|---|---|")
+        for _, r in relabels.iterrows():
+            pct = r["pct_change"]
+            delta = "same" if (pd.notna(pct) and abs(pct) < 0.05) else f"{_fmt(pct,1)}%"
+            lines.append(
+                f"| {r['old_activity']} → {r['new_activity']} | {r['unit']} "
+                f"| {r['scope']} | {_fmt(r['kg_co2e_old'])} → {_fmt(r['kg_co2e_new'])} "
+                f"| {delta} |"
+            )
+        lines.append("")
 
     # Biggest movers in the footprint
     lines.append("## Biggest contributors to the change")

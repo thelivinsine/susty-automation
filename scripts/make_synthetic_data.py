@@ -40,6 +40,12 @@ SHEETS = [
             ("Gaseous fuels", "Natural gas", "kwh", [0.18320], [0.18210]),
             ("Liquid fuels", "Diesel (average biofuel blend)", "litre", [2.5100], [2.6620]),  # +6.1% flagged S1
             ("Liquid fuels", "Petrol (average biofuel blend)", "litre", [2.3400], [2.3490]),
+            # A DEFRA-style relabel: same factor, renamed in 2026 (a qualifier
+            # added). vals=None means "not present that year", so it shows up as
+            # removed (old name) + added (new name) and the relabel detector
+            # should pair them instead of counting two spurious movers.
+            ("Liquid fuels", "Fuel oil", "litre", [3.1800], None),                 # removed in 2026
+            ("Liquid fuels", "Fuel oil (mineral)", "litre", None, [3.2050]),        # added in 2026
         ],
     },
     {
@@ -137,6 +143,8 @@ def _write_workbook(path: str, year_index: int) -> None:
         prev_activity = None
         for (activity, desc2, unit, vals25, vals26) in sh["rows"]:
             vals = (vals25, vals26)[year_index]
+            if vals is None:
+                continue  # activity absent this year (models a relabel/retire)
             act_cell = "" if activity == prev_activity else activity
             row = [act_cell, desc2, unit] + list(vals)
             ws.append(row)

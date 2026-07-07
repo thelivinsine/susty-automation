@@ -121,11 +121,35 @@ else:
 
 ds = results.get("diff_stats")
 if ds:
+    relabels_n = ds.get("relabels", 0)
+    relabel_note = (
+        f" · {relabels_n} paired as relabels "
+        f"({ds.get('added_net', ds['added'])} genuinely new, "
+        f"{ds.get('removed_net', ds['removed'])} genuinely removed)"
+        if relabels_n
+        else ""
+    )
     st.caption(
         f"Version scan: {ds['flagged']} factors moved past DEFRA thresholds across "
         f"{ds['joined']} present in both years · {ds['added']} added, "
-        f"{ds['removed']} removed (added/removed include DEFRA relabels)."
+        f"{ds['removed']} removed{relabel_note}."
     )
+
+relabels = results.get("relabels")
+if relabels is not None and not relabels.empty:
+    with st.expander(f"Relabels paired ({len(relabels)} renamed factors)"):
+        st.caption(
+            "Same factor, renamed across versions. Paired so they do not read as "
+            "real movement. Only high-confidence matches (same unit and scope) are "
+            "paired; anything unclear stays added/removed rather than guessed."
+        )
+        st.dataframe(
+            relabels[
+                ["old_activity", "new_activity", "unit", "scope",
+                 "kg_co2e_old", "kg_co2e_new", "pct_change", "name_score"]
+            ],
+            hide_index=True,
+        )
 
 # --- Biggest movers ---
 st.subheader("Biggest contributors to the change")
