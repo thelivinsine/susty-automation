@@ -19,6 +19,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 from paths import resolve_paths          # noqa: E402
 from pipeline import run_pipeline         # noqa: E402
 from report import build_markdown_report  # noqa: E402
+from explain import active_backend        # noqa: E402
 
 
 def _line(char="─", n=70):
@@ -36,8 +37,13 @@ def main() -> None:
     print(f"  new workbook : {p['defra_new']}")
     print(f"  changes PDF  : {p['changes_pdf']}")
     print(f"  product BOM  : {p['bom']}")
-    api = "yes (real Claude call)" if os.getenv("ANTHROPIC_API_KEY") else "no (offline explainer)"
-    print(f"  ANTHROPIC_API_KEY set: {api}")
+    backend = active_backend()
+    api = (
+        f"{backend['provider']} ({backend['model']})"
+        if backend["live"]
+        else "offline explainer (set GEMINI_API_KEY or ANTHROPIC_API_KEY for a live model)"
+    )
+    print(f"  Explanation backend: {api}")
     print()
 
     results = run_pipeline(

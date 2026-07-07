@@ -21,6 +21,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 from paths import resolve_paths          # noqa: E402
 from pipeline import run_pipeline         # noqa: E402
 from report import build_markdown_report  # noqa: E402
+from explain import active_backend        # noqa: E402
 
 st.set_page_config(page_title="EF Version Explainer", layout="wide")
 
@@ -51,10 +52,14 @@ with st.sidebar:
     st.caption("Columns: line_item, quantity, unit")
     uploaded = st.file_uploader("Upload a BOM CSV", type=["csv"])
 
-    if os.getenv("ANTHROPIC_API_KEY"):
-        st.caption("Explanation layer: real Claude API ✓")
+    backend = active_backend()
+    if backend["live"]:
+        st.caption(f"Explanation layer: {backend['provider']} ({backend['model']}) ✓")
     else:
-        st.caption("Explanation layer: offline mode (no ANTHROPIC_API_KEY)")
+        st.caption(
+            "Explanation layer: offline mode. Set GEMINI_API_KEY (Gemini) or "
+            "ANTHROPIC_API_KEY (Claude) to use a live model."
+        )
 
     run = st.button("Run analysis", type="primary")
 

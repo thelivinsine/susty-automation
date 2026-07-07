@@ -68,10 +68,26 @@ otherwise it reads the **"What's new" sheet inside the new workbook**.
 
 ### The AI explanation layer
 
-Set `ANTHROPIC_API_KEY` to use the Claude API (`claude-sonnet-5`) for the
-explanations. Without a key the tool falls back to a deterministic **offline**
-explainer that obeys the same grounding rules — so the demo, and the "won't
-invent a reason" trap test, run without any key.
+The explainer picks its backend from whichever API key is set — no code change
+needed:
+
+```bash
+# Google Gemini (default model gemini-2.5-flash; override with GEMINI_MODEL)
+export GEMINI_API_KEY=your-key-here
+
+# …or Anthropic Claude (default claude-sonnet-5; override with ANTHROPIC_MODEL)
+export ANTHROPIC_API_KEY=your-key-here
+```
+
+Set it in your shell before running, or put it in a local `.env` file (which is
+git-ignored — never commit a key). If both keys are set, Gemini wins. Without any
+key the tool falls back to a deterministic **offline** explainer that obeys the
+same grounding rules — so the demo, and the "won't invent a reason" trap test,
+run without any key.
+
+Whichever model runs, the grounding rules are enforced in code: it can only use
+the numbers and DEFRA text passed to it, and where the notes are silent it must
+say so rather than invent a reason.
 
 ## How it's built
 

@@ -102,11 +102,22 @@ movers; only factors present in both years and past threshold are "flagged".
 
 ## AI / API notes
 
-- Model: `claude-sonnet-5` for the explanation layer (cost/quality balance).
-- Set `ANTHROPIC_API_KEY` to use the real API. If it is not set, `explain.py`
-  falls back to a deterministic **offline** explainer that still obeys the
-  grounding rules (so the demo and the trap test run without a key). Offline
-  output is labelled so it is never mistaken for a real model answer.
+The explanation layer picks its backend from whichever API key is set:
+
+- **Gemini** — set `GEMINI_API_KEY` (or `GOOGLE_API_KEY`). Model from
+  `GEMINI_MODEL` (default `gemini-2.5-flash`). Uses the `google-genai` SDK.
+- **Claude** — set `ANTHROPIC_API_KEY`. Model from `ANTHROPIC_MODEL` (default
+  `claude-sonnet-5`). Uses the `anthropic` SDK.
+- **Offline** — if neither key is set, `explain.py` falls back to a deterministic
+  offline explainer that still obeys the grounding rules (so the demo and the
+  trap test run without a key). Offline output is labelled so it is never
+  mistaken for a real model answer.
+
+If both keys are set, Gemini wins. Whatever the backend, the grounding rules are
+enforced in code (`_finalize`), so no model can invent a reason the DEFRA notes
+don't contain, and the deterministic target-impact flag always overrides the
+model's. Set the key as an environment variable (or in a local `.env`, which is
+git-ignored) — do not hard-code it.
 
 ## How to run
 
