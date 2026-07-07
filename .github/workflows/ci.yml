@@ -29,5 +29,8 @@ jobs:
       - name: Generate synthetic demo data
         run: python scripts/make_synthetic_data.py
 
+      - name: Retrieval-quality gate (no wrong grounding notes)
+        run: python scripts/eval_retrieval.py
+
       - name: Tests
         run: pytest -q

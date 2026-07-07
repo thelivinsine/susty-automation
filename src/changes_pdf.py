@@ -165,11 +165,18 @@ def retrieve_passage(chunks: list[dict], material: str, min_score: float = 0.5):
     best_text, best_score = "", 0.0
     for ch in chunks:
         haystack = f"{ch['title']} {ch['text']}"
-        overlap = _keyword_overlap(material, f"{ch['title']} {ch['text']}")
-        # Fuzzy score against the (short, distinctive) title guards against
-        # passages that mention a keyword only in passing.
+        overlap = _keyword_overlap(material, haystack)
+        # Fuzzy score against the (short) title refines the ranking, but only for
+        # a passage that ALREADY shares the query's distinctive keywords. On its
+        # own, title fuzz matches shared boilerplate: "Petrol (average biofuel
+        # blend)" scores ~0.87 against the DIESEL note's title because they share
+        # "(average biofuel blend)", and a generic "Calculating emissions"
+        # heading scores ~0.55 against many factor names. Letting title fuzz
+        # trigger a hit by itself grounds a change in the WRONG note, which is the
+        # one failure the tool must never make. So keyword overlap is the gate:
+        # the title can only boost a passage whose overlap already clears the bar.
         title_fuzz = fuzz.token_set_ratio(material.lower(), ch["title"].lower()) / 100.0
-        score = max(overlap, title_fuzz)
+        score = max(overlap, title_fuzz) if overlap >= min_score else overlap
         if score > best_score:
             best_score, best_text = score, haystack.strip()
 

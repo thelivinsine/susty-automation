@@ -206,3 +206,29 @@ DECISIONS D10 and STATUS handoff H5. Branch `claude/next-task-ydh8wl`.
 **Artifacts:** src/diff.py, src/pipeline.py, src/report.py, app.py, run_demo.py,
 scripts/make_synthetic_data.py, data/synthetic/*, tests/test_relabel.py,
 docs/DECISIONS.md, docs/STATUS.md, docs/PROMPT_LOG.md.
+
+---
+
+### 2026-07-07 · P12
+**Prompt (verbatim):** "go ahead"
+
+**Response summary:** Built the retrieval-quality harness for the grounding step
+(the next candidate from STATUS). Added `scripts/eval_retrieval.py`: it scores
+`changes_pdf.retrieve_passage` against a labelled gold set for precision, recall,
+and refusal accuracy, and fails on any WRONG grounding note (the failure a plain
+hit-count cannot see, and the one D2 forbids). The harness immediately surfaced a
+real defect: retrieval scored `max(keyword_overlap, title_fuzz)`, so a fuzzy title
+match on shared boilerplate could fire a hit on the wrong note ("Petrol (average
+biofuel blend)" -> the diesel note at 0.87; on real data, "Plug-in Hybrid" car/van
+factors -> a "Calculating emissions" heading at ~0.55). Fixed by making keyword
+overlap the gate so the title only refines a passage whose overlap already clears
+the bar. Verified empirically on the real "What's new" data: 7 title-only false
+positives became honest "no reason found" with zero genuine hits lost, and the
+real electricity retrieval stays covered. Added a 3-test gate
+(`tests/test_retrieval_quality.py`) and a CI step. 22 tests green, both linters
+clean. Documented in DECISIONS D11 and STATUS handoff H6. Branch
+`claude/next-task-ydh8wl`.
+
+**Artifacts:** src/changes_pdf.py, scripts/eval_retrieval.py,
+tests/test_retrieval_quality.py, .github/workflows/ci.yml, docs/DECISIONS.md,
+docs/STATUS.md, docs/PROMPT_LOG.md.
