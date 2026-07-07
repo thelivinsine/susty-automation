@@ -72,7 +72,10 @@ def main() -> None:
           f"{ds['joined']} matched across both years")
     print(f"  material movers (past DEFRA thresholds): {ds['flagged']}")
     print(f"  structural: {ds['added']} added, {ds['removed']} removed "
-          f"(includes DEFRA relabels, not counted as movers)")
+          f"(not counted as movers)")
+    if ds.get("relabels"):
+        print(f"  relabels paired: {ds['relabels']} renamed factors "
+              f"-> {ds['added_net']} genuinely new, {ds['removed_net']} genuinely removed")
     _line()
     print("STAGE 3    Matched product BOM to factors")
     mc = results["match_coverage"]

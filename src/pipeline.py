@@ -10,6 +10,7 @@ import pandas as pd
 
 from loader import load_defra
 from diff import diff_versions
+from relabel import detect_relabels
 from matching import match_bom, coverage_summary
 from recompute import recompute, top_delta_lines
 from changes_pdf import load_change_chunks, retrieve_passage
@@ -29,6 +30,9 @@ def run_pipeline(
     df_old = load_defra(defra_old_path, old_label)
     df_new = load_defra(defra_new_path, new_label)
     diff_df = diff_versions(df_old, df_new)
+
+    # Pair DEFRA renames so they stop reading as spurious added + removed factors.
+    relabels_df = detect_relabels(diff_df)
 
     bom_df = (
         bom_path_or_df
@@ -82,17 +86,25 @@ def run_pipeline(
             }
         )
 
+    added_raw = int((diff_df["status"] == "added").sum())
+    removed_raw = int((diff_df["status"] == "removed").sum())
+    n_relabels = len(relabels_df)
     diff_stats = {
         "factors_old": len(df_old),
         "factors_new": len(df_new),
         "joined": int((diff_df["status"].isin(["changed", "unchanged"])).sum()),
         "flagged": int(diff_df["flagged"].sum()),
-        "added": int((diff_df["status"] == "added").sum()),
-        "removed": int((diff_df["status"] == "removed").sum()),
+        "added": added_raw,
+        "removed": removed_raw,
+        "relabels": n_relabels,
+        # Net of paired renames: what is genuinely new / retired.
+        "added_net": added_raw - n_relabels,
+        "removed_net": removed_raw - n_relabels,
     }
 
     return {
         "diff_df": diff_df,
+        "relabels": relabels_df,
         "diff_stats": diff_stats,
         "matched_df": matched_df,
         "match_coverage": match_cov,
