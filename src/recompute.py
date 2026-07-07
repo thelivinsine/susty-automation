@@ -46,7 +46,7 @@ def recompute(matched_df: pd.DataFrame, diff_df: pd.DataFrame):
                     "co2e_new": None,
                     "line_delta": None,
                     "included": False,
-                    "note": "unmatched — excluded from totals (needs human match)",
+                    "note": "unmatched, excluded from totals (needs human match)",
                 }
             )
             continue
@@ -69,7 +69,7 @@ def recompute(matched_df: pd.DataFrame, diff_df: pd.DataFrame):
                     "co2e_new": None,
                     "line_delta": None,
                     "included": False,
-                    "note": "factor missing in one version — excluded from totals",
+                    "note": "factor missing in one version, excluded from totals",
                 }
             )
             continue

@@ -1,4 +1,4 @@
-# CLAUDE.md — EF Version Explainer
+# CLAUDE.md: EF Version Explainer
 
 Project rules and context for anyone (human or AI) working in this repo.
 Read this first.
@@ -9,7 +9,7 @@ Read this first.
 GHG conversion-factor workbooks, flags factors that changed beyond DEFRA's own
 materiality thresholds (**>5% for Scope 1/2, >10% for Scope 3**), recalculates a
 product's carbon footprint under both versions, and uses the Claude API to
-**explain each change** in plain English plus a methodology-grade note — the
+**explain each change** in plain English plus a methodology-grade note, the
 "explain-the-delta" work a consultant would otherwise do by hand.
 
 The wedge is the **explanation**, not the recomputation. Big platforms already
@@ -48,7 +48,7 @@ override defaults. The essentials:
   files in `data/` (CSV / parquet / xlsx / pdf).
 - **Carbon only** (kg CO2e) for v1. No other impact categories.
 - Build in **small, testable steps**. Never scaffold features nobody asked for.
-- Every code change must come with a way to **SEE it work** — a runnable check
+- Every code change must come with a way to **SEE it work**: a runnable check
   or printed result.
 - Keep functions small and named in plain language.
 
@@ -92,15 +92,15 @@ Real DEFRA full-set workbooks live in `data/`. The loader recognizes the gov.uk
 names automatically:
 
 - `ghg-conversion-factors-2025-full-set.xlsx`,
-  `ghg-conversion-factors-2026-full-set.xlsx` — "Government conversion factors
+  `ghg-conversion-factors-2026-full-set.xlsx`: "Government conversion factors
   for company reporting" (full set), two years. (Aliases `defra_2025.xlsx` /
   `defra_2026.xlsx` also work.)
-- `sample_bom_real.csv` — a product bill-of-materials (`line_item, quantity,
+- `sample_bom_real.csv`: a product bill-of-materials (`line_item, quantity,
   unit`) matched to real activities. A real `data/sample_bom.csv` overrides it.
 
 **Grounding for the explanations:** if a Major Changes PDF (`*change*.pdf`) is in
 `data/`, it is used; otherwise the tool reads the **"What's new" sheet inside the
-new workbook** — which explains that year's methodology revisions and relabels.
+new workbook**, which explains that year's methodology revisions and relabels.
 
 Real full-set workbooks are large; `.gitignore` keeps the generic `defra_*.xlsx`
 aliases out of git, but the gov.uk-named files are tracked when committed.
@@ -113,7 +113,7 @@ pipeline runs today. Synthetic files are marked as such and must never be
 presented as real DEFRA figures.
 
 **Real-data note:** across 2025→2026 the full set shows ~500 "added" and ~500
-"removed" activities — most are DEFRA *relabels* (e.g. waste "Incineration with
+"removed" activities, most of them DEFRA *relabels* (e.g. waste "Incineration with
 energy recovery" → "Combustion"; "HGV (all diesel)" → "HGV (non-refrigerated,
 all diesel)"). These are reported separately and are **not** counted as material
 movers; only factors present in both years and past threshold are "flagged".
@@ -122,11 +122,11 @@ movers; only factors present in both years and past threshold are "flagged".
 
 The explanation layer picks its backend from whichever API key is set:
 
-- **Gemini** — set `GEMINI_API_KEY` (or `GOOGLE_API_KEY`). Model from
+- **Gemini**: set `GEMINI_API_KEY` (or `GOOGLE_API_KEY`). Model from
   `GEMINI_MODEL` (default `gemini-2.5-flash`). Uses the `google-genai` SDK.
-- **Claude** — set `ANTHROPIC_API_KEY`. Model from `ANTHROPIC_MODEL` (default
+- **Claude**: set `ANTHROPIC_API_KEY`. Model from `ANTHROPIC_MODEL` (default
   `claude-sonnet-5`). Uses the `anthropic` SDK.
-- **Offline** — if neither key is set, `explain.py` falls back to a deterministic
+- **Offline**: if neither key is set, `explain.py` falls back to a deterministic
   offline explainer that still obeys the grounding rules (so the demo and the
   trap test run without a key). Offline output is labelled so it is never
   mistaken for a real model answer.
@@ -135,7 +135,7 @@ If both keys are set, Gemini wins. Whatever the backend, the grounding rules are
 enforced in code (`_finalize`), so no model can invent a reason the DEFRA notes
 don't contain, and the deterministic target-impact flag always overrides the
 model's. Set the key as an environment variable (or in a local `.env`, which is
-git-ignored) — do not hard-code it.
+git-ignored), do not hard-code it.
 
 ## How to run
 
@@ -149,8 +149,8 @@ pytest -q                                  # the tests
 
 ## What NOT to do
 
-1. Don't add ecoinvent (licensed) — DEFRA only for v1.
+1. Don't add ecoinvent (licensed): DEFRA only for v1.
 2. Don't add a database / login / payments.
-3. Don't cover every impact category or dataset — carbon + DEFRA proves it.
+3. Don't cover every impact category or dataset: carbon + DEFRA proves it.
 4. Don't let the AI guess a match or invent a reason.
 5. Don't polish before it works end-to-end.

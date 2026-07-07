@@ -107,3 +107,24 @@ adopted the auto-ship + housekeeping workflow going forward.
 **Artifacts:** docs/WORKING_PREFERENCES.md, docs/STATUS.md, docs/DECISIONS.md,
 docs/PROMPT_LOG.md, CLAUDE.md, src/report.py, app.py, run_demo.py. Commit and
 main-establishment recorded in STATUS.md.
+
+---
+
+### 2026-07-07 · P8
+**Prompt (verbatim):** "what's next?"
+
+**Response summary:** Picked the first CI quality gate: a microcopy linter that
+enforces the no-em-dash house rule as code. Built `scripts/lint_microcopy.py`
+(AST-based: flags em dashes in user-facing Python string literals, excluding
+docstrings and comments, plus anywhere in Markdown; allowlists the synthetic
+data generator, which mirrors DEFRA's third-party formatting). Wired it into
+pytest (`tests/test_microcopy.py`) and a new GitHub Actions workflow
+(`.github/workflows/ci.yml`) that runs the gate then the tests on every PR into
+`main`. The linter caught two real user-facing violations the earlier scrub
+missed (`src/recompute.py` note strings), which are now fixed, plus scrubbed em
+dashes from README.md and CLAUDE.md. Verified: linter clean, fails correctly on
+a planted em dash, and `pytest` green at 8 passed.
+
+**Artifacts:** scripts/lint_microcopy.py, tests/test_microcopy.py,
+.github/workflows/ci.yml, src/recompute.py, README.md, CLAUDE.md, docs/STATUS.md,
+docs/PROMPT_LOG.md.
