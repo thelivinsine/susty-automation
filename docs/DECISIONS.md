@@ -182,3 +182,23 @@ Design choices:
 Runs in the existing pytest CI step (no data files needed), so it gates every PR.
 It does not replace the real-workbook smoke test; the two are complementary
 (frozen-truth correctness here, real-shape sanity there).
+
+## D13. Dependency-audit gate
+A CI gate (`scripts/audit_deps.py`, wired into `.github/workflows/ci.yml`) audits
+the declared dependencies and their whole transitive closure against known-CVE
+databases via `pip-audit -r requirements.txt`. A flagged package surfaces on a PR
+rather than in production.
+
+Why CI-only, not a pytest test (unlike the microcopy and retrieval gates): those
+are deterministic and run offline, so they live in the suite. A dependency audit
+is inherently ONLINE (it queries a live advisory feed) and TIME-VARYING (a clean
+tree today can flag tomorrow when a new CVE lands, with no code change). Putting
+that in `pytest` would make the offline suite flaky and network-dependent, so it
+runs as its own CI step and as a one-command local check.
+
+`pip-audit` is deliberately NOT added to `requirements.txt`: it is dev-only
+tooling, so bundling it would bloat the app's declared runtime deps and audit the
+audit tool's own tree. CI installs it in the audit step instead; the wrapper tells
+a local user to `pip install pip-audit` if it is missing. Unfixable or
+false-positive advisories can be waived deliberately with `--ignore-vuln <ID>`
+(passed through to pip-audit) plus a note, rather than by weakening the gate.
