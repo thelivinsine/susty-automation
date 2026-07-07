@@ -150,6 +150,24 @@ if relabels is not None and not relabels.empty:
             ],
             hide_index=True,
         )
+        rel_expl = results.get("relabel_explanations") or []
+        if rel_expl:
+            st.markdown(
+                "**Renamed and moved.** These relabels also crossed DEFRA's "
+                "materiality threshold, so they are explained here too (grounded "
+                "the same way as the flagged factors)."
+            )
+            for e in rel_expl:
+                header = (
+                    f"{e['old_activity']} → {e['new_activity']}  ·  {e['scope']}  ·  "
+                    f"{e['kg_co2e_old']:g} → {e['kg_co2e_new']:g}  "
+                    f"({e['pct_change']:+.1f}%)"
+                )
+                with st.expander(header):
+                    st.markdown(f"**Why it changed.** {e['plain_english_reason']}")
+                    st.markdown(f"**Methodology note.** {e['methodology_note']}")
+                    st.markdown(f"**Target impact.** {e['target_impact_flag']}")
+                    st.caption(f"retrieval relevance score: {e['retrieval_score']}")
 
 # --- Biggest movers ---
 st.subheader("Biggest contributors to the change")

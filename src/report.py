@@ -80,6 +80,11 @@ def build_markdown_report(results: dict) -> str:
     # Relabels (renamed factors, paired)
     relabels = results.get("relabels")
     if relabels is not None and not relabels.empty:
+        rel_expl = results.get("relabel_explanations") or []
+        # Pairs whose value also crossed threshold get a ⚠ marker and an
+        # explanation block below the table.
+        material_pairs = {(e["old_activity"], e["new_activity"]) for e in rel_expl}
+
         lines.append("## Relabels (renamed factors, paired)")
         lines.append("")
         lines.append(
@@ -94,12 +99,39 @@ def build_markdown_report(results: dict) -> str:
         for _, r in relabels.iterrows():
             pct = r["pct_change"]
             delta = "same" if (pd.notna(pct) and abs(pct) < 0.05) else f"{_fmt(pct,1)}%"
+            if (r["old_activity"], r["new_activity"]) in material_pairs:
+                delta += " ⚠ material"
             lines.append(
                 f"| {r['old_activity']} → {r['new_activity']} | {r['unit']} "
                 f"| {r['scope']} | {_fmt(r['kg_co2e_old'])} → {_fmt(r['kg_co2e_new'])} "
                 f"| {delta} |"
             )
         lines.append("")
+
+        # Renamed AND moved: explain the ones that also crossed the threshold.
+        if rel_expl:
+            lines.append("### Why the renamed factors also moved")
+            lines.append("")
+            lines.append(
+                "These relabels are not just renames: the factor value also crossed "
+                "DEFRA's materiality threshold, so each is explained below, grounded "
+                "in the changes notes (or reported as unexplained when the notes are "
+                "silent)."
+            )
+            lines.append("")
+            for e in rel_expl:
+                lines.append(
+                    f"**{e['old_activity']} → {e['new_activity']}**  ·  {e['scope']}"
+                    f"  ·  {_fmt(e['kg_co2e_old'])} → {_fmt(e['kg_co2e_new'])} "
+                    f"({_fmt(e['pct_change'],1)}%)"
+                )
+                lines.append("")
+                lines.append(f"**Why it changed.** {e['plain_english_reason']}")
+                lines.append("")
+                lines.append(f"**Methodology note.** {e['methodology_note']}")
+                lines.append("")
+                lines.append(f"**Target impact.** {e['target_impact_flag']}")
+                lines.append("")
 
     # Biggest movers in the footprint
     lines.append("## Biggest contributors to the change")

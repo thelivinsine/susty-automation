@@ -92,6 +92,13 @@ def main() -> None:
         print(f"  • {e['activity']} ({e['pct_change']:+.1f}%)")
         print(f"      {e['plain_english_reason'][:100]}"
               + ("..." if len(e['plain_english_reason']) > 100 else ""))
+    rel_expl = results.get("relabel_explanations") or []
+    if rel_expl:
+        print("  renamed AND moved (relabels past threshold, now explained):")
+        for e in rel_expl:
+            print(f"  • {e['old_activity']} → {e['new_activity']} ({e['pct_change']:+.1f}%)")
+            print(f"      {e['plain_english_reason'][:100]}"
+                  + ("..." if len(e['plain_english_reason']) > 100 else ""))
     _line()
 
     report_md = build_markdown_report(results)
