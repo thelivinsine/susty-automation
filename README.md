@@ -4,7 +4,7 @@
 
 Every year the official databases that convert activity (a litre of diesel, a
 kWh of grid electricity) into kg CO₂e quietly update their numbers. When they do,
-every company's carbon footprint silently shifts — and someone has to work out
+every company's carbon footprint silently shifts, and someone has to work out
 *what changed, why, and whether it breaks the company's climate targets.* Today
 that is manual consulting work in Excel and Word.
 
@@ -15,12 +15,12 @@ bill-of-materials**, it:
 1. **Normalizes** both workbooks into one tidy table.
 2. **Diffs** them and flags factors that moved beyond DEFRA's own materiality
    thresholds (>5% Scope 1/2, >10% Scope 3).
-3. **Matches** the product's materials to DEFRA activities — and flags anything
+3. **Matches** the product's materials to DEFRA activities, and flags anything
    it can't match with confidence rather than guessing.
 4. **Recomputes** the product footprint under both versions and reports how much
    of it could actually be computed (coverage %).
 5. **Explains** each flagged change in plain English + a methodology-grade note,
-   **grounded strictly in the official DEFRA "major changes" report** — and says
+   **grounded strictly in the official DEFRA "major changes" report**, and says
    "no official reason found" instead of inventing one.
 
 The wedge is step 5. Big platforms recompute the new number; nobody explains a
@@ -52,23 +52,23 @@ workbooks from gov.uk ("Government conversion factors for company reporting") an
 drop them into `data/`:
 
 - `ghg-conversion-factors-2025-full-set.xlsx`,
-  `ghg-conversion-factors-2026-full-set.xlsx` — two years of the full workbook
+  `ghg-conversion-factors-2026-full-set.xlsx`: two years of the full workbook
   (the gov.uk filenames work as-is; `defra_2025.xlsx` / `defra_2026.xlsx` also work)
-- `sample_bom_real.csv` — your product's bill-of-materials (`line_item, quantity, unit`)
+- `sample_bom_real.csv`: your product's bill-of-materials (`line_item, quantity, unit`)
 
 The tool prefers real files over the synthetic ones automatically. For the change
 explanations it uses a Major Changes PDF if you add one (`*change*.pdf`),
 otherwise it reads the **"What's new" sheet inside the new workbook**.
 
 > **A note on real data:** between two years the full set typically shows several
-> hundred "added" and "removed" activities — most are DEFRA *relabels* (e.g.
+> hundred "added" and "removed" activities, most of them DEFRA *relabels* (e.g.
 > "HGV (all diesel)" → "HGV (non-refrigerated, all diesel)"). The tool reports
 > those separately and only counts factors present in *both* years, past
 > threshold, as material movers.
 
 ### The AI explanation layer
 
-The explainer picks its backend from whichever API key is set — no code change
+The explainer picks its backend from whichever API key is set, no code change
 needed:
 
 ```bash
@@ -79,7 +79,7 @@ export GEMINI_API_KEY=your-key-here
 export ANTHROPIC_API_KEY=your-key-here
 ```
 
-Set it in your shell before running, or — easier — copy the template and fill in
+Set it in your shell before running, or (easier) copy the template and fill in
 your key:
 
 ```bash
@@ -88,7 +88,7 @@ cp .env.example .env      # then paste your key into .env (it's git-ignored)
 
 The app and `run_demo.py` load `.env` automatically. If both keys are set, Gemini
 wins. Without any key the tool falls back to a deterministic **offline** explainer
-that obeys the same grounding rules — so the demo, and the "won't invent a reason"
+that obeys the same grounding rules, so the demo, and the "won't invent a reason"
 trap test, run without any key.
 
 > **GitHub secrets note:** repository secrets only reach **GitHub Actions**
@@ -124,6 +124,6 @@ run_demo.py      one-command end-to-end demo
 ## The one rule that must not break
 
 **Never silently guess.** A wrong factor match, or an invented reason for a
-change, is worse than admitting uncertainty — it's the whole credibility of the
+change, is worse than admitting uncertainty. It's the whole credibility of the
 tool. Low-confidence matches are flagged for a human; changes the DEFRA report
 doesn't explain are reported as unexplained, not fabricated.
