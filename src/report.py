@@ -11,7 +11,7 @@ import pandas as pd
 
 def _fmt(x, nd=3):
     if x is None or (isinstance(x, float) and pd.isna(x)):
-        return "—"
+        return "n/a"
     if isinstance(x, float):
         return f"{x:,.{nd}f}"
     return str(x)
@@ -27,7 +27,7 @@ def build_markdown_report(results: dict) -> str:
     arrow = "▲" if (pct or 0) >= 0 else "▼"
 
     lines = []
-    lines.append("# Emission-Factor Version Explainer — Report")
+    lines.append("# EF Version Explainer report")
     lines.append("")
     lines.append(
         f"**Comparing DEFRA {old_l} → {new_l}.** "
@@ -47,12 +47,12 @@ def build_markdown_report(results: dict) -> str:
     lines.append(
         f"- Coverage: **{s['coverage_pct']}%** of the bill-of-materials could be "
         f"computed ({s['lines_included']}/{s['lines_total']} lines). "
-        f"{s['lines_excluded']} line(s) excluded — see *Needs review* below."
+        f"{s['lines_excluded']} line(s) excluded. See *Needs review* below."
     )
     if results["context"].get("breaches_baseline"):
         lines.append(
             "- ⚠️ **Target flag:** the footprint increased, which would **breach a "
-            "flat baseline** — flag for review against active targets (e.g. SBTi)."
+            "flat baseline**. Flag for review against active targets (e.g. SBTi)."
         )
     else:
         lines.append("- ✅ Footprint did not increase against a flat baseline.")
@@ -103,7 +103,7 @@ def build_markdown_report(results: dict) -> str:
         lines.append("")
 
     # Needs review
-    lines.append("## Needs review (not auto-matched — never guessed)")
+    lines.append("## Needs review (not auto-matched, never guessed)")
     lines.append("")
     mc = results["match_coverage"]
     lines.append(
@@ -113,7 +113,7 @@ def build_markdown_report(results: dict) -> str:
     lines.append("")
     review = results["matched_df"][results["matched_df"]["needs_review"]]
     if review.empty:
-        lines.append("_None — every line matched with confidence._")
+        lines.append("_None. Every line matched with confidence._")
     else:
         lines.append("| Line item | Unit | Best score | Reason |")
         lines.append("|---|---|---|---|")

@@ -50,7 +50,7 @@ STRICT RULES:
   recall an emission factor from memory.
 - Base the reason ONLY on the provided "DEFRA changes report excerpt". If that
   excerpt is empty or does not actually explain THIS change, set
-  plain_english_reason to exactly: "{NO_REASON}" — do not speculate.
+  plain_english_reason to exactly: "{NO_REASON}". Do not speculate.
 - Keep methodology_note consistent with GHG Protocol / ISO 14064 language.
 - Respond with STRICT JSON only, with exactly these keys:
   "plain_english_reason", "methodology_note", "target_impact_flag".
@@ -72,14 +72,14 @@ def _target_flag(pct: float, context: dict | None) -> str:
     if rose and breaches:
         return (
             "This factor increased, adding to a product footprint rise that would "
-            "breach a flat baseline — flag for target review."
+            "breach a flat baseline. Flag for target review."
         )
     if rose:
         return "This factor increased; product footprint stays within a flat baseline."
     if fell:
         return "This factor decreased, easing the product footprint."
     if pct is not None and abs(pct) >= 10:
-        return "Material factor change — check headroom against active targets."
+        return "Material factor change. Check headroom against active targets."
     return "Immaterial at the product level."
 
 
@@ -100,7 +100,7 @@ def _offline_explain(material, old, new, pct, retrieved_text, context) -> dict:
         if len(snippet) > 600:
             snippet = snippet[:600].rsplit(" ", 1)[0] + "…"
         reason = (
-            f"[offline mode — extract from DEFRA changes report, not model-"
+            f"[offline mode: extract from DEFRA changes report, not model-"
             f"generated] The factor {_direction(pct)} "
             f"{abs(pct):.1f}% ({old:g} → {new:g}). Official note: {snippet}"
         )
@@ -201,7 +201,7 @@ def _gemini_explain(material, old, new, pct, retrieved_text, context) -> dict:
 def _degrade(material, old, new, pct, retrieved_text, context, exc) -> dict:
     """When an API call fails, fall back to the offline explainer with a note."""
     result = _offline_explain(material, old, new, pct, retrieved_text, context)
-    result["methodology_note"] += f"  (Note: API call failed — {type(exc).__name__}.)"
+    result["methodology_note"] += f"  (Note: API call failed: {type(exc).__name__}.)"
     return result
 
 

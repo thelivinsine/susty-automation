@@ -38,7 +38,7 @@ def _line(char="─", n=70):
 def main() -> None:
     p = resolve_paths()
     _line("=")
-    print("EF VERSION EXPLAINER — END-TO-END DEMO")
+    print("EF VERSION EXPLAINER  ·  END-TO-END DEMO")
     _line("=")
     kind = "REAL DEFRA data" if p["using_real_data"] else "SYNTHETIC demo data"
     print(f"Data source: {kind}")
@@ -98,7 +98,7 @@ def main() -> None:
         f.write(report_md)
     print(f"STAGE 6    Wrote report -> {out_path}")
     _line("=")
-    print("DEMO OK — open the report above, or run:  streamlit run app.py")
+    print("DEMO OK. Open the report above, or run:  streamlit run app.py")
 
 
 if __name__ == "__main__":

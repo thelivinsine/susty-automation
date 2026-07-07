@@ -22,6 +22,24 @@ Suhas Pala. Non-developer domain expert (sustainability / LCA). Explanations of
 code choices should be in plain English; prefer simple, readable code over
 clever code.
 
+## House rules (read `docs/` first)
+
+Standing working preferences live in **`docs/WORKING_PREFERENCES.md`** and
+override defaults. The essentials:
+
+- **No em dashes** in any visible string or chat reply. Use a period, comma,
+  colon, parentheses, or "so"/"and". En dash and bullet are fine.
+- Act as a decisive CTO for a non-technical owner. One recommended path, not a
+  menu. Say what was chosen in one line and proceed.
+- **Auto-ship:** when a change is complete and green, open a PR into `main` and
+  squash-merge it, then realign the dev branch (`docs/WORKING_PREFERENCES.md` has
+  the housekeeping steps). `main` is production and source of truth.
+- Token discipline: targeted search over whole-file reads, batch tool calls, no
+  subagents for routine work.
+- After every significant task, update **both** `docs/STATUS.md` and
+  `docs/PROMPT_LOG.md` (and any stale docs). Locked decisions live in
+  `docs/DECISIONS.md`; read before undoing anything marked LOCKED.
+
 ## Hard constraints (do not violate without asking)
 
 - **Stack:** Python + pandas + Streamlit + openpyxl + pdfplumber + the Anthropic

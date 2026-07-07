@@ -37,7 +37,7 @@ st.set_page_config(page_title="EF Version Explainer", layout="wide")
 st.title("Emission-Factor Version Explainer")
 st.caption(
     "Compare two annual DEFRA GHG conversion-factor releases, recompute a "
-    "product's footprint under each, and explain what changed — grounded in the "
+    "product's footprint under each, and explain what changed, grounded in the "
     "official DEFRA changes report."
 )
 
@@ -113,7 +113,7 @@ c4.metric("Flagged movers", int(results["diff_df"]["flagged"].sum()))
 
 if results["context"].get("breaches_baseline"):
     st.warning(
-        "⚠️ The footprint increased — this would **breach a flat baseline**. "
+        "⚠️ The footprint increased. This would **breach a flat baseline**. "
         "Flag for review against active targets (e.g. SBTi)."
     )
 else:
