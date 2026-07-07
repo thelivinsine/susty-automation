@@ -79,11 +79,22 @@ export GEMINI_API_KEY=your-key-here
 export ANTHROPIC_API_KEY=your-key-here
 ```
 
-Set it in your shell before running, or put it in a local `.env` file (which is
-git-ignored — never commit a key). If both keys are set, Gemini wins. Without any
-key the tool falls back to a deterministic **offline** explainer that obeys the
-same grounding rules — so the demo, and the "won't invent a reason" trap test,
-run without any key.
+Set it in your shell before running, or — easier — copy the template and fill in
+your key:
+
+```bash
+cp .env.example .env      # then paste your key into .env (it's git-ignored)
+```
+
+The app and `run_demo.py` load `.env` automatically. If both keys are set, Gemini
+wins. Without any key the tool falls back to a deterministic **offline** explainer
+that obeys the same grounding rules — so the demo, and the "won't invent a reason"
+trap test, run without any key.
+
+> **GitHub secrets note:** repository secrets only reach **GitHub Actions**
+> runs, not your laptop or the Streamlit dashboard. Use a local `.env` for
+> running locally; use GitHub secrets only if you run this in a CI workflow (and
+> Streamlit Cloud's own Secrets manager if you deploy the dashboard there).
 
 Whichever model runs, the grounding rules are enforced in code: it can only use
 the numbers and DEFRA text passed to it, and where the notes are silent it must

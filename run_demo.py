@@ -16,6 +16,15 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
+# Load a local .env (git-ignored) so GEMINI_API_KEY / ANTHROPIC_API_KEY are
+# picked up automatically. Optional — no-op if python-dotenv isn't installed.
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+except Exception:
+    pass
+
 from paths import resolve_paths          # noqa: E402
 from pipeline import run_pipeline         # noqa: E402
 from report import build_markdown_report  # noqa: E402

@@ -6,6 +6,7 @@ rapidfuzz>=3.0         # fuzzy string matching for BOM -> factor matching
 streamlit>=1.30        # the single-page UI
 anthropic>=0.40        # Claude backend for the explanation layer
 google-genai>=0.3      # Gemini backend for the explanation layer (set GEMINI_API_KEY)
+python-dotenv>=1.0     # auto-load API keys from a local .env file
 
 # dev / test
 pytest>=8.0
