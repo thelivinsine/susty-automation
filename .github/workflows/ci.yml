@@ -26,6 +26,11 @@ jobs:
       - name: Microcopy gate (no em dashes in visible copy)
         run: python scripts/lint_microcopy.py
 
+      - name: Dependency-audit gate (known vulnerabilities)
+        run: |
+          python -m pip install pip-audit
+          python scripts/audit_deps.py
+
       - name: Generate synthetic demo data
         run: python scripts/make_synthetic_data.py
 

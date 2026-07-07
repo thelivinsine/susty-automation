@@ -256,3 +256,23 @@ clean. Documented in DECISIONS D12 and STATUS handoff H7. Branch
 
 **Artifacts:** tests/test_golden_loader.py, docs/DECISIONS.md, docs/STATUS.md,
 docs/PROMPT_LOG.md.
+
+---
+
+### 2026-07-07 · P14
+**Prompt (verbatim):** "go ahead"
+
+**Response summary:** Added the dependency-audit gate, chosen over semantic
+relabels (which need unavailable DEFRA notes and risk the no-guess rule). Built
+`scripts/audit_deps.py`, a wrapper that runs `pip-audit -r requirements.txt` over
+the declared deps and their transitive closure, and wired it into CI as its own
+step (installs pip-audit, then runs the wrapper). Kept it CI-only rather than a
+pytest test because a dependency audit is online and time-varying (a clean tree
+can flag later with no code change), unlike the deterministic offline gates; and
+kept pip-audit OUT of requirements.txt so the app's runtime deps stay lean.
+Verified it runs clean in the sandbox (no known vulnerabilities). 26 tests green,
+all three CI gates clean. Documented in DECISIONS D13 and STATUS handoff H8.
+Branch `claude/next-task-ydh8wl`.
+
+**Artifacts:** scripts/audit_deps.py, .github/workflows/ci.yml, docs/DECISIONS.md,
+docs/STATUS.md, docs/PROMPT_LOG.md.

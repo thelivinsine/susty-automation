@@ -16,14 +16,14 @@ from a git-ignored `.env`.
 
 Gates: `pytest` green (26 tests, including the grounding trap, a real-workbook
 test, the microcopy gate, the relabel suite, the material-relabel explanation
-path, the retrieval-quality gold set, and loader/diff golden vectors). Two CI
-gates are live: the microcopy linter (no-em-dash house rule) and a
-retrieval-quality gate that fails the build on any WRONG grounding note, both
-wired into pytest and the GitHub Actions workflow; the loader/diff golden vectors
-run in the same pytest step. Streamlit app boots clean. Demo footprint on the
-sample product: 2.344 to 2.305 kg CO2e, with the UK electricity change explained
-from the real DEFRA text. On real data, relabel pairing collapses ~500/500
-added/removed to 76 genuinely new and 54 genuinely removed.
+path, the retrieval-quality gold set, and loader/diff golden vectors). Three CI
+gates are live: the microcopy linter (no-em-dash house rule), a retrieval-quality
+gate that fails the build on any WRONG grounding note, and a dependency-audit gate
+(`pip-audit` on requirements); the loader/diff golden vectors run in the same
+pytest step. Streamlit app boots clean. Demo footprint on the sample product:
+2.344 to 2.305 kg CO2e, with the UK electricity change explained from the real
+DEFRA text. On real data, relabel pairing collapses ~500/500 added/removed to 76
+genuinely new and 54 genuinely removed.
 
 ## What shipped
 - Pipeline: loader, diff, matching, recompute, changes retrieval, explain,
@@ -46,34 +46,34 @@ added/removed to 76 genuinely new and 54 genuinely removed.
 - Loader/diff golden vectors (`tests/test_golden_loader.py`): pin the exact
   normalized output for a frozen, code-built fixture that exercises every tricky
   parsing path (DECISIONS D12).
+- Dependency-audit gate (`scripts/audit_deps.py`): CI-only `pip-audit` over the
+  requirements' transitive closure, fails on any known CVE (DECISIONS D13).
 - Docs: WORKING_PREFERENCES, DECISIONS, PROMPT_LOG, this file.
 
 ## Known gaps / next candidates
 - Semantic relabels with low string overlap (Incineration -> Combustion) still
   read as added/removed; would need DEFRA's own relabel notes.
-- More CI gates: a dependency-audit gate (loader/diff golden vectors now done).
-- Package manager pin + lockfile for supply-chain hygiene. Not done (pip +
-  requirements.txt only so far).
+- Package manager pin + lockfile for reproducible installs (deps are audited now,
+  but still unpinned `>=` in requirements.txt).
 - Live Gemini runs only on the owner's machine (endpoint blocked in the web
   sandbox).
 
 ## Resume here
 Two most recent handoffs:
 
+- H8 (2026-07-07): Added the dependency-audit gate (DECISIONS D13). CI installs
+  `pip-audit` and runs `scripts/audit_deps.py`, which audits the requirements'
+  transitive closure against known-CVE feeds and fails on any advisory. Kept it
+  CI-only (not pytest) because it is online and time-varying, unlike the
+  deterministic offline gates; pip-audit stays out of requirements.txt to avoid
+  bloating runtime deps. Currently clean. 26 tests green; now three CI gates.
 - H7 (2026-07-07): Added loader/diff golden-vector tests (DECISIONS D12). A small,
   frozen, code-built fixture (an independent oracle, not the synthetic generator)
   pins the EXACT normalized loader output and diff results, exercising scope-from-
   metadata, messy-scope normalization, forward-fill, the ignored Year column, unit
   normalization, (activity, unit) dedup, and super-header block expansion. Runs in
-  the existing pytest CI step, so it gates every PR without needing the big data
-  files. 26 tests green.
-- H6 (2026-07-07): Built the retrieval-quality harness (DECISIONS D11). Scores
-  `retrieve_passage` against a labelled gold set for precision/recall/refusal, and
-  gates on any WRONG grounding note. Found and fixed a real defect: a fuzzy TITLE
-  match on shared boilerplate fired a hit on the wrong note (petrol -> diesel note;
-  real "Plug-in Hybrid" -> a "Calculating emissions" heading). Made keyword overlap
-  the gate; 7 real-data false positives became honest "no reason found". 22 tests.
+  the existing pytest CI step. 26 tests green.
 
-Next likely task: a dependency-audit gate (e.g. pip-audit in CI), or tackle
-semantic relabels (low string overlap, e.g. Incineration -> Combustion) using
-DEFRA's own relabel notes.
+Next likely task: pin dependencies with a lockfile for reproducible installs (the
+audit gate is in place but deps are still `>=`), or tackle semantic relabels (low
+string overlap, e.g. Incineration -> Combustion) using DEFRA's own relabel notes.
