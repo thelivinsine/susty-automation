@@ -9,7 +9,7 @@ endobj
 << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>
 endobj
 4 0 obj
-<< /Length 1269 >>
+<< /Length 1222 >>
 stream
 BT
 /F1 11 Tf
@@ -29,13 +29,11 @@ T*
 T*
 (Change: Electricity generated) Tj
 T*
-(The UK grid average electricity factor increased by around 9%. The 2026 update reflects a) Tj
+(The UK grid average electricity factor changed by around 9%. The 2026 update reflects a) Tj
 T*
-(higher share of natural gas generation in the 2024 generation mix used as the basis for) Tj
+(revised generation mix in the year used as the basis for the factor, together with a) Tj
 T*
-(the factor, together with a methodology refresh aligning transmission and distribution) Tj
-T*
-(losses with the latest DUKES data.) Tj
+(methodology refresh aligning transmission and distribution losses with the latest data.) Tj
 T*
 () Tj
 T*
@@ -72,9 +70,9 @@ xref
 0000000058 00000 n 
 0000000115 00000 n 
 0000000241 00000 n 
-0000001562 00000 n 
+0000001515 00000 n 
 trailer
 << /Size 6 /Root 1 0 R >>
 startxref
-1632
+1585
 %%EOF

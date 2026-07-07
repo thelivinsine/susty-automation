@@ -46,15 +46,25 @@ pytest -q
 
 ### Using real DEFRA data
 
-The demo ships with **synthetic, clearly-labelled** factor data so it runs
-anywhere. To use genuine figures, download from gov.uk ("Government conversion
-factors for company reporting") and drop these into `data/`:
+The demo ships with **synthetic, clearly-labelled** factor data (in the same
+DEFRA layout) so it runs anywhere. To use genuine figures, download the full-set
+workbooks from gov.uk ("Government conversion factors for company reporting") and
+drop them into `data/`:
 
-- `defra_2025.xlsx`, `defra_2026.xlsx` — two years of the full workbook
-- `defra_changes_2026.pdf` — the "major changes" report for the new year
-- `sample_bom.csv` — your product's bill-of-materials (`line_item, quantity, unit`)
+- `ghg-conversion-factors-2025-full-set.xlsx`,
+  `ghg-conversion-factors-2026-full-set.xlsx` — two years of the full workbook
+  (the gov.uk filenames work as-is; `defra_2025.xlsx` / `defra_2026.xlsx` also work)
+- `sample_bom_real.csv` — your product's bill-of-materials (`line_item, quantity, unit`)
 
-The tool automatically prefers real files over the synthetic ones.
+The tool prefers real files over the synthetic ones automatically. For the change
+explanations it uses a Major Changes PDF if you add one (`*change*.pdf`),
+otherwise it reads the **"What's new" sheet inside the new workbook**.
+
+> **A note on real data:** between two years the full set typically shows several
+> hundred "added" and "removed" activities — most are DEFRA *relabels* (e.g.
+> "HGV (all diesel)" → "HGV (non-refrigerated, all diesel)"). The tool reports
+> those separately and only counts factors present in *both* years, past
+> threshold, as material movers.
 
 ### The AI explanation layer
 
@@ -75,7 +85,8 @@ src/
   diff.py        diff_versions()   flag material changes by threshold
   matching.py    match_bom()       BOM -> factor, never guesses
   recompute.py   recompute()       footprint old vs new + coverage
-  changes_pdf.py retrieve_passage() grounding retrieval over the changes PDF
+  changes_pdf.py load_change_chunks()/retrieve_passage() grounding over the
+                 Major Changes PDF or the workbook's "What's new" sheet
   explain.py     explain_change()  grounded Claude call (+ offline fallback)
   report.py      build_markdown_report()
   pipeline.py    run_pipeline()    the glue

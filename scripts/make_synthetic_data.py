@@ -1,17 +1,21 @@
 """
-make_synthetic_data.py — generate CLEARLY-LABELLED SYNTHETIC data so the whole
-pipeline runs end-to-end without the real (gov.uk) DEFRA files.
+make_synthetic_data.py — generate CLEARLY-LABELLED SYNTHETIC data, shaped like
+the REAL DEFRA "full set" workbook, so the whole pipeline runs end-to-end without
+the real (gov.uk) files.
 
-It writes, into data/synthetic/:
-  - defra_2025.xlsx, defra_2026.xlsx  (DEFRA-shaped workbooks: title rows, a
-    'Scope' header, forward-fill-able Level columns, a 'kg CO2e' column)
-  - changes_2026.pdf                  (a 'major changes' report that explains
-    SOME of the moved factors, not all — so the grounding trap test is real)
-  - sample_bom.csv                    (a synthetic product bill-of-materials)
+It writes into data/synthetic/:
+  - defra_2025.xlsx, defra_2026.xlsx  — DEFRA-shaped workbooks: title/metadata
+    rows, a 'Scope:' metadata cell, guidance text, an
+    'Activity | <descriptor> | Unit | kg CO2e' table with forward-fill-able
+    descriptor columns, and a multi-block 'Material use' sheet with a super-header
+    (Primary / Closed-loop) — so the loader is exercised the same way it is on the
+    real file.
+  - changes_2026.pdf  — a 'major changes' report explaining SOME movers, not all
+    (so the AI grounding trap test is real).
+  - sample_bom.csv    — a synthetic product bill-of-materials.
 
 THESE NUMBERS ARE INVENTED. They are shaped like DEFRA data for testing only and
-must never be presented as real emission factors. Drop real workbooks at
-data/defra_2025.xlsx etc. to use genuine figures.
+must never be presented as real emission factors.
 """
 
 from __future__ import annotations
@@ -23,33 +27,61 @@ from openpyxl import Workbook
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(os.path.dirname(HERE), "data", "synthetic")
 
-# (sheet, scope, level1, level2, level3, level4, column_text, unit, kg_2025, kg_2026)
-FACTORS = [
-    # Fuels — Scope 1
-    ("Fuels", "Scope 1", "Gaseous fuels", "Natural gas", "", "", "", "kwh", 0.18320, 0.18210),
-    ("Fuels", "Scope 1", "Liquid fuels", "Diesel (average biofuel blend)", "", "", "", "litre", 2.5100, 2.6620),  # +6.1% flagged
-    ("Fuels", "Scope 1", "Liquid fuels", "Petrol (average biofuel blend)", "", "", "", "litre", 2.3400, 2.3490),
-    # UK electricity — Scope 2
-    ("UK electricity", "Scope 2", "UK electricity", "Electricity generated", "", "", "", "kwh", 0.20700, 0.22510),  # +8.7% flagged
-    # Material use — Scope 3
-    ("Material use", "Scope 3", "Metal", "Aluminium", "Primary material production", "", "", "tonne", 12500.0, 14200.0),  # +13.6% flagged
-    ("Material use", "Scope 3", "Plastic", "Average plastics", "Primary material production", "", "", "tonne", 3120.0, 3450.0),  # +10.6% flagged (NO reason in PDF -> trap)
-    ("Material use", "Scope 3", "Paper", "Board", "Primary material production", "", "", "tonne", 820.0, 900.0),  # +9.8% NOT flagged (<10%)
-    ("Material use", "Scope 3", "Glass", "Glass", "Primary material production", "", "", "tonne", 850.0, 861.0),
-    # Water supply — Scope 3
-    ("Water supply", "Scope 3", "Water supply", "Water supply", "", "", "", "cubic metre", 0.17700, 0.14900),  # -15.8% flagged (NO reason -> gap)
-    # Freighting goods — Scope 3
-    ("Freighting goods", "Scope 3", "HGV (all diesel)", "Rigid (>7.5t-17t)", "50% laden", "", "", "tonne.km", 0.10700, 0.10850),
+# Each sheet: name, scope, descriptor column headers, super-header block labels
+# (one per kg CO2e column), and rows. A row is:
+#   (activity_level, descriptor2, unit, [value_2025_per_block], [value_2026_per_block])
+SHEETS = [
+    {
+        "name": "Fuels",
+        "scope": "Scope 1",
+        "descriptors": ["Activity", "Fuel"],
+        "blocks": [""],  # single kg CO2e column
+        "rows": [
+            ("Gaseous fuels", "Natural gas", "kwh", [0.18320], [0.18210]),
+            ("Liquid fuels", "Diesel (average biofuel blend)", "litre", [2.5100], [2.6620]),  # +6.1% flagged S1
+            ("Liquid fuels", "Petrol (average biofuel blend)", "litre", [2.3400], [2.3490]),
+        ],
+    },
+    {
+        "name": "UK electricity",
+        "scope": "Scope 2",
+        "descriptors": ["Activity", "Country"],
+        "blocks": [""],
+        "rows": [
+            ("Electricity generated", "Electricity: UK", "kwh", [0.20700], [0.22510]),  # +8.7% flagged S2
+        ],
+    },
+    {
+        "name": "Material use",
+        "scope": "Scope 3",
+        "descriptors": ["Activity", "Material"],
+        "blocks": ["Primary material production", "Closed-loop source"],  # two kg CO2e cols
+        "rows": [
+            ("Metal", "Aluminium", "tonne", [12500.0, 500.0], [14200.0, 520.0]),   # +13.6% flagged S3
+            ("Plastic", "Average plastics", "tonne", [3120.0, 1500.0], [3450.0, 1520.0]),  # +10.6% flagged (NO reason -> trap)
+            ("Paper", "Board", "tonne", [820.0, 700.0], [900.0, 720.0]),           # +9.8% NOT flagged (<10%)
+            ("Glass", "Glass", "tonne", [850.0, 800.0], [861.0, 805.0]),
+        ],
+    },
+    {
+        "name": "Water supply",
+        "scope": "Scope 3",
+        "descriptors": ["Activity", "Type"],
+        "blocks": [""],
+        "rows": [
+            ("Water supply", "", "cubic metre", [0.17700], [0.14900]),  # -15.8% flagged S3 (NO reason -> gap)
+        ],
+    },
 ]
 
-# Which moved factors the "major changes" report explains, and the stated reason.
+# The changes report explains SOME movers; plastics and water are deliberately left
+# unexplained so the grounding trap test has a real "no reason found" case.
 CHANGE_REASONS = {
     "Electricity generated": (
-        "The UK grid average electricity factor increased by around 9%. The 2026 "
-        "update reflects a higher share of natural gas generation in the 2024 "
-        "generation mix used as the basis for the factor, together with a "
-        "methodology refresh aligning transmission and distribution losses with "
-        "the latest DUKES data."
+        "The UK grid average electricity factor changed by around 9%. The 2026 "
+        "update reflects a revised generation mix in the year used as the basis "
+        "for the factor, together with a methodology refresh aligning "
+        "transmission and distribution losses with the latest data."
     ),
     "Diesel (average biofuel blend)": (
         "The diesel factor rose by about 6%. This reflects a reduction in the "
@@ -62,49 +94,60 @@ CHANGE_REASONS = {
         "upstream electricity intensity used for smelting in the underlying life "
         "cycle inventory, reflecting a less decarbonised assumed power mix."
     ),
-    # NOTE: 'Average plastics' and 'Water supply' are deliberately NOT explained
-    # here, so the AI grounding trap test has a real 'no reason found' case.
 }
 
 
 def _write_workbook(path: str, year_index: int) -> None:
-    """year_index: 0 -> use kg_2025 column, 1 -> use kg_2026 column."""
+    """year_index: 0 -> 2025 values, 1 -> 2026 values."""
     wb = Workbook()
     wb.remove(wb.active)
+    year = 2025 + year_index
 
-    # group factors by sheet
-    sheets: dict[str, list] = {}
-    for row in FACTORS:
-        sheets.setdefault(row[0], []).append(row)
-
-    for sheet_name, rows in sheets.items():
-        ws = wb.create_sheet(title=sheet_name[:31])
-        # DEFRA-style junk/title rows above the header
-        ws.append([f"{sheet_name} — Government conversion factors (SYNTHETIC)"])
-        ws.append([f"GHG Conversion Factors {2025 + year_index} — for testing only"])
+    for sh in SHEETS:
+        ws = wb.create_sheet(title=sh["name"][:31])
+        # Title + metadata rows, mirroring the real workbook's preamble.
+        ws.append([f"{sh['name']} — Government conversion factors (SYNTHETIC)"])
+        ws.append([sh["name"]])
+        ws.append(["Index"])
         ws.append([])
-        # header row (loader anchors on the 'Scope' cell)
-        ws.append(
-            ["Scope", "Level 1", "Level 2", "Level 3", "Level 4",
-             "Column Text", "UOM", "kg CO2e"]
-        )
-        prev_scope = prev_l1 = None
-        for (_s, scope, l1, l2, l3, l4, coltext, unit, kg25, kg26) in rows:
-            kg = (kg25, kg26)[year_index]
-            # forward-fill emulation: blank out repeated Scope / Level 1 cells
-            scope_cell = "" if scope == prev_scope else scope
-            l1_cell = "" if (l1 == prev_l1 and scope == prev_scope) else l1
-            ws.append([scope_cell, l1_cell, l2, l3, l4, coltext, unit, kg])
-            prev_scope, prev_l1 = scope, l1
+        ws.append(["Emissions source:", sh["name"], "Factor set:", "Full set"])
+        ws.append(["Scope:", sh["scope"], "Version:", 1, "Year:", year])  # loader reads scope here
+        ws.append([])
+        ws.append([f"{sh['name']} conversion factors {year} — for testing only"])
+        ws.append(["Guidance"])
+        ws.append(["● Synthetic guidance line — not real DEFRA text."])
+        ws.append([])
+
+        descriptors = sh["descriptors"]
+        blocks = sh["blocks"]
+        n_desc = len(descriptors)
+
+        # Super-header row (block labels above each kg CO2e column) — only when
+        # there is more than one block, matching the real multi-block sheets.
+        if len(blocks) > 1:
+            super_row = [None] * (n_desc + 1) + list(blocks)
+            ws.append(super_row)
+
+        # Header row: Activity | <descriptors...> | Unit | kg CO2e (x n_blocks)
+        header = list(descriptors) + ["Unit"] + ["kg CO2e"] * len(blocks)
+        ws.append(header)
+
+        # Data rows, with forward-fill emulation (blank the first descriptor when
+        # it repeats, like the real merged cells).
+        prev_activity = None
+        for (activity, desc2, unit, vals25, vals26) in sh["rows"]:
+            vals = (vals25, vals26)[year_index]
+            act_cell = "" if activity == prev_activity else activity
+            row = [act_cell, desc2, unit] + list(vals)
+            ws.append(row)
+            prev_activity = activity
 
     os.makedirs(os.path.dirname(path), exist_ok=True)
     wb.save(path)
 
 
 def _write_changes_pdf(path: str) -> None:
-    """Write a small 'major changes' report PDF from the CHANGE_REASONS above."""
-    # We build a minimal valid PDF by hand-writing text via reportlab if present,
-    # else via a tiny raw-PDF fallback, so we don't add a heavy dependency.
+    """Write a small 'major changes' report PDF from CHANGE_REASONS."""
     lines = [
         "DEFRA / DESNZ GHG Conversion Factors 2026",
         "Major changes report (SYNTHETIC — for testing only)",
@@ -115,7 +158,6 @@ def _write_changes_pdf(path: str) -> None:
     ]
     for key, reason in CHANGE_REASONS.items():
         lines.append(f"Change: {key}")
-        # wrap the reason to ~90 chars for readability
         words, cur = reason.split(), ""
         for w in words:
             if len(cur) + len(w) + 1 > 90:
@@ -133,7 +175,7 @@ def _write_changes_pdf(path: str) -> None:
         from reportlab.lib.pagesizes import A4
 
         c = canvas.Canvas(path, pagesize=A4)
-        width, height = A4
+        _, height = A4
         y = height - 60
         for ln in lines:
             if y < 60:
@@ -153,22 +195,20 @@ def _write_raw_pdf(path: str, lines: list[str]) -> None:
         return s.replace("\\", r"\\").replace("(", r"\(").replace(")", r"\)")
 
     text_ops = ["BT", "/F1 11 Tf", "50 780 Td", "14 TL"]
-    for i, ln in enumerate(lines):
+    for ln in lines:
         text_ops.append(f"({esc(ln[:110])}) Tj")
         text_ops.append("T*")
     text_ops.append("ET")
     content = "\n".join(text_ops).encode("latin-1", "replace")
 
-    objs = []
-    objs.append(b"<< /Type /Catalog /Pages 2 0 R >>")
-    objs.append(b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>")
-    objs.append(
+    objs = [
+        b"<< /Type /Catalog /Pages 2 0 R >>",
+        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
         b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] "
-        b"/Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>"
-    )
-    objs.append(b"<< /Length %d >>\nstream\n" % len(content) + content + b"\nendstream")
-    objs.append(b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>")
-
+        b"/Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>",
+        b"<< /Length %d >>\nstream\n" % len(content) + content + b"\nendstream",
+        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+    ]
     pdf = b"%PDF-1.4\n"
     offsets = []
     for i, obj in enumerate(objs, start=1):
@@ -186,21 +226,20 @@ def _write_raw_pdf(path: str, lines: list[str]) -> None:
 
 
 def _write_sample_bom(path: str) -> None:
-    """A synthetic product: a reusable aluminium water bottle (with packaging)."""
+    """A synthetic product mirroring the real-data sample (aluminium canned drink)."""
     rows = [
         ("line_item", "quantity", "unit"),
-        ("Aluminium, primary production", 0.00025, "tonne"),   # -> Aluminium (flagged)
-        ("Average plastics", 0.00010, "tonne"),                # -> Average plastics (flagged, NO reason -> trap)
-        ("Paper and board", 0.00005, "tonne"),                 # -> Board (not flagged)
-        ("Electricity generated, UK grid", 3.5, "kwh"),        # -> Electricity generated (flagged)
-        ("Diesel, average biofuel blend", 0.40, "litre"),      # -> Diesel (flagged)
-        ("Water supply", 0.02, "cubic metre"),                 # -> Water supply (flagged, NO reason)
+        ("Aluminium, primary production", 0.00025, "tonne"),        # -> Metal - Aluminium (flagged)
+        ("Average plastics, primary production", 0.00010, "tonne"),  # -> Plastic - Average plastics (flagged, NO reason -> trap)
+        ("Board, primary production", 0.00005, "tonne"),            # -> Paper - Board (not flagged)
+        ("Electricity generated, UK", 3.5, "kwh"),                  # -> Electricity generated (flagged)
+        ("Diesel (average biofuel blend)", 0.40, "litre"),          # -> Diesel (flagged)
+        ("Water supply", 0.02, "cubic metre"),                      # -> Water supply (flagged, NO reason)
         ("Proprietary sealant compound (custom)", 0.00002, "tonne"),  # -> UNMATCHED (needs_review)
     ]
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", newline="") as f:
-        w = csv.writer(f)
-        w.writerows(rows)
+        csv.writer(f).writerows(rows)
 
 
 def main() -> None:

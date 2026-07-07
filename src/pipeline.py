@@ -12,7 +12,7 @@ from loader import load_defra
 from diff import diff_versions
 from matching import match_bom, coverage_summary
 from recompute import recompute, top_delta_lines
-from changes_pdf import extract_changes_text, chunk_changes, retrieve_passage
+from changes_pdf import load_change_chunks, retrieve_passage
 from explain import explain_change
 
 
@@ -48,13 +48,9 @@ def run_pipeline(
     }
 
     # Explain only the flagged factors that actually appear in THIS product's
-    # footprint (that's what the client cares about).
-    chunks = []
-    if changes_pdf_path:
-        try:
-            chunks = chunk_changes(extract_changes_text(changes_pdf_path))
-        except Exception:
-            chunks = []
+    # footprint (that's what the client cares about). Grounding source: a real
+    # Major Changes PDF if provided, else the new workbook's "What's new" sheet.
+    chunks = load_change_chunks(changes_pdf_path, defra_new_path)
 
     included_activities = set(
         line_table.loc[line_table["included"], "matched_activity"].dropna()
@@ -86,8 +82,18 @@ def run_pipeline(
             }
         )
 
+    diff_stats = {
+        "factors_old": len(df_old),
+        "factors_new": len(df_new),
+        "joined": int((diff_df["status"].isin(["changed", "unchanged"])).sum()),
+        "flagged": int(diff_df["flagged"].sum()),
+        "added": int((diff_df["status"] == "added").sum()),
+        "removed": int((diff_df["status"] == "removed").sum()),
+    }
+
     return {
         "diff_df": diff_df,
+        "diff_stats": diff_stats,
         "matched_df": matched_df,
         "match_coverage": match_cov,
         "line_table": line_table,

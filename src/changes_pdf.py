@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import re
 import pdfplumber
+import openpyxl
 from rapidfuzz import fuzz
 
 # Generic words that carry no discriminating signal when matching a material name
@@ -69,6 +70,73 @@ def chunk_changes(text: str) -> list[dict]:
     if buf:
         paras.append(" ".join(buf))
     return [{"title": "", "text": p} for p in paras if len(p) > 20]
+
+
+def extract_whats_new_text(xlsx_path: str) -> str:
+    """
+    Extract the "What's new" sheet from a DEFRA workbook. The real full-set
+    workbook ships this sheet, and it is an excellent grounding source: it
+    explains the year's methodology revisions, data updates and relabels in
+    prose. Used when a standalone Major Changes PDF is not provided.
+    """
+    wb = openpyxl.load_workbook(xlsx_path, read_only=True, data_only=True)
+    target = None
+    for name in wb.sheetnames:
+        if "what" in name.lower() and "new" in name.lower():
+            target = name
+            break
+    if target is None:
+        return ""
+    ws = wb[target]
+    rows = []
+    for row in ws.iter_rows(values_only=True):
+        text = " ".join(str(c) for c in row if c is not None and str(c).strip())
+        if text.strip():
+            rows.append(text.strip())
+    return "\n".join(rows)
+
+
+def chunk_whats_new(text: str) -> list[dict]:
+    """
+    Chunk the "What's new" text by its numbered sections, e.g.
+    "1 Revision to the calculation method for UK electricity". Each section
+    becomes one retrievable passage.
+    """
+    lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+    blocks, current = [], None
+    heading = re.compile(r"^(\d+)\s+([A-Z].{6,})")
+    for ln in lines:
+        m = heading.match(ln)
+        if m:
+            if current:
+                blocks.append(current)
+            current = {"title": m.group(2).strip(), "text": ""}
+        elif current is not None:
+            current["text"] = (current["text"] + " " + ln).strip()
+    if current:
+        blocks.append(current)
+    return [b for b in blocks if b["text"]]
+
+
+def load_change_chunks(pdf_path: str | None, new_workbook_path: str | None) -> list[dict]:
+    """
+    Build grounding chunks, preferring a real Major Changes PDF, then falling
+    back to the new workbook's "What's new" sheet. Returns [] if neither works
+    (the explainer then honestly reports "no official reason found").
+    """
+    if pdf_path:
+        try:
+            chunks = chunk_changes(extract_changes_text(pdf_path))
+            if chunks:
+                return chunks
+        except Exception:
+            pass
+    if new_workbook_path:
+        try:
+            return chunk_whats_new(extract_whats_new_text(new_workbook_path))
+        except Exception:
+            pass
+    return []
 
 
 def _keywords(material: str) -> set[str]:

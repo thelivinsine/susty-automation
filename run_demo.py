@@ -50,9 +50,14 @@ def main() -> None:
     )
 
     s = results["summary"]
+    ds = results["diff_stats"]
     _line()
     print("STAGE 1-2  Loaded both workbooks and diffed them")
-    print(f"  factors flagged as material movers: {int(results['diff_df']['flagged'].sum())}")
+    print(f"  factors: {ds['factors_old']} ({p['old_label']}) vs {ds['factors_new']} ({p['new_label']}), "
+          f"{ds['joined']} matched across both years")
+    print(f"  material movers (past DEFRA thresholds): {ds['flagged']}")
+    print(f"  structural: {ds['added']} added, {ds['removed']} removed "
+          f"(includes DEFRA relabels, not counted as movers)")
     _line()
     print("STAGE 3    Matched product BOM to factors")
     mc = results["match_coverage"]

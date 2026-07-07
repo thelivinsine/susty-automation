@@ -36,12 +36,12 @@ defaults = resolve_paths()
 with st.sidebar:
     st.header("Inputs")
     if defaults["using_real_data"]:
-        st.success("Using REAL DEFRA files found in data/.")
+        st.success("Using REAL DEFRA full-set workbooks found in data/.")
     else:
         st.info(
-            "Using SYNTHETIC demo data. Drop real DEFRA workbooks into data/ "
-            "(defra_2025.xlsx, defra_2026.xlsx, defra_changes_2026.pdf) to use "
-            "genuine figures."
+            "Using SYNTHETIC demo data. Drop real DEFRA full-set workbooks into "
+            "data/ (e.g. ghg-conversion-factors-2025-full-set.xlsx and the 2026 "
+            "file) to use genuine figures."
         )
 
     old_label = st.text_input("Old version label", defaults["old_label"])
@@ -105,6 +105,14 @@ if results["context"].get("breaches_baseline"):
 else:
     st.success("Footprint did not increase against a flat baseline.")
 
+ds = results.get("diff_stats")
+if ds:
+    st.caption(
+        f"Version scan: {ds['flagged']} factors moved past DEFRA thresholds across "
+        f"{ds['joined']} present in both years · {ds['added']} added, "
+        f"{ds['removed']} removed (added/removed include DEFRA relabels)."
+    )
+
 # --- Biggest movers ---
 st.subheader("Biggest contributors to the change")
 top = results["top_delta"]
@@ -117,8 +125,9 @@ else:
 # --- Explanations ---
 st.subheader("What changed and why")
 st.caption(
-    "Grounded strictly in the DEFRA changes report. Where the report is silent, "
-    "the tool says so instead of inventing a reason."
+    "Grounded strictly in the DEFRA changes notes (a Major Changes PDF if "
+    "provided, otherwise the workbook's 'What's new' sheet). Where the notes are "
+    "silent, the tool says so instead of inventing a reason."
 )
 if not results["explanations"]:
     st.write("No flagged, footprint-relevant factor changes.")

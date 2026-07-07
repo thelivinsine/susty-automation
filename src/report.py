@@ -56,6 +56,15 @@ def build_markdown_report(results: dict) -> str:
         )
     else:
         lines.append("- ✅ Footprint did not increase against a flat baseline.")
+
+    ds = results.get("diff_stats")
+    if ds:
+        lines.append(
+            f"- Version scan: **{ds['flagged']}** factors moved past DEFRA's "
+            f"materiality thresholds across {ds['joined']} factors present in both "
+            f"years; {ds['added']} added and {ds['removed']} removed "
+            f"(added/removed include DEFRA relabels and are not counted as movers)."
+        )
     lines.append("")
 
     # Biggest movers in the footprint
@@ -75,7 +84,7 @@ def build_markdown_report(results: dict) -> str:
     lines.append("")
 
     # Explanations (the moat)
-    lines.append("## What changed and why (grounded in the DEFRA changes report)")
+    lines.append("## What changed and why (grounded in the DEFRA changes notes)")
     lines.append("")
     if not results["explanations"]:
         lines.append("_No flagged, footprint-relevant factor changes._")

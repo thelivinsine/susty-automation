@@ -68,15 +68,16 @@ def diff_versions(df_old: pd.DataFrame, df_new: pd.DataFrame) -> pd.DataFrame:
 
         pct = _pct_change(old_v, new_v) if (has_old and has_new) else np.nan
 
+        # "flagged" means a MATERIAL % change on a factor present in BOTH years.
+        # Added / removed factors are reported separately (many are DEFRA
+        # relabels, e.g. "Incineration with energy recovery" -> "Combustion");
+        # lumping them in here would wildly overstate the count of real movers.
         flagged = bool(
             has_old
             and has_new
             and not pd.isna(pct)
             and abs(pct) > _threshold_for_scope(r["scope"])
         )
-        # Added / removed factors are always worth a human's attention.
-        if status in ("added", "removed"):
-            flagged = True
 
         rows.append(
             {

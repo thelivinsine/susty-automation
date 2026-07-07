@@ -70,18 +70,35 @@ Product BOM CSV ─►[matching]─►[recompute]──────────�
 
 ## Data (data/)
 
-Real DEFRA data is **not** committed (large, and the build environment cannot
-reach gov.uk). To use real data, drop these into `data/`:
+Real DEFRA full-set workbooks live in `data/`. The loader recognizes the gov.uk
+names automatically:
 
-- `defra_2025.xlsx`, `defra_2026.xlsx` — "Government conversion factors for
-  company reporting" (full set) for two years, from gov.uk.
-- `defra_changes_2026.pdf` — the DEFRA "major changes" report for the new year.
-- `sample_bom.csv` — a product bill-of-materials (`line_item, quantity, unit`).
+- `ghg-conversion-factors-2025-full-set.xlsx`,
+  `ghg-conversion-factors-2026-full-set.xlsx` — "Government conversion factors
+  for company reporting" (full set), two years. (Aliases `defra_2025.xlsx` /
+  `defra_2026.xlsx` also work.)
+- `sample_bom_real.csv` — a product bill-of-materials (`line_item, quantity,
+  unit`) matched to real activities. A real `data/sample_bom.csv` overrides it.
+
+**Grounding for the explanations:** if a Major Changes PDF (`*change*.pdf`) is in
+`data/`, it is used; otherwise the tool reads the **"What's new" sheet inside the
+new workbook** — which explains that year's methodology revisions and relabels.
+
+Real full-set workbooks are large; `.gitignore` keeps the generic `defra_*.xlsx`
+aliases out of git, but the gov.uk-named files are tracked when committed.
 
 Until real files are added, `scripts/make_synthetic_data.py` generates
-**clearly-labelled SYNTHETIC** DEFRA-format workbooks, a changes PDF, and a
-sample BOM so the whole pipeline runs today. Synthetic files are marked as such
-and must never be presented as real DEFRA figures.
+**clearly-labelled SYNTHETIC** workbooks in the **same DEFRA layout** (metadata
+scope row, guidance preamble, `Activity | descriptor | Unit | kg CO2e` table,
+multi-block super-header), plus a changes PDF and a sample BOM, so the whole
+pipeline runs today. Synthetic files are marked as such and must never be
+presented as real DEFRA figures.
+
+**Real-data note:** across 2025→2026 the full set shows ~500 "added" and ~500
+"removed" activities — most are DEFRA *relabels* (e.g. waste "Incineration with
+energy recovery" → "Combustion"; "HGV (all diesel)" → "HGV (non-refrigerated,
+all diesel)"). These are reported separately and are **not** counted as material
+movers; only factors present in both years and past threshold are "flagged".
 
 ## AI / API notes
 

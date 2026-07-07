@@ -124,3 +124,33 @@ def test_explanation_is_grounded_and_wont_invent():
     assert passage2 == ""
     out = explain_change(trap, 3120, 3450, 10.58, passage2, {"breaches_baseline": True})
     assert out["plain_english_reason"] == NO_REASON
+
+
+# ---- Real DEFRA full-set workbook (skips if the big files aren't present) ----
+REAL_OLD = os.path.join(ROOT, "data", "ghg-conversion-factors-2025-full-set.xlsx")
+REAL_NEW = os.path.join(ROOT, "data", "ghg-conversion-factors-2026-full-set.xlsx")
+
+
+@pytest.mark.skipif(
+    not (os.path.exists(REAL_OLD) and os.path.exists(REAL_NEW)),
+    reason="real DEFRA full-set workbooks not present in data/",
+)
+def test_real_workbook_loads_and_diffs():
+    from changes_pdf import load_change_chunks, retrieve_passage as rp
+
+    old = load_defra(REAL_OLD, "2025")
+    new = load_defra(REAL_NEW, "2026")
+    # Sanity: the real full set has well over a thousand factors across scopes.
+    assert len(old) > 1500 and len(new) > 1500
+    assert {"Scope 1", "Scope 2", "Scope 3"}.issubset(set(old["scope"]))
+
+    d = diff_versions(old, new)
+    # The headline UK electricity factor exists in both years and falls sharply.
+    elec = d[d["activity"] == "Electricity generated - Electricity: UK"]
+    assert not elec.empty
+    assert elec.iloc[0]["pct_change"] < -10  # 2026 methodology cut it ~26%
+
+    # The workbook's own "What's new" sheet grounds the electricity explanation.
+    chunks = load_change_chunks(None, REAL_NEW)
+    passage, score = rp(chunks, "Electricity generated - Electricity: UK")
+    assert passage != "" and "electricity" in passage.lower()
