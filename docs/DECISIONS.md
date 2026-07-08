@@ -235,3 +235,48 @@ Not done here (still open, see REFERENCE backlog): the underlying sub-row
 mispairing from DEFRA's table reorder. Grouping makes it honest and readable; a
 finer within-family pairing (or DEFRA's own row map) would make the per-variant
 deltas trustworthy. Left rather than guessed.
+
+## D15. Goal reframed around genuine usefulness (LOCKED direction)
+The owner reset the goal: the tool must be GENUINELY USEFUL to a specific
+sustainability audience first; getting hired is a SIDE EFFECT, not the aim. A
+six-persona expert panel plus two adversarial critiques (recorded in full in
+`docs/VISION.md`) reached a unanimous "partly useful" verdict and converged on:
+
+- **Primary audience:** the UK solo / boutique carbon consultant producing
+  client-facing SECR / voluntary footprints on free DEFRA factors. Secondary: the
+  in-house sustainability lead at a DEFRA-reporting SME. The open-source community
+  is the DISTRIBUTION engine, not a third audience to serve.
+- **Why hiring stays served:** in a pond this small the public artifact IS the
+  hiring strategy, so genuine usefulness and getting-hired collapse into one move.
+  Do not monetize the tool; let the tool monetize the owner (reputation, pull).
+- **The honest correction:** the original "nobody explains the DEFRA delta" wedge
+  is false (free release-day blogs and DEFRA's own reports explain the headline
+  movers). The defensible value is the LONG TAIL: complete, per-factor,
+  against-the-user's-own-register, reproducible coverage, plus the no-guess
+  honesty. Positioning and full scope IN/OUT live in `docs/VISION.md`.
+
+Locked so future sessions do not drift back to "credibility artifact to get hired"
+as the primary framing.
+
+## D16. Real-data ingest is the demo-to-tool build (VISION move #2)
+The panel's single most important finding: the tool was strong on the commodity
+part (diff/flag/recompute/generic explanation) and absent on the differentiating
+part (working against the user's OWN messy inventory). So the chosen build was to
+widen the front door, not the surface. Shipped in three steps (plan in
+`docs/PLAN_real_data_ingest.md`):
+
+- `src/ingest.py` reads a real `.csv`/`.xlsx`, guesses the item/quantity/unit
+  columns from awkward headers with a plain synonyms list (no AI, so it stays
+  transparent and testable), and reports confidence.
+- The no-guess rule (D2) is extended to the COLUMN level: if the tool is not
+  confident which column is which, the app asks (three confirm dropdowns) rather
+  than guessing; rows with a blank/garbled quantity, missing unit, or missing item
+  are SET ASIDE with a reason, never dropped silently or defaulted to zero.
+- Explanations are ranked by IMPACT on the user's own footprint (kg CO2e moved in
+  this product, summed across matched BOM lines), so the report leads with what
+  actually moved their number, not DEFRA's generic order.
+
+Deliberately out of scope (kept small): parsing BOMs from PDFs/Word, AI in the
+column-guessing, and touching the footprint math or factor matching. Still open:
+tolerance for files whose headers are not on the first row, and VISION move #3 (a
+dated, cited, printable memo as the first-class output).

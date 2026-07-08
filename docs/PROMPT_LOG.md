@@ -403,3 +403,151 @@ the finer within-family pairing to the REFERENCE backlog.
 **Artifacts:** src/relabel.py, src/pipeline.py, src/report.py, app.py, run_demo.py,
 tests/test_relabel.py, docs/DECISIONS.md, docs/STATUS.md, docs/REFERENCE.md,
 docs/PROMPT_LOG.md.
+
+---
+
+Branch for all entries below: `claude/project-progress-review-b8wwaa`.
+
+### 2026-07-08 · P20
+**Prompt (verbatim):** "how's the project going compared to the goal and plan as
+per the docs"
+
+**Response summary:** Read the original plan (`docs/reference/Build_Playbook.md`,
+the MVP spec) against the living docs and the code, and gave an honest scorecard:
+the MVP the playbook describes is built, green (32 tests), and running on the real
+DEFRA 2025->2026 workbooks; all 7 build prompts and all 4 acceptance criteria are
+met; the project has gone beyond the plan into relabel families and three CI gates.
+Named the deliberate open gaps (within-family per-variant deltas, Streamlit
+theming, semantic relabels, lockfile, Gemini only reachable on the owner's
+machine). No code changed.
+
+**Artifacts:** none (assessment only).
+
+---
+
+### 2026-07-08 · P21
+**Prompt (verbatim):** "i want you to remember a new goal: the getting hired part
+should be a side effect of this tool. I want this tool to be genuinely useful to
+specific audience in sustainability field/community. is it fulfilling that? if not,
+what should be scoped and how should the goal and scope be formaulated? ... brainstorm
+this using multiple agents with various expertise and personalities ... produce a
+thorough report of goal, scope, audience, vision and mission".
+
+**Response summary:** Ran a multi-agent Workflow: six diverse expert personas (LCA
+practitioner, climate-SaaS strategist, standards/assurance expert, solo-consultant
+end user, skeptical VC, community/GTM lead), two adversarial critiques, and a
+synthesis (9 agents, web-grounded competitive + regulatory claims). Unanimous
+verdict: "partly useful" today, because the tool eats a toy 5-line BOM, not the
+user's real factor register (strong where least defensible, absent where the moat
+lives). Reframed: primary audience is the UK solo/boutique DEFRA consultant;
+getting-hired is a side effect (in a small pond the public artifact IS the hiring
+strategy). Wrote vision, mission, positioning, scope IN/OUT, risks, and the next 3
+moves to `docs/VISION.md`. Key external finding: the "nobody explains the DEFRA
+delta" wedge is false (Acclaro, EmissionFactors.net, Circular Ecology, the EMA,
+and DEFRA's own reports explain the headline movers for free); the defensible
+value is the long tail against the user's own register.
+
+**Artifacts:** docs/VISION.md.
+
+---
+
+### 2026-07-08 · P22
+**Prompt (verbatim):** "I don't understand your findings nor recommendations.
+explain me clearly"
+
+**Response summary:** Re-explained the panel's findings in plain English for the
+non-technical owner: the tool has two halves (the working, valuable half is the
+relabel reconciliation and the no-guess honesty; the missing half is that it only
+runs on a fake tiny product list, not a real messy client spreadsheet). Named the
+one real user (the small independent UK consultant, who is also who would hire
+him), and gave the three next moves. No code changed.
+
+**Artifacts:** none (explanation only).
+
+---
+
+### 2026-07-08 · P23
+**Prompt (verbatim):** "go ahead" (to write a concrete plan for VISION move #2,
+make the tool accept a real user's spreadsheet).
+
+**Response summary:** Read how the BOM flows today (`pipeline.py` reads a clean
+3-column CSV) and wrote `docs/PLAN_real_data_ingest.md`: a 4-step, plain-English
+plan (forgiving reader, confirm-your-columns in the app, rank changes by impact on
+the user's own footprint, a locking test), each with a way to SEE it work, plus an
+explicit OUT list and the "validate with a real file first" advice. Also committed
+the untracked `docs/VISION.md` (stop-hook flagged it). Recorded the goal reframe as
+DECISIONS D15.
+
+**Artifacts:** docs/PLAN_real_data_ingest.md, docs/VISION.md, docs/DECISIONS.md.
+
+---
+
+### 2026-07-08 · P24
+**Prompt (verbatim):** "go ahead with step 1"
+
+**Response summary:** Built the forgiving inventory reader `src/ingest.py`: reads
+.csv/.xlsx, guesses which column is the item/quantity/unit from awkward headers via
+a plain synonyms list (no AI), reports its confidence so the app can ask when
+unsure, tolerates "1,200"-style numbers, and SETS ASIDE rows with a blank/garbled
+quantity, missing unit, or missing item (with a reason) instead of guessing, the
+no-guess rule (D2) extended to the column level. Added `scripts/check_ingest.py`
+(runs it on a deliberately messy fixture, prints the mapping and set-aside rows)
+and `tests/test_ingest.py` (6 tests). Suite 38 green. Recorded as DECISIONS D16.
+
+**Artifacts:** src/ingest.py, scripts/check_ingest.py, tests/test_ingest.py,
+docs/DECISIONS.md.
+
+---
+
+### 2026-07-08 · P25
+**Prompt (verbatim):** "go ahead with step 2"
+
+**Response summary:** Wired the reader into `app.py`. The uploader now accepts
+.csv and .xlsx with any column names; after upload the app shows three dropdowns
+pre-filled with the guessed mapping for the user to confirm or fix, and the Run
+button stays disabled until the mapping is complete and unambiguous. Set-aside rows
+are listed in a new "Rows set aside" section. The built-in sample still runs when
+nothing is uploaded. The microcopy gate caught two em dashes I introduced (the
+"— select —" placeholder and a caption), now fixed. Verified: app boots headless
+(HTTP 200, no errors) and a messy in-memory xlsx runs read->guess->build->full
+pipeline end to end on synthetic data (2 good rows matched, 2 set aside). Suite 38
+green.
+
+**Artifacts:** app.py.
+
+---
+
+### 2026-07-08 · P26
+**Prompt (verbatim):** "go ahead with step 3"
+
+**Response summary:** Made the report lead with the changes that moved the user's
+OWN footprint the most. Each flagged factor's explanation now carries
+`footprint_impact` (kg CO2e it moved in this product, summed across the BOM lines
+that matched it) and its share of the total change; explanations are sorted by that
+impact. Report and app show the kg impact and share next to each change. Verified on
+synthetic data: aluminium (72.6% of the total change) leads, then electricity,
+diesel, plastics, water (which fell 15.8% but is last because it barely touches this
+product). Suite 38 green, microcopy clean. Updated STATUS (H13) and the plan doc to
+mark steps 1-3 shipped.
+
+**Artifacts:** src/pipeline.py, src/report.py, app.py, docs/STATUS.md,
+docs/PLAN_real_data_ingest.md.
+
+---
+
+### 2026-07-08 · P27
+**Prompt (verbatim):** "document the session"
+
+**Response summary:** Recorded P20 to P27 in this log, added DECISIONS D15 (goal
+reframed to genuine usefulness, primary audience the UK solo/boutique DEFRA
+consultant, getting-hired a side effect) and D16 (real-data ingest as the
+demo-to-tool build, no-guess extended to columns), and refreshed STATUS. Session
+summary: (1) honest status review against the original plan; (2) a six-persona
+multi-agent brainstorm that reframed the goal around genuine usefulness
+(`docs/VISION.md`); (3) shipped VISION move #2 (real-data ingest) in three steps,
+forgiving reader + confirm-your-columns + impact ranking. Gates at session end: 38
+tests green, microcopy linter clean, app boots. Open next: header-row tolerance,
+then VISION move #3 (a dated, cited, printable memo), and validating with a real
+client file.
+
+**Artifacts:** docs/PROMPT_LOG.md, docs/DECISIONS.md, docs/STATUS.md.
