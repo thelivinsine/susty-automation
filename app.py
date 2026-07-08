@@ -31,8 +31,19 @@ from paths import resolve_paths          # noqa: E402
 from pipeline import run_pipeline         # noqa: E402
 from report import build_markdown_report  # noqa: E402
 from explain import active_backend        # noqa: E402
+from ingest import read_table, guess_mapping, build_inventory  # noqa: E402
 
 st.set_page_config(page_title="EF Version Explainer", layout="wide")
+
+
+@st.cache_data(show_spinner=False)
+def _read_raw(file_bytes, file_name):
+    """Read an uploaded .csv/.xlsx into a raw DataFrame (cached on its bytes)."""
+    import io
+
+    bio = io.BytesIO(file_bytes)
+    bio.name = file_name  # read_table picks the reader from the extension
+    return read_table(bio)
 
 st.title("Emission-Factor Version Explainer")
 st.caption(
@@ -57,9 +68,69 @@ with st.sidebar:
     old_label = st.text_input("Old version label", defaults["old_label"])
     new_label = st.text_input("New version label", defaults["new_label"])
 
-    st.markdown("**Product bill-of-materials (CSV)**")
-    st.caption("Columns: line_item, quantity, unit")
-    uploaded = st.file_uploader("Upload a BOM CSV", type=["csv"])
+    st.markdown("**Product inventory / bill-of-materials**")
+    st.caption(
+        "Upload a .csv or .xlsx. Any column names are fine (Material, Qty, UoM "
+        "and so on). You confirm which is which below. Nothing is assumed silently."
+    )
+    uploaded = st.file_uploader("Upload an inventory file", type=["csv", "xlsx"])
+
+    # A real client file rarely has the exact columns the pipeline needs, so we
+    # guess the mapping and let the user confirm or fix it (the no-guess rule,
+    # applied at the column level). clean_bom_df stays None when nothing is
+    # uploaded, in which case the sample BOM is used.
+    clean_bom_df = None
+    set_aside: list = []
+    ingest_ready = True  # the built-in sample path is always ready
+
+    if uploaded is not None:
+        try:
+            raw_df = _read_raw(uploaded.getvalue(), uploaded.name)
+        except Exception as exc:
+            st.error(f"Could not read that file: {exc}")
+            raw_df = None
+            ingest_ready = False
+
+        if raw_df is not None and len(raw_df.columns) > 0:
+            cols = [str(c) for c in raw_df.columns]
+            guessed, confidence = guess_mapping(cols)
+
+            st.markdown("**Confirm your columns**")
+            placeholder = "(select a column)"
+            options = [placeholder] + cols
+
+            def _default_index(field):
+                g = guessed.get(field)
+                return (cols.index(g) + 1) if g in cols else 0
+
+            sel_item = st.selectbox("Item / material", options, index=_default_index("line_item"))
+            sel_qty = st.selectbox("Quantity", options, index=_default_index("quantity"))
+            sel_unit = st.selectbox("Unit", options, index=_default_index("unit"))
+
+            mapping = {
+                "line_item": None if sel_item == placeholder else sel_item,
+                "quantity": None if sel_qty == placeholder else sel_qty,
+                "unit": None if sel_unit == placeholder else sel_unit,
+            }
+            picked = [c for c in mapping.values() if c]
+            if len(picked) < 3:
+                st.warning("Pick the item, quantity, and unit columns to continue.")
+                ingest_ready = False
+            elif len(set(picked)) < 3:
+                st.warning("Each column can be used once. Pick three different columns.")
+                ingest_ready = False
+            else:
+                clean_bom_df, set_aside = build_inventory(raw_df, mapping)
+                if clean_bom_df.empty:
+                    st.error("No usable rows after applying that mapping. Check the columns.")
+                    ingest_ready = False
+                else:
+                    st.success(f"{len(clean_bom_df)} of {len(raw_df)} rows ready.")
+                    if set_aside:
+                        st.caption(f"{len(set_aside)} row(s) set aside (shown in the report).")
+        elif raw_df is not None:
+            st.error("That file has no columns to read.")
+            ingest_ready = False
 
     backend = active_backend()
     if backend["live"]:
@@ -70,32 +141,31 @@ with st.sidebar:
             "ANTHROPIC_API_KEY (Claude) to use a live model."
         )
 
-    run = st.button("Run analysis", type="primary")
+    run = st.button("Run analysis", type="primary", disabled=not ingest_ready)
 
 
 @st.cache_data(show_spinner=False)
-def _run(old_p, new_p, pdf_p, bom_csv_bytes, bom_path, old_l, new_l):
-    if bom_csv_bytes is not None:
-        import io
-
-        bom_df = pd.read_csv(io.BytesIO(bom_csv_bytes))
-    else:
-        bom_df = pd.read_csv(bom_path)
+def _run(old_p, new_p, pdf_p, bom_df, old_l, new_l):
     return run_pipeline(old_p, new_p, pdf_p, bom_df, old_l, new_l)
 
 
-if run or "results" not in st.session_state:
+if (run or "results" not in st.session_state) and ingest_ready:
+    bom_df = clean_bom_df if clean_bom_df is not None else pd.read_csv(defaults["bom"])
     with st.spinner("Loading, diffing, matching, recomputing, explaining…"):
         results = _run(
             defaults["defra_old"],
             defaults["defra_new"],
             defaults["changes_pdf"],
-            uploaded.getvalue() if uploaded else None,
-            defaults["bom"],
+            bom_df,
             old_label,
             new_label,
         )
         st.session_state["results"] = results
+        st.session_state["set_aside"] = set_aside
+
+if "results" not in st.session_state:
+    st.info("Upload a file, confirm your columns in the sidebar, then click Run analysis.")
+    st.stop()
 
 results = st.session_state["results"]
 s = results["summary"]
@@ -214,6 +284,21 @@ if review.empty:
 else:
     st.dataframe(
         review[["line_item", "unit", "match_score", "match_method"]],
+        width="stretch",
+        hide_index=True,
+    )
+
+# --- Rows set aside from the uploaded file (before matching) ---
+aside = st.session_state.get("set_aside") or []
+if aside:
+    st.subheader("Rows set aside from your file (never guessed)")
+    st.caption(
+        "These lines were skipped because a required value was missing or "
+        "unreadable (no item name, no unit, or a blank/garbled quantity). Fix "
+        "them in your file and re-upload to include them."
+    )
+    st.dataframe(
+        pd.DataFrame(aside)[["row_number", "line_item", "reason"]],
         width="stretch",
         hide_index=True,
     )
