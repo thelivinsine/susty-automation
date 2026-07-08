@@ -276,3 +276,60 @@ Branch `claude/next-task-ydh8wl`.
 
 **Artifacts:** scripts/audit_deps.py, .github/workflows/ci.yml, docs/DECISIONS.md,
 docs/STATUS.md, docs/PROMPT_LOG.md.
+
+---
+
+### 2026-07-08 · P15
+**Prompt (verbatim):** "how can I view the product?"
+
+**Response summary:** Gave the owner three ways to view the tool and, because the
+session runs in a cloud sandbox where Streamlit is not reachable, rendered the
+LIVE pipeline output as a browser-viewable HTML Artifact from the real DEFRA 2025
+to 2026 data (footprint 2.344 to 2.305 kg CO2e, 85.7% coverage, the UK electricity
+change explained, HGV rename-and-move examples, one line held for review). Also
+documented the two local commands: `streamlit run app.py` (the interactive
+dashboard) and `python run_demo.py` (writes reports/demo_report.md). Flagged a real
+UX issue found while rendering: on real data the renamed-and-moved section (D10)
+emits ~420 near-duplicate entries (the same HGV rename repeated across weight
+classes and units), which bloats the report; proposed grouping them.
+
+**Artifacts:** none committed (external Artifact rendered from a live run; no repo
+change).
+
+---
+
+### 2026-07-08 · P16
+**Prompt (verbatim):** "looks good. why not use the design and color scheme used by
+DEFFRA but not a literal copy so that the users are familiar with the visuals"
+
+**Response summary:** Rebuilt the report-view Artifact in the GOV.UK Design System
+idiom (DEFRA sits inside GOV.UK), evoking it without cloning: black masthead with
+an environment-green keyline, a phase banner with a "Prototype" tag, the green
+confirmation panel for the headline result, GOV.UK tag pills, big-number stats,
+the bordered summary/key-value explanation block, GOV.UK-style tables, the warning
+text component (the "!" in a black circle), a green start button, the GOV.UK
+palette (blue #1d70b8, green #00703c, red #d4351c, grey rules, yellow #ffdd00
+focus), and Arial (GOV.UK's own GDS Transport fallback). Light and dark themes.
+Added an independence disclaimer (not affiliated with or endorsed by DEFRA / GOV.UK,
+visually inspired only), which matters if it goes client-facing. Preserved the
+mockup at `docs/mockups/govuk_report_view.html` as the reference for theming the
+real Streamlit app next. Offered to theme app.py to match (config.toml palette +
+CSS) and fold in the 420-duplicate fix at the same time.
+
+**Artifacts:** docs/mockups/govuk_report_view.html (design reference; external
+Artifact updated at the same URL).
+
+---
+
+### 2026-07-08 · P17
+**Prompt (verbatim):** "document the session"
+
+**Response summary:** Recorded P15 to P17 in this log and added STATUS handoff H9.
+This block of prompts was about SEEING the product, not changing the pipeline: the
+committed output is the design-reference mockup plus these docs. Captured the two
+open follow-ups the exploration surfaced: (1) dedupe the renamed-and-moved output
+(420 near-duplicates on real data), and (2) optionally theme the Streamlit app to
+the GOV.UK-familiar look using the saved mockup. No pipeline code changed; 26 tests
+still green.
+
+**Artifacts:** docs/PROMPT_LOG.md, docs/STATUS.md.

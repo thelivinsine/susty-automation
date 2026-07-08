@@ -1,0 +1,199 @@
+{
+ "labels": {
+  "old": "2025",
+  "new": "2026"
+ },
+ "summary": {
+  "total_old": 2.344,
+  "total_new": 2.3046,
+  "absolute_delta": -0.0394,
+  "pct_delta": -1.68,
+  "lines_total": 7,
+  "lines_included": 6,
+  "lines_excluded": 1,
+  "coverage_pct": 85.7
+ },
+ "diff_stats": {
+  "factors_old": 2111,
+  "factors_new": 2133,
+  "joined": 1597,
+  "flagged": 67,
+  "added": 536,
+  "removed": 514,
+  "relabels": 460,
+  "added_net": 76,
+  "removed_net": 54
+ },
+ "match_coverage": {
+  "total_lines": 7,
+  "auto_matched": 6,
+  "needs_review": 1,
+  "auto_match_pct": 85.7
+ },
+ "context": {
+  "breaches_baseline": false,
+  "product_pct_delta": -1.68
+ },
+ "top_delta": [
+  {
+   "line_item": "Electricity generated, UK",
+   "quantity": 0.85,
+   "unit": "kwh",
+   "matched_activity": "Electricity generated - Electricity: UK",
+   "factor_old": 0.177,
+   "factor_new": 0.13096,
+   "co2e_old": 0.15045,
+   "co2e_new": 0.11131599999999998,
+   "line_delta": -0.039134000000000016,
+   "included": true,
+   "note": ""
+  },
+  {
+   "line_item": "Diesel (average biofuel blend)",
+   "quantity": 0.05,
+   "unit": "litre",
+   "matched_activity": "Liquid fuels - Diesel (average biofuel blend)",
+   "factor_old": 2.57082,
+   "factor_new": 2.58354,
+   "co2e_old": 0.128541,
+   "co2e_new": 0.12917700000000001,
+   "line_delta": 0.0006360000000000254,
+   "included": true,
+   "note": ""
+  },
+  {
+   "line_item": "Paper and board: board, primary production",
+   "quantity": 0.0003,
+   "unit": "tonne",
+   "matched_activity": "Paper - Paper and board: board - Primary material production",
+   "factor_old": 1199.72542,
+   "factor_new": 1198.23866,
+   "co2e_old": 0.359917626,
+   "co2e_new": 0.35947159799999995,
+   "line_delta": -0.0004460280000000427,
+   "included": true,
+   "note": ""
+  },
+  {
+   "line_item": "Aluminium cans and foil, primary production",
+   "quantity": 0.00018,
+   "unit": "tonne",
+   "matched_activity": "Metal - Metal: aluminium cans and foil (excl. forming) - Primary material production",
+   "factor_old": 9115.90131,
+   "factor_new": 9113.58251,
+   "co2e_old": 1.6408622358,
+   "co2e_new": 1.6404448518,
+   "line_delta": -0.0004173839999999096,
+   "included": true,
+   "note": ""
+  },
+  {
+   "line_item": "Plastics: average plastics, primary production",
+   "quantity": 2e-05,
+   "unit": "tonne",
+   "matched_activity": "Plastic - Plastics: average plastics - Primary material production",
+   "factor_old": 3172.49932,
+   "factor_new": 3170.5068,
+   "co2e_old": 0.0634499864,
+   "co2e_new": 0.063410136,
+   "line_delta": -3.98503999999994e-05,
+   "included": true,
+   "note": ""
+  }
+ ],
+ "explanations": [
+  {
+   "activity": "Electricity generated - Electricity: UK",
+   "scope": "Scope 2",
+   "kg_co2e_old": 0.177,
+   "kg_co2e_new": 0.13096,
+   "pct_change": -26.011299435028253,
+   "retrieval_score": 1.0,
+   "plain_english_reason": "[offline mode: extract from DEFRA changes report, not model-generated] The factor fell 26.0% (0.177 \u2192 0.13096). Official note: Revision to the calculation method for UK electricity (affected tabs: UK electricity; Transmission and distribution; indirect knock-on effects on other factors that include electricity including Rail, xEVs and Homeworking) What and why? A revised methodology has been introduced for calculating UK electricity emissions. The previous approach derived an emissions factor by dividing total electricity-related emissions from the UK Greenhouse Gas Inventory (GHGI) by total electricity generation. Because this method depended on the GHGI publication cycle, it resulted in a two-year lag between the\u2026",
+   "methodology_note": "Reported under the same GHG Protocol scope classification; the change is a factor-version update, so year-over-year comparisons should note the DEFRA release year (ISO 14064 comparability).",
+   "target_impact_flag": "This factor decreased, easing the product footprint."
+  }
+ ],
+ "relabel_explanations": [
+  {
+   "old_activity": "HGV (all diesel) - All HGVs - CNG",
+   "new_activity": "HGV (non-refrigerated, all diesel) - Average non-refrigerated HGVs - CNG",
+   "scope": "Scope 1",
+   "kg_co2e_old": 1.01203,
+   "kg_co2e_new": 0.84482,
+   "pct_change": -16.522237483078563,
+   "retrieval_score": 1.0,
+   "plain_english_reason": "[offline mode: extract from DEFRA changes report, not model-generated] The factor fell 16.5% (1.01203 \u2192 0.84482). Official note: Changes to the naming conventions for HGVs and reordering of HGV tables What and why? Some HGV category names have been modified to improve clarity for users, as follows: (a) 'HGV (all diesel)' has been renamed 'HGV (non-refrigerated, all diesel)' to make it clear that this category does not include refrigerated vehicles. This was already stated in a note on the accompanying cell(s), but the new name will aid interpretation. (b) 'HGV refrigerated (all diesel) has been renamed 'HGV (refrigerated, all diesel)'. (c) The categories previously called 'All rigids', 'All artics' and 'All HGVs' have\u2026",
+   "methodology_note": "Reported under the same GHG Protocol scope classification; the change is a factor-version update, so year-over-year comparisons should note the DEFRA release year (ISO 14064 comparability).",
+   "target_impact_flag": "This factor decreased, easing the product footprint."
+  },
+  {
+   "old_activity": "HGV (all diesel) - All HGVs - CNG",
+   "new_activity": "HGV (non-refrigerated, all diesel) - Average non-refrigerated HGVs - CNG",
+   "scope": "Scope 1",
+   "kg_co2e_old": 1.6287,
+   "kg_co2e_new": 1.3596,
+   "pct_change": -16.522379812120104,
+   "retrieval_score": 1.0,
+   "plain_english_reason": "[offline mode: extract from DEFRA changes report, not model-generated] The factor fell 16.5% (1.6287 \u2192 1.3596). Official note: Changes to the naming conventions for HGVs and reordering of HGV tables What and why? Some HGV category names have been modified to improve clarity for users, as follows: (a) 'HGV (all diesel)' has been renamed 'HGV (non-refrigerated, all diesel)' to make it clear that this category does not include refrigerated vehicles. This was already stated in a note on the accompanying cell(s), but the new name will aid interpretation. (b) 'HGV refrigerated (all diesel) has been renamed 'HGV (refrigerated, all diesel)'. (c) The categories previously called 'All rigids', 'All artics' and 'All HGVs' have\u2026",
+   "methodology_note": "Reported under the same GHG Protocol scope classification; the change is a factor-version update, so year-over-year comparisons should note the DEFRA release year (ISO 14064 comparability).",
+   "target_impact_flag": "This factor decreased, easing the product footprint."
+  },
+  {
+   "old_activity": "HGV (all diesel) - All HGVs - CNG",
+   "new_activity": "HGV (non-refrigerated, all diesel) - Average non-refrigerated HGVs - CNG",
+   "scope": "Scope 3",
+   "kg_co2e_old": 0.07431,
+   "kg_co2e_new": 0.1232,
+   "pct_change": 65.79195263087068,
+   "retrieval_score": 1.0,
+   "plain_english_reason": "[offline mode: extract from DEFRA changes report, not model-generated] The factor rose 65.8% (0.07431 \u2192 0.1232). Official note: Changes to the naming conventions for HGVs and reordering of HGV tables What and why? Some HGV category names have been modified to improve clarity for users, as follows: (a) 'HGV (all diesel)' has been renamed 'HGV (non-refrigerated, all diesel)' to make it clear that this category does not include refrigerated vehicles. This was already stated in a note on the accompanying cell(s), but the new name will aid interpretation. (b) 'HGV refrigerated (all diesel) has been renamed 'HGV (refrigerated, all diesel)'. (c) The categories previously called 'All rigids', 'All artics' and 'All HGVs' have\u2026",
+   "methodology_note": "Reported under the same GHG Protocol scope classification; the change is a factor-version update, so year-over-year comparisons should note the DEFRA release year (ISO 14064 comparability).",
+   "target_impact_flag": "This factor increased; product footprint stays within a flat baseline."
+  },
+  {
+   "old_activity": "HGV (all diesel) - All HGVs - Diesel",
+   "new_activity": "HGV (non-refrigerated, all diesel) - Average non-refrigerated HGVs - Diesel",
+   "scope": "Scope 1",
+   "kg_co2e_old": 0.65975,
+   "kg_co2e_new": 0.89743,
+   "pct_change": 36.02576733611217,
+   "retrieval_score": 1.0,
+   "plain_english_reason": "[offline mode: extract from DEFRA changes report, not model-generated] The factor rose 36.0% (0.65975 \u2192 0.89743). Official note: Changes to the naming conventions for HGVs and reordering of HGV tables What and why? Some HGV category names have been modified to improve clarity for users, as follows: (a) 'HGV (all diesel)' has been renamed 'HGV (non-refrigerated, all diesel)' to make it clear that this category does not include refrigerated vehicles. This was already stated in a note on the accompanying cell(s), but the new name will aid interpretation. (b) 'HGV refrigerated (all diesel) has been renamed 'HGV (refrigerated, all diesel)'. (c) The categories previously called 'All rigids', 'All artics' and 'All HGVs' have\u2026",
+   "methodology_note": "Reported under the same GHG Protocol scope classification; the change is a factor-version update, so year-over-year comparisons should note the DEFRA release year (ISO 14064 comparability).",
+   "target_impact_flag": "This factor increased; product footprint stays within a flat baseline."
+  },
+  {
+   "old_activity": "HGV (all diesel) - All HGVs - Diesel",
+   "new_activity": "HGV (non-refrigerated, all diesel) - Average non-refrigerated HGVs - Diesel",
+   "scope": "Scope 1",
+   "kg_co2e_old": 1.06176,
+   "kg_co2e_new": 1.44427,
+   "pct_change": 36.02603224834237,
+   "retrieval_score": 1.0,
+   "plain_english_reason": "[offline mode: extract from DEFRA changes report, not model-generated] The factor rose 36.0% (1.06176 \u2192 1.44427). Official note: Changes to the naming conventions for HGVs and reordering of HGV tables What and why? Some HGV category names have been modified to improve clarity for users, as follows: (a) 'HGV (all diesel)' has been renamed 'HGV (non-refrigerated, all diesel)' to make it clear that this category does not include refrigerated vehicles. This was already stated in a note on the accompanying cell(s), but the new name will aid interpretation. (b) 'HGV refrigerated (all diesel) has been renamed 'HGV (refrigerated, all diesel)'. (c) The categories previously called 'All rigids', 'All artics' and 'All HGVs' have\u2026",
+   "methodology_note": "Reported under the same GHG Protocol scope classification; the change is a factor-version update, so year-over-year comparisons should note the DEFRA release year (ISO 14064 comparability).",
+   "target_impact_flag": "This factor increased; product footprint stays within a flat baseline."
+  },
+  {
+   "old_activity": "HGV (all diesel) - All HGVs - LPG",
+   "new_activity": "HGV (non-refrigerated, all diesel) - Average non-refrigerated HGVs - LPG",
+   "scope": "Scope 1",
+   "kg_co2e_old": 0.89121,
+   "kg_co2e_new": 1.02266,
+   "pct_change": 14.749610080676828,
+   "retrieval_score": 1.0,
+   "plain_english_reason": "[offline mode: extract from DEFRA changes report, not model-generated] The factor rose 14.7% (0.89121 \u2192 1.02266). Official note: Changes to the naming conventions for HGVs and reordering of HGV tables What and why? Some HGV category names have been modified to improve clarity for users, as follows: (a) 'HGV (all diesel)' has been renamed 'HGV (non-refrigerated, all diesel)' to make it clear that this category does not include refrigerated vehicles. This was already stated in a note on the accompanying cell(s), but the new name will aid interpretation. (b) 'HGV refrigerated (all diesel) has been renamed 'HGV (refrigerated, all diesel)'. (c) The categories previously called 'All rigids', 'All artics' and 'All HGVs' have\u2026",
+   "methodology_note": "Reported under the same GHG Protocol scope classification; the change is a factor-version update, so year-over-year comparisons should note the DEFRA release year (ISO 14064 comparability).",
+   "target_impact_flag": "This factor increased; product footprint stays within a flat baseline."
+  }
+ ],
+ "n_relabel_explanations": 420,
+ "needs_review": [
+  {
+   "line_item": "Proprietary specialty resin (custom compound)",
+   "unit": "tonne",
+   "score": 49.3
+  }
+ ]
+}
