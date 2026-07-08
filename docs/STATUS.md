@@ -59,19 +59,18 @@ reachable only on the owner's machine.
 ## Resume here
 Two most recent handoffs (older ones rotate into `docs/archive/`):
 
+- H11 (2026-07-08): Owner asked to commit the two source docs shared at project
+  start and to make `main` the default branch (P17). Added the build playbook and
+  the MVP spec PDF under `docs/reference/`, shipped via PR #10. Default-branch
+  switch is a manual owner step (no repo-settings tool / no direct GitHub API here):
+  GitHub repo Settings, Branches, set default to `main`. Docs/reference only, no
+  code touched.
 - H10 (2026-07-08): Adopted the "model selection & documentation practices" doc.
   Added `docs/REFERENCE.md` (per-session model-selection guidance + the backlog
   moved out of STATUS) and the `docs/archive/` ISO-week rotation convention with an
   index, rotating H8 into `STATUS_2026-W28.md`. Recorded the four-doc structure and
   the rotation rules in WORKING_PREFERENCES and CLAUDE.md. Docs-only; no code
   touched, 26 tests still green.
-- H9 (2026-07-08): Owner asked how to view the product, then to style it in a
-  DEFRA-familiar way (P15, P16). Rendered the live pipeline output as an HTML view
-  and rebuilt it in the GOV.UK Design System idiom (evoked, not cloned; with an
-  independence disclaimer), saved as `docs/mockups/govuk_report_view.html`. No
-  pipeline code changed. Surfaced two follow-ups now in the backlog: dedupe the
-  ~420 renamed-and-moved entries on real data, and (optionally) theme the Streamlit
-  app to the same look. 26 tests still green.
 
 Next likely task: dedupe the renamed-and-moved output (D10 follow-up, ~420
 near-duplicates on real data) and/or theme the Streamlit app to the GOV.UK-familiar

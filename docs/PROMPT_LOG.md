@@ -358,3 +358,23 @@ docs/archive/STATUS_2026-W28.md, docs/WORKING_PREFERENCES.md, docs/STATUS.md,
 docs/PROMPT_LOG.md, CLAUDE.md. PR #9.
 
 **Artifacts:** docs/PROMPT_LOG.md, docs/STATUS.md.
+
+---
+
+### 2026-07-08 · P17
+**Prompt (verbatim):** "1. commit the playbook and ef version explainer docs
+shared in the beginning of the chat to the repo as I can't find them anywhere in
+the repo. 2. set the main branch as default"
+
+**Response summary:** Committed the two source documents shared at the start (the
+build playbook and the MVP spec PDF) into `docs/reference/`, shipped via PR #10
+squash-merged into `main`, then realigned the dev branch. Could not set the
+repository default branch to `main`: there is no MCP tool for repo settings and no
+direct GitHub API access in this environment, so it is a manual owner step (GitHub
+repo Settings, Branches, switch default to `main`). Note: this session's branch was
+far behind the shared `main` (parallel sessions had merged PRs #1 to #9); the
+fetch and reset brought the tree up to the current state and integration was clean.
+
+**Artifacts:** docs/reference/Build_Playbook.md,
+docs/reference/MVP_Spec_and_Build_Playbook.pdf. PR #10. docs/PROMPT_LOG.md,
+docs/STATUS.md.
