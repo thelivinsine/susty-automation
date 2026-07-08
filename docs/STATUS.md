@@ -30,6 +30,17 @@ explained from the real DEFRA text. On real data, relabel pairing collapses
 paired renames group into 11 readable families.
 
 ## What shipped
+- **Goal reframed around genuine usefulness** (`docs/VISION.md`): a six-persona
+  panel + critique set the primary audience as the UK solo/boutique DEFRA
+  consultant, with getting-hired as an explicit side effect. Honest verdict:
+  "partly useful" until the tool eats a real inventory. Plan in
+  `docs/PLAN_real_data_ingest.md`.
+- **Real-data ingest (VISION move #2), shipped:** `src/ingest.py` reads a real
+  messy `.csv`/`.xlsx`, guesses the item/quantity/unit columns from awkward
+  headers, and sets aside bad rows instead of guessing (no-guess rule at the
+  column level). `app.py` has a confirm-your-columns step and lists set-aside
+  rows. Explanations are now ranked by impact on the user's OWN footprint (kg +
+  share shown). `scripts/check_ingest.py` + `tests/test_ingest.py` (suite 38).
 - Pipeline: loader, diff, matching, recompute, changes retrieval, explain,
   report, app, run_demo (`src/`, `app.py`, `run_demo.py`).
 - Real DEFRA full-set support and "What's new" grounding.
@@ -65,6 +76,15 @@ reachable only on the owner's machine.
 ## Resume here
 Two most recent handoffs (older ones rotate into `docs/archive/`):
 
+- H13 (2026-07-08): Reframed the project goal around GENUINE USEFULNESS via a
+  six-persona brainstorm (`docs/VISION.md`): primary audience is the UK
+  solo/boutique DEFRA consultant, getting-hired is a side effect. Then shipped
+  VISION move #2 (real-data ingest) in three steps: `src/ingest.py` (forgiving
+  reader), a confirm-your-columns step in `app.py`, and impact-ranking of
+  explanations by the user's own footprint. Suite 38 green; app boots clean.
+  Next likely: the "find the header row" tolerance for files with a title above
+  the headers, then VISION move #3 (a dated, cited, printable memo as the
+  first-class output).
 - H12 (2026-07-08): Grouped the renamed-and-moved output into rename families
   (D10 follow-up, D14). On real data the HGV rename spanned 420 material variants
   (DEFRA also reordered the sub-tables, so the greedy matcher scattered +-100%

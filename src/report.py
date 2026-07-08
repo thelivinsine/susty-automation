@@ -161,6 +161,12 @@ def build_markdown_report(results: dict) -> str:
     lines.append("")
     if not results["explanations"]:
         lines.append("_No flagged, footprint-relevant factor changes._")
+    else:
+        lines.append(
+            "_Ordered by how much each change moved this product's footprint "
+            "(largest first)._"
+        )
+        lines.append("")
     for e in results["explanations"]:
         lines.append(
             f"### {e['activity']}  ·  {e['scope']}  ·  "
@@ -168,6 +174,14 @@ def build_markdown_report(results: dict) -> str:
             f"({_fmt(e['pct_change'],1)}%)"
         )
         lines.append("")
+        imp = e.get("footprint_impact")
+        if imp is not None:
+            share = e.get("footprint_impact_pct")
+            share_txt = f" ({share:+.1f}% of the total change)" if share is not None else ""
+            lines.append(
+                f"**Impact on your footprint.** {imp:+,.4f} kg CO₂e{share_txt}."
+            )
+            lines.append("")
         lines.append(f"**Why it changed.** {e['plain_english_reason']}")
         lines.append("")
         lines.append(f"**Methodology note.** {e['methodology_note']}")
