@@ -74,7 +74,8 @@ def main() -> None:
     print(f"  structural: {ds['added']} added, {ds['removed']} removed "
           f"(not counted as movers)")
     if ds.get("relabels"):
-        print(f"  relabels paired: {ds['relabels']} renamed factors "
+        print(f"  relabels paired: {ds['relabels']} renamed factors in "
+              f"{ds.get('relabel_families', ds['relabels'])} families "
               f"-> {ds['added_net']} genuinely new, {ds['removed_net']} genuinely removed")
     _line()
     print("STAGE 3    Matched product BOM to factors")
@@ -94,9 +95,11 @@ def main() -> None:
               + ("..." if len(e['plain_english_reason']) > 100 else ""))
     rel_expl = results.get("relabel_explanations") or []
     if rel_expl:
-        print("  renamed AND moved (relabels past threshold, now explained):")
+        print("  renamed AND moved (relabel families past threshold, now explained):")
         for e in rel_expl:
-            print(f"  • {e['old_activity']} → {e['new_activity']} ({e['pct_change']:+.1f}%)")
+            variants = f"{e['n_variants']} variants" if e["n_variants"] > 1 else "1 variant"
+            print(f"  • {e['old_name']} → {e['new_name']} ({variants})")
+            print(f"      {e['value_movement']}")
             print(f"      {e['plain_english_reason'][:100]}"
                   + ("..." if len(e['plain_english_reason']) > 100 else ""))
     _line()

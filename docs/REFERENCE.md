@@ -40,10 +40,12 @@ How to apply it:
 
 (Moved out of `STATUS.md` so the status doc stays a lean snapshot.)
 
-- Renamed-and-moved duplicates: on real data D10 emits ~420 entries, many
-  near-identical (the same HGV rename across weight classes and units). Group them
-  (one row + count) so the report and app stay readable. Found while rendering the
-  product view (P15).
+- Within-family relabel pairing: grouping the renamed-and-moved output into rename
+  families (D14) made it readable and honest, but the underlying per-variant deltas
+  still scatter +-100% because DEFRA REORDERED the HGV sub-tables and the greedy
+  matcher pairs old rows against reordered new rows. A finer within-family pairing
+  (align sub-rows by their leaf/variant, or use DEFRA's own row map) would make the
+  per-variant deltas trustworthy. Left rather than guessed for now.
 - Streamlit theming: a GOV.UK-familiar look was designed for the standalone report
   view (`docs/mockups/govuk_report_view.html`). The real app (`app.py`) still uses
   Streamlit defaults; theming it to match (config.toml palette + CSS) is a natural

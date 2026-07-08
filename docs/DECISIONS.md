@@ -202,3 +202,36 @@ audit tool's own tree. CI installs it in the audit step instead; the wrapper tel
 a local user to `pip install pip-audit` if it is missing. Unfixable or
 false-positive advisories can be waived deliberately with `--ignore-vuln <ID>`
 (passed through to pip-audit) plus a note, rather than by weakening the gate.
+
+## D14. Group relabels into rename FAMILIES (the D10 follow-up)
+D10 routed every material relabel through the grounded explainer and noted "the
+set is small, so this is cheap." That held on the synthetic demo (one relabel) but
+not on real data: DEFRA's 2025->2026 HGV rename is applied across ~80 weight-class
+/ fuel / unit variants each, so 460 pairs produced 420 material ones. That meant
+~420 near-identical explanation blocks AND ~420 explain_change API calls per run,
+and (because DEFRA also REORDERED the HGV sub-tables) the greedy matcher paired old
+rows against reordered new rows, giving mixed-direction deltas swinging +-100%.
+Emitting 420 confident single-direction "this factor rose X%" explanations off that
+scatter is exactly the fabricated precision D2 forbids.
+
+Fix (`relabel.group_relabels`, wired through `pipeline.py`, report, app, run_demo):
+- A rename FAMILY is one (old head, new head, scope), where the head is the first
+  " - " segment. On real data 460 pairs collapse to 11 table families and the 420
+  material pairs to 10 explained families (so ~10 API calls, not 420).
+- Honesty is preserved, not traded for brevity: value movement is shown as a RANGE
+  across the family (min% to max%) with an up/down split, never a single delta
+  standing in for many. A family that moves both ways gets a "Mixed direction:
+  review each against active targets" target flag instead of a false single-
+  direction claim. The grounded reason (retrieved once on the shared head) is the
+  same for the whole family, so one explanation genuinely covers it: the DEFRA note
+  ("naming conventions for HGVs... reordering of HGV tables") explains the whole
+  family, including why the per-variant deltas scatter.
+- A one-variant family keeps its full activity names (so the synthetic Fuel-oil
+  relabel still reads as itself); only real multi-variant families show heads.
+- Footprint math is still untouched (relabels stay review-only, D9): grouping is a
+  presentation and explanation change, it cannot move the carbon number.
+
+Not done here (still open, see REFERENCE backlog): the underlying sub-row
+mispairing from DEFRA's table reorder. Grouping makes it honest and readable; a
+finer within-family pairing (or DEFRA's own row map) would make the per-variant
+deltas trustworthy. Left rather than guessed.
