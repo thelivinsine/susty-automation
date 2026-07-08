@@ -10,7 +10,7 @@ import pandas as pd
 
 from loader import load_defra
 from diff import diff_versions
-from relabel import detect_relabels
+from relabel import detect_relabels, group_relabels, relabel_head, RELABEL_GROUP_COLUMNS
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SYNTH = os.path.join(ROOT, "data", "synthetic")
@@ -137,6 +137,95 @@ def test_detects_the_synthetic_relabel_end_to_end():
     assert pair["new_activity"] == "Liquid fuels - Fuel oil (mineral)"
 
 
+# ---- group_relabels: collapse a rename family into one readable row ----------
+def _relabel_row(old_a, new_a, unit, scope, kg_old, kg_new, pct):
+    """One detect_relabels-shaped row."""
+    return {
+        "old_activity": old_a,
+        "new_activity": new_a,
+        "unit": unit,
+        "scope": scope,
+        "kg_co2e_old": kg_old,
+        "kg_co2e_new": kg_new,
+        "pct_change": pct,
+        "name_score": 95.0,
+    }
+
+
+def test_group_relabels_collapses_a_family_and_reports_a_range():
+    # The SAME head rename across three variants (fuel/unit) is one family.
+    OLD, NEW = "HGV (all diesel)", "HGV (non-refrigerated, all diesel)"
+    rel = pd.DataFrame([
+        _relabel_row(f"{OLD} - All HGVs - Diesel", f"{NEW} - Avg - Diesel",
+                     "km", "Scope 3", 1.0, 1.5, 50.0),
+        _relabel_row(f"{OLD} - All HGVs - CNG", f"{NEW} - Avg - CNG",
+                     "miles", "Scope 3", 1.0, 0.8, -20.0),
+        _relabel_row(f"{OLD} - All artics - Diesel", f"{NEW} - Avg artics - Diesel",
+                     "tonne km", "Scope 3", 1.0, 1.02, 2.0),
+    ])
+    g = group_relabels(rel)
+    # Three variants collapse to one family row...
+    assert len(g) == 1
+    row = g.iloc[0]
+    assert row["old_name"] == OLD and row["new_name"] == NEW
+    assert row["n_variants"] == 3
+    # ...the value movement is an honest range, not a single figure...
+    assert row["pct_min"] == -20.0 and row["pct_max"] == 50.0
+    assert "-20.0%" in row["movement"] and "50.0%" in row["movement"]
+    # ...and the Scope-3 movers past the 10% bar are counted as material.
+    assert row["n_material"] == 2  # +50% and -20%, not the +2%
+    assert "past DEFRA threshold" in row["movement"]
+    assert row["units"] == "km, miles, tonne km"
+
+
+def test_group_relabels_keeps_full_names_for_a_single_variant():
+    rel = pd.DataFrame([
+        _relabel_row("Liquid fuels - Fuel oil", "Liquid fuels - Fuel oil (mineral)",
+                     "litre", "Scope 1", 3.1, 3.2, 3.2),
+    ])
+    g = group_relabels(rel)
+    assert len(g) == 1
+    assert g.iloc[0]["old_name"] == "Liquid fuels - Fuel oil"
+    assert g.iloc[0]["new_name"] == "Liquid fuels - Fuel oil (mineral)"
+    assert g.iloc[0]["n_variants"] == 1
+
+
+def test_group_relabels_pure_rename_reads_as_unchanged():
+    rel = pd.DataFrame([
+        _relabel_row("Widget - R1270 = propylene", "Widget - R1270 = propene",
+                     "kg", "Scope 3", 1.80, 1.80, 0.0),
+    ])
+    g = group_relabels(rel)
+    assert g.iloc[0]["n_material"] == 0
+    assert g.iloc[0]["movement"] == "rename only (value unchanged)"
+
+
+def test_group_relabels_splits_families_by_scope():
+    # Same head strings but different scope are different factors -> two families.
+    rel = pd.DataFrame([
+        _relabel_row("Van (diesel) - X", "Van (all diesel) - X", "km", "Scope 1",
+                     1.0, 1.1, 10.0),
+        _relabel_row("Van (diesel) - Y", "Van (all diesel) - Y", "km", "Scope 3",
+                     1.0, 1.1, 10.0),
+    ])
+    g = group_relabels(rel)
+    assert len(g) == 2
+
+
+def test_group_relabels_empty_keeps_shape():
+    g = group_relabels(pd.DataFrame(columns=[
+        "old_activity", "new_activity", "unit", "scope",
+        "kg_co2e_old", "kg_co2e_new", "pct_change", "name_score",
+    ]))
+    assert g.empty
+    assert list(g.columns) == RELABEL_GROUP_COLUMNS
+
+
+def test_relabel_head_is_first_segment():
+    assert relabel_head("HGV (all diesel) - All HGVs - Diesel") == "HGV (all diesel)"
+    assert relabel_head("Plain name") == "Plain name"
+
+
 # ---- is_material: the single materiality rule shared with the relabel path ----
 def test_is_material_uses_scope_thresholds():
     from diff import is_material
@@ -164,13 +253,16 @@ def test_pipeline_explains_a_material_relabel():
         new_label="2026",
     )
     rel_expl = results["relabel_explanations"]
-    # The fuel-oil relabel crossed the Scope-1 threshold, so exactly it is
-    # explained; a non-material rename would not appear here.
+    # The fuel-oil relabel crossed the Scope-1 threshold, so exactly its family is
+    # explained; a non-material rename would not appear here. This family has one
+    # variant, so it keeps its full names.
     assert len(rel_expl) == 1
     e = rel_expl[0]
-    assert e["old_activity"] == "Liquid fuels - Fuel oil"
-    assert e["new_activity"] == "Liquid fuels - Fuel oil (mineral)"
-    assert e["pct_change"] > 5.0
+    assert e["old_name"] == "Liquid fuels - Fuel oil"
+    assert e["new_name"] == "Liquid fuels - Fuel oil (mineral)"
+    assert e["n_variants"] == 1
+    assert e["pct_min"] > 5.0 and e["pct_max"] > 5.0
+    assert "moved" in e["value_movement"]
 
     # The changes note explains this one, so the reason is grounded (not the
     # "no reason" refusal) and carries the deterministic target flag.

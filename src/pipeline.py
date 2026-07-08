@@ -10,11 +10,47 @@ import pandas as pd
 
 from loader import load_defra
 from diff import diff_versions, is_material
-from relabel import detect_relabels
+from relabel import detect_relabels, group_relabels, relabel_head
 from matching import match_bom, coverage_summary
 from recompute import recompute, top_delta_lines
 from changes_pdf import load_change_chunks, retrieve_passage
 from explain import explain_change
+
+
+def _family_movement(pcts, n_rose: int, n_fell: int) -> str:
+    """Honest sentence about how a rename family's material values moved. Reports
+    the range and the up/down split, never a single made-up delta."""
+    lo, hi = min(pcts), max(pcts)
+    span = f"by {lo:+.1f}%" if abs(lo - hi) < 0.05 else f"from {lo:+.1f}% to {hi:+.1f}%"
+    n = len(pcts)
+    noun = "sub-factor" if n == 1 else "sub-factors"
+    return (
+        f"{n} {noun} in this rename crossed DEFRA's materiality threshold; "
+        f"their values moved {span} ({n_rose} rose, {n_fell} fell)."
+    )
+
+
+def _family_target_flag(group, context) -> str:
+    """Family-level target wording. A family can move in both directions, so a
+    single 'this factor rose' claim would be dishonest: say so when it is mixed."""
+    rose = int((group["pct_change"] > 0).sum())
+    fell = int((group["pct_change"] < 0).sum())
+    breaches = (context or {}).get("breaches_baseline")
+    if rose and fell:
+        return (
+            "Mixed direction within the family: some sub-factors rose and some "
+            "fell. Review each against active targets."
+        )
+    if rose and breaches:
+        return (
+            "These factors increased, adding to a product footprint rise that "
+            "would breach a flat baseline. Flag for target review."
+        )
+    if rose:
+        return "These factors increased; product footprint stays within a flat baseline."
+    if fell:
+        return "These factors decreased, easing the product footprint."
+    return "Immaterial at the product level."
 
 
 def run_pipeline(
@@ -91,38 +127,74 @@ def run_pipeline(
     # shown in the relabels table with their delta but never explained. Explain
     # them here, grounded the same way as the flagged factors, so no material
     # change escapes the "explain the delta" promise just because it was renamed.
+    #
+    # But on real data ONE rename spans dozens of near-identical variants (the HGV
+    # relabel across weight class / fuel / unit), which produced ~420 all-but-
+    # identical blocks and ~420 API calls per run. So we group by rename FAMILY
+    # (D10 refined): one grounded explanation per family, with value movement
+    # reported as an honest range and up/down split rather than a single made-up
+    # delta. Grounding (D2) is still enforced per call.
+    material = (
+        relabels_df[
+            [is_material(p, s) for p, s in zip(relabels_df["pct_change"], relabels_df["scope"])]
+        ]
+        if not relabels_df.empty
+        else relabels_df
+    )
     relabel_explanations = []
-    for _, rel in relabels_df.iterrows():
-        if not is_material(rel["pct_change"], rel["scope"]):
-            continue
-        # The change note may sit under either the old or the new name; retrieve
-        # on both and keep the stronger hit. Empty passage -> honest "no reason".
-        passage, score = "", 0.0
-        if chunks:
-            for name in (rel["new_activity"], rel["old_activity"]):
-                p, s = retrieve_passage(chunks, name)
-                if s > score:
-                    passage, score = p, s
-        result = explain_change(
-            material=f"{rel['old_activity']} → {rel['new_activity']}",
-            old=rel["kg_co2e_old"],
-            new=rel["kg_co2e_new"],
-            pct=rel["pct_change"],
-            retrieved_text=passage,
-            context=context,
-        )
-        relabel_explanations.append(
-            {
-                "old_activity": rel["old_activity"],
-                "new_activity": rel["new_activity"],
-                "scope": rel["scope"],
-                "kg_co2e_old": rel["kg_co2e_old"],
-                "kg_co2e_new": rel["kg_co2e_new"],
-                "pct_change": rel["pct_change"],
-                "retrieval_score": score,
-                **result,
-            }
-        )
+    if not material.empty:
+        fam = material.copy()
+        fam["_oh"] = fam["old_activity"].map(relabel_head)
+        fam["_nh"] = fam["new_activity"].map(relabel_head)
+        for (oh, nh, scope), g in fam.groupby(["_oh", "_nh", "scope"], sort=False):
+            n_var = len(g)
+            pcts = [p for p in g["pct_change"] if pd.notna(p)]
+            # The change note may sit under either the old or the new head name;
+            # retrieve on both and keep the stronger hit. All variants share the
+            # head, so one retrieval covers the family. Empty -> honest "no reason".
+            passage, score = "", 0.0
+            if chunks:
+                for name in (nh, oh):
+                    p, s = retrieve_passage(chunks, name)
+                    if s > score:
+                        passage, score = p, s
+            # A representative member (biggest move) gives explain_change real
+            # numbers; the reason is grounded in the shared rename note, so it is
+            # valid for the whole family. Family-level target flag overrides the
+            # per-factor one (a family can move both ways).
+            rep = g.loc[g["pct_change"].abs().idxmax()]
+            multi = n_var > 1
+            result = explain_change(
+                material=f"{oh} → {nh}" if multi else f"{rep['old_activity']} → {rep['new_activity']}",
+                old=rep["kg_co2e_old"],
+                new=rep["kg_co2e_new"],
+                pct=rep["pct_change"],
+                retrieved_text=passage,
+                context=context,
+            )
+            n_rose = int((g["pct_change"] > 0).sum())
+            n_fell = int((g["pct_change"] < 0).sum())
+            relabel_explanations.append(
+                {
+                    "old_name": oh if multi else rep["old_activity"],
+                    "new_name": nh if multi else rep["new_activity"],
+                    "scope": scope,
+                    "units": ", ".join(sorted(g["unit"].astype(str).unique())),
+                    "n_variants": n_var,
+                    "n_rose": n_rose,
+                    "n_fell": n_fell,
+                    "pct_min": min(pcts),
+                    "pct_max": max(pcts),
+                    "value_movement": _family_movement(pcts, n_rose, n_fell),
+                    "retrieval_score": score,
+                    "plain_english_reason": result["plain_english_reason"],
+                    "methodology_note": result["methodology_note"],
+                    "target_impact_flag": _family_target_flag(g, context),
+                }
+            )
+
+    # Collapse the per-variant relabel pairs into readable rename families.
+    relabel_groups = group_relabels(relabels_df)
 
     added_raw = int((diff_df["status"] == "added").sum())
     removed_raw = int((diff_df["status"] == "removed").sum())
@@ -135,6 +207,9 @@ def run_pipeline(
         "added": added_raw,
         "removed": removed_raw,
         "relabels": n_relabels,
+        # How many rename FAMILIES those pairs collapse into (what the reader sees).
+        "relabel_families": len(relabel_groups),
+        "material_relabel_families": len(relabel_explanations),
         # Net of paired renames: what is genuinely new / retired.
         "added_net": added_raw - n_relabels,
         "removed_net": removed_raw - n_relabels,
@@ -143,6 +218,7 @@ def run_pipeline(
     return {
         "diff_df": diff_df,
         "relabels": relabels_df,
+        "relabel_groups": relabel_groups,
         "diff_stats": diff_stats,
         "matched_df": matched_df,
         "match_coverage": match_cov,

@@ -378,3 +378,28 @@ fetch and reset brought the tree up to the current state and integration was cle
 **Artifacts:** docs/reference/Build_Playbook.md,
 docs/reference/MVP_Spec_and_Build_Playbook.pdf. PR #10. docs/PROMPT_LOG.md,
 docs/STATUS.md.
+### 2026-07-08 · P19
+Branch: `claude/whats-next-fnjxkf` (reset onto current `main`, which had merged
+PRs #5 to #9 the stale base lacked).
+
+**Prompt (verbatim):** "What's next?"
+
+**Response summary:** Picked the top backlog item, then found it was bigger than a
+readability chore. On the owner's real data the renamed-and-moved path (D10) was
+emitting 420 near-identical explanation blocks and ~420 explain_change API calls
+per run, and because DEFRA reordered the HGV sub-tables the greedy matcher scattered
+mixed-direction +-100% deltas: 420 confident single-direction explanations off that
+scatter is the fabricated precision D2 forbids. Fixed by grouping relabels into
+rename families (`relabel.group_relabels`), so 460 pairs read as 11 table families
+and 420 material pairs as 10 grounded family explanations (~10 API calls). Kept it
+honest: value movement is a RANGE with an up/down split, a both-ways family gets a
+"mixed direction, review each" flag not a false single-direction claim, and the
+grounded note (retrieved once per family) explains the whole family including why
+the deltas scatter. One-variant families keep their full names, so the synthetic
+Fuel-oil relabel is unchanged. Footprint math untouched (relabels stay review-only,
+D9). 32 tests green (was 26); demo and microcopy gate clean. Recorded as D14; moved
+the finer within-family pairing to the REFERENCE backlog.
+
+**Artifacts:** src/relabel.py, src/pipeline.py, src/report.py, app.py, run_demo.py,
+tests/test_relabel.py, docs/DECISIONS.md, docs/STATUS.md, docs/REFERENCE.md,
+docs/PROMPT_LOG.md.

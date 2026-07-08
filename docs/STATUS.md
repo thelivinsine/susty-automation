@@ -9,21 +9,25 @@ diffs them, pairs DEFRA relabels so renames stop reading as added+removed noise,
 matches a product BOM (no-guess rule), recomputes the footprint under both years
 with coverage, and explains flagged changes grounded in the DEFRA "What's new"
 sheet. Renamed-and-moved factors are explained too: a relabel whose value also
-crossed the materiality threshold is now routed through the same grounded
-explainer, so no material change slips past just because DEFRA renamed it.
-Explanation backend is Gemini (or Claude, or offline), selected by API key loaded
-from a git-ignored `.env`.
+crossed the materiality threshold is routed through the same grounded explainer.
+Those relabels are now GROUPED into rename families (same head rename and scope),
+so the real-data HGV rename that spanned ~420 near-identical variants reads as ~10
+explained families instead of 420 blocks (and ~10 API calls, not 420), with value
+movement shown as an honest range and a "mixed direction" flag where sub-factors
+move both ways. Explanation backend is Gemini (or Claude, or offline), selected by
+API key loaded from a git-ignored `.env`.
 
-Gates: `pytest` green (26 tests, including the grounding trap, a real-workbook
-test, the microcopy gate, the relabel suite, the material-relabel explanation
-path, the retrieval-quality gold set, and loader/diff golden vectors). Three CI
-gates are live: the microcopy linter (no-em-dash house rule), a retrieval-quality
-gate that fails the build on any WRONG grounding note, and a dependency-audit gate
-(`pip-audit` on requirements); the loader/diff golden vectors run in the same
-pytest step. Streamlit app boots clean. Demo footprint on the sample product:
-2.344 to 2.305 kg CO2e, with the UK electricity change explained from the real
-DEFRA text. On real data, relabel pairing collapses ~500/500 added/removed to 76
-genuinely new and 54 genuinely removed.
+Gates: `pytest` green (32 tests, including the grounding trap, a real-workbook
+test, the microcopy gate, the relabel suite (detection + family grouping), the
+material-relabel explanation path, the retrieval-quality gold set, and loader/diff
+golden vectors). Three CI gates are live: the microcopy linter (no-em-dash house
+rule), a retrieval-quality gate that fails the build on any WRONG grounding note,
+and a dependency-audit gate (`pip-audit` on requirements); the loader/diff golden
+vectors run in the same pytest step. Streamlit app boots clean. Demo footprint on
+the sample product: 2.344 to 2.305 kg CO2e, with the UK electricity change
+explained from the real DEFRA text. On real data, relabel pairing collapses
+~500/500 added/removed to 76 genuinely new and 54 genuinely removed, and the 460
+paired renames group into 11 readable families.
 
 ## What shipped
 - Pipeline: loader, diff, matching, recompute, changes retrieval, explain,
@@ -36,7 +40,9 @@ genuinely new and 54 genuinely removed.
   microcopy linter (`scripts/lint_microcopy.py`) and the retrieval-quality gate
   (`scripts/eval_retrieval.py`), both also run by pytest.
 - Relabel matching (`src/relabel.py`): pairs DEFRA renames across years with a
-  leaf-substitution guard, surfaced as a review-only section (DECISIONS D9).
+  leaf-substitution guard, surfaced as a review-only section (DECISIONS D9), and
+  grouped into rename families for readable output (`group_relabels`, DECISIONS
+  D14).
 - Renamed-and-moved explanations: material relabels routed through the grounded
   explainer, with one shared `diff.is_material` rule; surfaced in report, app,
   and run_demo (DECISIONS D10).
@@ -59,20 +65,22 @@ reachable only on the owner's machine.
 ## Resume here
 Two most recent handoffs (older ones rotate into `docs/archive/`):
 
+- H12 (2026-07-08): Grouped the renamed-and-moved output into rename families
+  (D10 follow-up, D14). On real data the HGV rename spanned 420 material variants
+  (DEFRA also reordered the sub-tables, so the greedy matcher scattered +-100%
+  deltas); those now collapse to ~10 grounded family explanations with an honest
+  value-movement range and a "mixed direction" flag, not 420 fabricated single-
+  direction blocks (and ~10 API calls, not 420). New `relabel.group_relabels`;
+  report/app/run_demo render families; +6 tests (32 green). Footprint math
+  untouched (relabels stay review-only, D9).
 - H11 (2026-07-08): Owner asked to commit the two source docs shared at project
   start and to make `main` the default branch (P17). Added the build playbook and
   the MVP spec PDF under `docs/reference/`, shipped via PR #10. Default-branch
   switch is a manual owner step (no repo-settings tool / no direct GitHub API here):
   GitHub repo Settings, Branches, set default to `main`. Docs/reference only, no
   code touched.
-- H10 (2026-07-08): Adopted the "model selection & documentation practices" doc.
-  Added `docs/REFERENCE.md` (per-session model-selection guidance + the backlog
-  moved out of STATUS) and the `docs/archive/` ISO-week rotation convention with an
-  index, rotating H8 into `STATUS_2026-W28.md`. Recorded the four-doc structure and
-  the rotation rules in WORKING_PREFERENCES and CLAUDE.md. Docs-only; no code
-  touched, 26 tests still green.
 
-Next likely task: dedupe the renamed-and-moved output (D10 follow-up, ~420
-near-duplicates on real data) and/or theme the Streamlit app to the GOV.UK-familiar
-look using the saved mockup. Lower-priority: lockfile pinning, or semantic relabels
-(needs DEFRA's own relabel notes).
+Next likely task: theme the Streamlit app to the GOV.UK-familiar look using the
+saved mockup (`docs/mockups/govuk_report_view.html`). Lower-priority: a finer
+within-family relabel pairing to make per-variant deltas trustworthy (or DEFRA's
+own row map), lockfile pinning, or semantic relabels (needs DEFRA's relabel notes).

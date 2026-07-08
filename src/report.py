@@ -77,54 +77,61 @@ def build_markdown_report(results: dict) -> str:
         )
     lines.append("")
 
-    # Relabels (renamed factors, paired)
-    relabels = results.get("relabels")
-    if relabels is not None and not relabels.empty:
+    # Relabels (renamed factors, paired) — collapsed into rename families so the
+    # ~460 real-data pairs read as ~10 rows.
+    groups = results.get("relabel_groups")
+    if groups is not None and not groups.empty:
         rel_expl = results.get("relabel_explanations") or []
-        # Pairs whose value also crossed threshold get a ⚠ marker and an
-        # explanation block below the table.
-        material_pairs = {(e["old_activity"], e["new_activity"]) for e in rel_expl}
 
         lines.append("## Relabels (renamed factors, paired)")
         lines.append("")
+        n_pairs = int(groups["n_variants"].sum())
         lines.append(
-            "These appeared as one activity removed and another added, but are the "
-            "same factor renamed. They are paired here so they do not read as real "
+            f"These appeared as one activity removed and another added, but are the "
+            f"same factor renamed. {n_pairs} such pairs are grouped into "
+            f"{len(groups)} rename families below so they do not read as real "
             "movement. Only high-confidence name matches (same unit and scope) are "
-            "paired; anything unclear is left as added/removed rather than guessed."
+            "paired; anything unclear is left as added/removed rather than guessed. "
+            "Value movement is shown as a range across the family, never a single "
+            "figure standing in for many."
         )
         lines.append("")
-        lines.append("| Old name → new name | Unit | Scope | kg CO₂e (old → new) | Δ |")
+        lines.append("| Rename (old → new) | Scope | Units | Variants | Value movement |")
         lines.append("|---|---|---|---|---|")
-        for _, r in relabels.iterrows():
-            pct = r["pct_change"]
-            delta = "same" if (pd.notna(pct) and abs(pct) < 0.05) else f"{_fmt(pct,1)}%"
-            if (r["old_activity"], r["new_activity"]) in material_pairs:
-                delta += " ⚠ material"
+        for _, r in groups.iterrows():
+            movement = r["movement"]
+            if r["n_material"]:
+                movement += " ⚠ material"
             lines.append(
-                f"| {r['old_activity']} → {r['new_activity']} | {r['unit']} "
-                f"| {r['scope']} | {_fmt(r['kg_co2e_old'])} → {_fmt(r['kg_co2e_new'])} "
-                f"| {delta} |"
+                f"| {r['old_name']} → {r['new_name']} | {r['scope']} | {r['units']} "
+                f"| {int(r['n_variants'])} | {movement} |"
             )
         lines.append("")
 
-        # Renamed AND moved: explain the ones that also crossed the threshold.
+        # Renamed AND moved: explain the families that also crossed the threshold,
+        # one grounded block per family (not per variant).
         if rel_expl:
             lines.append("### Why the renamed factors also moved")
             lines.append("")
             lines.append(
                 "These relabels are not just renames: the factor value also crossed "
-                "DEFRA's materiality threshold, so each is explained below, grounded "
-                "in the changes notes (or reported as unexplained when the notes are "
-                "silent)."
+                "DEFRA's materiality threshold. Each rename FAMILY is explained once "
+                "below, grounded in the changes notes (or reported as unexplained "
+                "when the notes are silent), with the value movement shown as a range."
             )
             lines.append("")
             for e in rel_expl:
-                lines.append(
-                    f"**{e['old_activity']} → {e['new_activity']}**  ·  {e['scope']}"
-                    f"  ·  {_fmt(e['kg_co2e_old'])} → {_fmt(e['kg_co2e_new'])} "
-                    f"({_fmt(e['pct_change'],1)}%)"
+                variants = (
+                    f"{e['n_variants']} variants"
+                    if e["n_variants"] > 1
+                    else "1 variant"
                 )
+                lines.append(
+                    f"**{e['old_name']} → {e['new_name']}**  ·  {e['scope']}"
+                    f"  ·  {variants} ({e['units']})"
+                )
+                lines.append("")
+                lines.append(f"**How the values moved.** {e['value_movement']}")
                 lines.append("")
                 lines.append(f"**Why it changed.** {e['plain_english_reason']}")
                 lines.append("")

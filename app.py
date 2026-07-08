@@ -135,35 +135,43 @@ if ds:
         f"{ds['removed']} removed{relabel_note}."
     )
 
-relabels = results.get("relabels")
-if relabels is not None and not relabels.empty:
-    with st.expander(f"Relabels paired ({len(relabels)} renamed factors)"):
+groups = results.get("relabel_groups")
+if groups is not None and not groups.empty:
+    n_pairs = int(groups["n_variants"].sum())
+    with st.expander(
+        f"Relabels paired ({n_pairs} renamed factors in {len(groups)} families)"
+    ):
         st.caption(
-            "Same factor, renamed across versions. Paired so they do not read as "
-            "real movement. Only high-confidence matches (same unit and scope) are "
-            "paired; anything unclear stays added/removed rather than guessed."
+            "Same factor, renamed across versions, grouped into rename families so "
+            "they do not read as real movement. Only high-confidence matches (same "
+            "unit and scope) are paired; anything unclear stays added/removed rather "
+            "than guessed. Value movement is a range across the family, never a "
+            "single figure standing in for many."
         )
         st.dataframe(
-            relabels[
-                ["old_activity", "new_activity", "unit", "scope",
-                 "kg_co2e_old", "kg_co2e_new", "pct_change", "name_score"]
+            groups[
+                ["old_name", "new_name", "scope", "units",
+                 "n_variants", "n_material", "movement"]
             ],
             hide_index=True,
         )
         rel_expl = results.get("relabel_explanations") or []
         if rel_expl:
             st.markdown(
-                "**Renamed and moved.** These relabels also crossed DEFRA's "
-                "materiality threshold, so they are explained here too (grounded "
-                "the same way as the flagged factors)."
+                "**Renamed and moved.** These rename families also crossed DEFRA's "
+                "materiality threshold, so each is explained once here (grounded the "
+                "same way as the flagged factors)."
             )
             for e in rel_expl:
+                variants = (
+                    f"{e['n_variants']} variants" if e["n_variants"] > 1 else "1 variant"
+                )
                 header = (
-                    f"{e['old_activity']} → {e['new_activity']}  ·  {e['scope']}  ·  "
-                    f"{e['kg_co2e_old']:g} → {e['kg_co2e_new']:g}  "
-                    f"({e['pct_change']:+.1f}%)"
+                    f"{e['old_name']} → {e['new_name']}  ·  {e['scope']}  ·  "
+                    f"{variants} ({e['units']})"
                 )
                 with st.expander(header):
+                    st.markdown(f"**How the values moved.** {e['value_movement']}")
                     st.markdown(f"**Why it changed.** {e['plain_english_reason']}")
                     st.markdown(f"**Methodology note.** {e['methodology_note']}")
                     st.markdown(f"**Target impact.** {e['target_impact_flag']}")
