@@ -92,9 +92,21 @@ def run_pipeline(
     # Major Changes PDF if provided, else the new workbook's "What's new" sheet.
     chunks = load_change_chunks(changes_pdf_path, defra_new_path)
 
-    included_activities = set(
-        line_table.loc[line_table["included"], "matched_activity"].dropna()
+    included = line_table[line_table["included"]]
+    included_activities = set(included["matched_activity"].dropna())
+
+    # How much each flagged factor moved THIS product's footprint (kg CO2e),
+    # summed across every BOM line that matched it. This is what makes the report
+    # about the user's own number: a 3% move on the factor that is 60% of their
+    # footprint matters more than a 40% move on a 0.1% line. We rank the
+    # explanations by it and show it next to each.
+    impact_by_activity = (
+        included.groupby("matched_activity")["line_delta"].sum().to_dict()
+        if not included.empty
+        else {}
     )
+    total_move = abs(summary.get("absolute_delta") or 0.0)
+
     explanations = []
     for _, row in diff_df.iterrows():
         if not row["flagged"]:
@@ -110,6 +122,7 @@ def run_pipeline(
             retrieved_text=passage,
             context=context,
         )
+        impact = float(impact_by_activity.get(row["activity"], 0.0))
         explanations.append(
             {
                 "activity": row["activity"],
@@ -117,10 +130,17 @@ def run_pipeline(
                 "kg_co2e_old": row["kg_co2e_old"],
                 "kg_co2e_new": row["kg_co2e_new"],
                 "pct_change": row["pct_change"],
+                "footprint_impact": round(impact, 4),
+                "footprint_impact_pct": (
+                    round(impact / total_move * 100, 1) if total_move else None
+                ),
                 "retrieval_score": score,
                 **result,
             }
         )
+
+    # Lead with the changes that moved the user's OWN footprint the most.
+    explanations.sort(key=lambda e: abs(e["footprint_impact"]), reverse=True)
 
     # A relabel is a SAME factor, renamed. Most renames barely move the value, but
     # some cross DEFRA's materiality threshold too (renamed AND moved). Those were

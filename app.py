@@ -259,18 +259,26 @@ else:
 # --- Explanations ---
 st.subheader("What changed and why")
 st.caption(
-    "Grounded strictly in the DEFRA changes notes (a Major Changes PDF if "
-    "provided, otherwise the workbook's 'What's new' sheet). Where the notes are "
-    "silent, the tool says so instead of inventing a reason."
+    "Ordered by how much each change moved this product's footprint (largest "
+    "first). Grounded strictly in the DEFRA changes notes (a Major Changes PDF "
+    "if provided, otherwise the workbook's 'What's new' sheet). Where the notes "
+    "are silent, the tool says so instead of inventing a reason."
 )
 if not results["explanations"]:
     st.write("No flagged, footprint-relevant factor changes.")
 for e in results["explanations"]:
+    imp = e.get("footprint_impact")
+    imp_txt = f"  ·  {imp:+.3g} kg impact" if imp is not None else ""
     header = (
         f"{e['activity']}  ·  {e['scope']}  ·  "
         f"{e['kg_co2e_old']:g} → {e['kg_co2e_new']:g}  ({e['pct_change']:+.1f}%)"
+        f"{imp_txt}"
     )
     with st.expander(header):
+        if imp is not None:
+            share = e.get("footprint_impact_pct")
+            share_txt = f" ({share:+.1f}% of the total change)" if share is not None else ""
+            st.markdown(f"**Impact on your footprint.** {imp:+,.4f} kg CO₂e{share_txt}.")
         st.markdown(f"**Why it changed.** {e['plain_english_reason']}")
         st.markdown(f"**Methodology note.** {e['methodology_note']}")
         st.markdown(f"**Target impact.** {e['target_impact_flag']}")
