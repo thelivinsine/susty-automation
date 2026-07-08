@@ -36,9 +36,14 @@ override defaults. The essentials:
   the housekeeping steps). `main` is production and source of truth.
 - Token discipline: targeted search over whole-file reads, batch tool calls, no
   subagents for routine work.
+- **Pick the session model up front** by the dominant work (frontier for design,
+  heavy for build, cheap for fill-in); step up a tier for high-stakes work. The
+  per-session guidance and the backlog live in `docs/REFERENCE.md`.
 - After every significant task, update **both** `docs/STATUS.md` and
-  `docs/PROMPT_LOG.md` (and any stale docs). Locked decisions live in
-  `docs/DECISIONS.md`; read before undoing anything marked LOCKED.
+  `docs/PROMPT_LOG.md` (and any stale docs). Backlog and model guidance live in
+  `docs/REFERENCE.md`; locked decisions live in `docs/DECISIONS.md` (read before
+  undoing anything marked LOCKED). Older handoffs and prompt entries rotate into
+  `docs/archive/` by ISO week.
 
 ## Hard constraints (do not violate without asking)
 

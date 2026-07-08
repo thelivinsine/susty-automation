@@ -69,15 +69,29 @@ restart the branch from latest `main` (same name), do not stack on merged histor
   scripts by default.
 
 ## Documentation (after every significant task or batch)
+Four core docs by role: `CLAUDE.md` + this file (instructions & conventions),
+`STATUS.md` (status), `REFERENCE.md` (reference), `DECISIONS.md` (decisions), plus
+the prompt log. Keep the file read every session SHORT, push detail and history
+into companion docs loaded on demand, and never let any single file grow without
+bound.
 - Lean living status doc: current state, what shipped, a "Resume here" pointer
-  with the two most recent handoffs. Archive older handoffs.
+  with ONLY the two most recent handoffs. Keep under ~250 lines. When you append a
+  new handoff, move any handoff older than the two most recent into the archive.
+- Reference doc (`REFERENCE.md`): stable, low-churn, read on demand. The backlog,
+  research/product-evaluation notes, and the per-session model-selection guidance.
 - Separate decisions log for the "why" behind locked decisions. Read it before
-  undoing anything marked "locked".
+  undoing anything marked "locked". Terse rule in `CLAUDE.md`, full reasoning here.
 - Append-only prompt/session log: one entry per owner prompt (verbatim prompt,
   timestamp, branch, response summary, artifacts: files, commit SHAs, PR numbers).
-  Never paste secrets or the internal model identifier.
+  Never paste secrets or the internal model identifier. Append to the tail; read
+  only the last ~30 lines to get the last entry number and template.
+- Archival & rotation by ISO week under `docs/archive/` with an index:
+  `STATUS_YYYY-Www.md` and `PROMPT_LOG_YYYY-Www.md`. Rotate prompt-log entries out
+  when the live file passes ~1,200 lines (keep ~current plus the last 5 sessions).
+  Archives are append-only: never rewrite entries when moving them.
 - "Update the documentation" means BOTH the status doc AND the prompt log (plus
-  any stale plan/CLAUDE.md), without being asked to name the prompt log.
+  any stale plan/CLAUDE.md), without being asked to name the prompt log. Ship all
+  doc updates in the same PR as the work.
 
 ## Locked decisions convention
 - When the owner says a decision is locked, do not revisit its structure or

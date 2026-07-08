@@ -332,4 +332,29 @@ open follow-ups the exploration surfaced: (1) dedupe the renamed-and-moved outpu
 the GOV.UK-familiar look using the saved mockup. No pipeline code changed; 26 tests
 still green.
 
+---
+
+### 2026-07-08 · P18
+Branch: `claude/best-practices-instructions-p7hgfh`.
+
+**Prompt (verbatim):** "attached is another set of best practices instructions
+for this project" (attachment: `modelanddocspractices.md`, a standing-preferences
+doc covering per-session model selection and documentation structure/archival),
+then "open pr and merge".
+
+**Response summary:** Adopted the doc. The project already had the status,
+decisions, and prompt-log docs, so I added the missing pieces: `docs/REFERENCE.md`
+(the read-on-demand reference doc holding the per-session model-selection guidance
+and the backlog moved out of STATUS), and the `docs/archive/` ISO-week rotation
+convention with an index, rotating handoff H8 into `STATUS_2026-W28.md`. Recorded
+the four-doc structure, the reference-doc role, and the archival/rotation rules in
+WORKING_PREFERENCES.md and CLAUDE.md, and trimmed STATUS to a lean snapshot.
+Docs-only; no pipeline code changed. Note: the assigned branch was cut from a stale
+base, so I reset it onto current `main` before applying, to avoid clobbering the
+merged PRs #4 to #8.
+
+**Artifacts:** docs/REFERENCE.md, docs/archive/README.md,
+docs/archive/STATUS_2026-W28.md, docs/WORKING_PREFERENCES.md, docs/STATUS.md,
+docs/PROMPT_LOG.md, CLAUDE.md. PR #9.
+
 **Artifacts:** docs/PROMPT_LOG.md, docs/STATUS.md.
