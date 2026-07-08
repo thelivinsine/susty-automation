@@ -51,6 +51,14 @@ genuinely new and 54 genuinely removed.
 - Docs: WORKING_PREFERENCES, DECISIONS, PROMPT_LOG, this file.
 
 ## Known gaps / next candidates
+- Renamed-and-moved duplicates: on real data D10 emits ~420 entries, many
+  near-identical (the same HGV rename across weight classes and units). Group them
+  (one row + count) so the report and app stay readable. Found while rendering the
+  product view (P15).
+- Streamlit theming: a GOV.UK-familiar look was designed for the standalone report
+  view (`docs/mockups/govuk_report_view.html`). The real app (`app.py`) still uses
+  Streamlit defaults; theming it to match (config.toml palette + CSS) is a natural
+  next step (P16).
 - Semantic relabels with low string overlap (Incineration -> Combustion) still
   read as added/removed; would need DEFRA's own relabel notes.
 - Package manager pin + lockfile for reproducible installs (deps are audited now,
@@ -61,19 +69,21 @@ genuinely new and 54 genuinely removed.
 ## Resume here
 Two most recent handoffs:
 
+- H9 (2026-07-08): Owner asked how to view the product, then to style it in a
+  DEFRA-familiar way (P15, P16). Rendered the live pipeline output as an HTML view
+  and rebuilt it in the GOV.UK Design System idiom (evoked, not cloned; with an
+  independence disclaimer), saved as `docs/mockups/govuk_report_view.html`. No
+  pipeline code changed. Surfaced two follow-ups now in Known gaps: dedupe the
+  ~420 renamed-and-moved entries on real data, and (optionally) theme the Streamlit
+  app to the same look. 26 tests still green.
 - H8 (2026-07-07): Added the dependency-audit gate (DECISIONS D13). CI installs
   `pip-audit` and runs `scripts/audit_deps.py`, which audits the requirements'
   transitive closure against known-CVE feeds and fails on any advisory. Kept it
   CI-only (not pytest) because it is online and time-varying, unlike the
   deterministic offline gates; pip-audit stays out of requirements.txt to avoid
-  bloating runtime deps. Currently clean. 26 tests green; now three CI gates.
-- H7 (2026-07-07): Added loader/diff golden-vector tests (DECISIONS D12). A small,
-  frozen, code-built fixture (an independent oracle, not the synthetic generator)
-  pins the EXACT normalized loader output and diff results, exercising scope-from-
-  metadata, messy-scope normalization, forward-fill, the ignored Year column, unit
-  normalization, (activity, unit) dedup, and super-header block expansion. Runs in
-  the existing pytest CI step. 26 tests green.
+  bloating runtime deps. Currently clean. 26 tests green; three CI gates.
 
-Next likely task: pin dependencies with a lockfile for reproducible installs (the
-audit gate is in place but deps are still `>=`), or tackle semantic relabels (low
-string overlap, e.g. Incineration -> Combustion) using DEFRA's own relabel notes.
+Next likely task: dedupe the renamed-and-moved output (D10 follow-up, ~420
+near-duplicates on real data) and/or theme the Streamlit app to the GOV.UK-familiar
+look using the saved mockup. Lower-priority: lockfile pinning, or semantic relabels
+(needs DEFRA's own relabel notes).

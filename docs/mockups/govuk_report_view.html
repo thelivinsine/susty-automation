@@ -1,0 +1,309 @@
+<title>EF Version Explainer report</title>
+<style>
+  /* ---- Tokens: a GOV.UK-familiar system, not a literal copy ---- */
+  :root {
+    --black: #0b0c0c;
+    --white: #ffffff;
+    --ground: #ffffff;
+    --grey-1: #f3f2f1;   /* section wash */
+    --grey-2: #e7e6e5;
+    --border: #b1b4b6;   /* mid grey rule */
+    --secondary: #505a5f;
+    --blue: #1d70b8;
+    --blue-dark: #003078;
+    --green: #00703c;
+    --green-panel: #00703c;
+    --red: #d4351c;
+    --focus: #ffdd00;
+    /* tag tints */
+    --tag-blue-bg: #d2e2f1; --tag-blue-tx: #14477d;
+    --tag-green-bg: #cce2d8; --tag-green-tx: #005a30;
+    --tag-red-bg: #f6d7d2; --tag-red-tx: #942514;
+    --tag-grey-bg: #eeefef; --tag-grey-tx: #383f43;
+    --heading: var(--black);
+    --body-tx: var(--black);
+    --font: arial, "Helvetica Neue", "Nimbus Sans", "Liberation Sans", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --black: #ffffff;
+      --white: #1a1a1a;
+      --ground: #0b0c0c;
+      --grey-1: #1c1d1f;
+      --grey-2: #2a2b2d;
+      --border: #5c5f61;
+      --secondary: #b6bbbe;
+      --blue: #5694ca;
+      --blue-dark: #99c1ea;
+      --green: #57a97a;
+      --green-panel: #005a30;
+      --red: #ea6d5b;
+      --focus: #ffdd00;
+      --tag-blue-bg: #17324d; --tag-blue-tx: #9fc3e8;
+      --tag-green-bg: #14331f; --tag-green-tx: #6fce9b;
+      --tag-red-bg: #3a1a14; --tag-red-tx: #f0a99b;
+      --tag-grey-bg: #26282a; --tag-grey-tx: #c5c9cb;
+      --heading: #ffffff; --body-tx: #ffffff;
+    }
+  }
+  :root[data-theme="light"] {
+    --black:#0b0c0c; --white:#ffffff; --ground:#ffffff; --grey-1:#f3f2f1; --grey-2:#e7e6e5;
+    --border:#b1b4b6; --secondary:#505a5f; --blue:#1d70b8; --blue-dark:#003078; --green:#00703c;
+    --green-panel:#00703c; --red:#d4351c; --focus:#ffdd00;
+    --tag-blue-bg:#d2e2f1; --tag-blue-tx:#14477d; --tag-green-bg:#cce2d8; --tag-green-tx:#005a30;
+    --tag-red-bg:#f6d7d2; --tag-red-tx:#942514; --tag-grey-bg:#eeefef; --tag-grey-tx:#383f43;
+    --heading:#0b0c0c; --body-tx:#0b0c0c;
+  }
+  :root[data-theme="dark"] {
+    --black:#ffffff; --white:#1a1a1a; --ground:#0b0c0c; --grey-1:#1c1d1f; --grey-2:#2a2b2d;
+    --border:#5c5f61; --secondary:#b6bbbe; --blue:#5694ca; --blue-dark:#99c1ea; --green:#57a97a;
+    --green-panel:#005a30; --red:#ea6d5b; --focus:#ffdd00;
+    --tag-blue-bg:#17324d; --tag-blue-tx:#9fc3e8; --tag-green-bg:#14331f; --tag-green-tx:#6fce9b;
+    --tag-red-bg:#3a1a14; --tag-red-tx:#f0a99b; --tag-grey-bg:#26282a; --tag-grey-tx:#c5c9cb;
+    --heading:#ffffff; --body-tx:#ffffff;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--ground); color: var(--body-tx); font-family: var(--font); font-size: 18px; line-height: 1.47; }
+  .tnum { font-variant-numeric: tabular-nums; }
+  a { color: var(--blue); text-decoration: underline; text-underline-offset: .1em; }
+  a:hover { color: var(--blue-dark); text-decoration-thickness: 3px; }
+  a:focus, .btn:focus, .focusable:focus { outline: 3px solid transparent; color: var(--black); background: var(--focus); box-shadow: 0 -2px var(--focus), 0 4px var(--black); text-decoration: none; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+  /* ---- Masthead: black bar + environment-green keyline ---- */
+  .masthead { background: var(--black); border-bottom: 4px solid var(--green); }
+  .masthead .inner { max-width: 960px; margin: 0 auto; padding: 12px clamp(15px, 4vw, 30px); display: flex; align-items: center; gap: 12px; }
+  .wordmark { color: var(--white); font-weight: 700; font-size: 21px; letter-spacing: .01em; }
+  .wordmark .tick { color: #ffffff; }
+  .masthead .dept { margin-left: auto; color: #c9cccd; font-size: 13px; }
+
+  /* ---- Phase banner ---- */
+  .phase { border-bottom: 1px solid var(--border); background: var(--ground); }
+  .phase .inner { max-width: 960px; margin: 0 auto; padding: 10px clamp(15px, 4vw, 30px); display: flex; align-items: center; gap: 12px; font-size: 15px; color: var(--secondary); }
+
+  .tag { display: inline-block; font-weight: 700; font-size: 13px; line-height: 1.2; letter-spacing: .04em; text-transform: uppercase; padding: 4px 8px; border-radius: 0; background: var(--tag-blue-bg); color: var(--tag-blue-tx); white-space: nowrap; }
+  .tag.green { background: var(--tag-green-bg); color: var(--tag-green-tx); }
+  .tag.red { background: var(--tag-red-bg); color: var(--tag-red-tx); }
+  .tag.grey { background: var(--tag-grey-bg); color: var(--tag-grey-tx); }
+
+  /* ---- Layout ---- */
+  main { max-width: 780px; margin: 0 auto; padding: clamp(24px, 4vw, 50px) clamp(15px, 4vw, 30px) 70px; }
+
+  h1 { color: var(--heading); font-weight: 700; font-size: clamp(32px, 6vw, 48px); line-height: 1.09; letter-spacing: -.01em; margin: 6px 0 0; text-wrap: balance; }
+  .lead { font-size: clamp(18px, 2.4vw, 22px); line-height: 1.4; margin: 18px 0 0; color: var(--body-tx); max-width: 40ch; }
+  .lead .v { font-weight: 700; white-space: nowrap; }
+  .lead .arrow { color: var(--green); }
+
+  h2 { color: var(--heading); font-weight: 700; font-size: clamp(22px, 3vw, 27px); line-height: 1.15; margin: 0; }
+  .section { margin-top: 46px; }
+  .section > .h2wrap { border-top: 2px solid var(--black); padding-top: 12px; margin-bottom: 16px; }
+  .caption { color: var(--secondary); font-size: 15px; margin: 4px 0 0; }
+  p { margin: 0 0 14px; }
+  p.body { max-width: 62ch; }
+
+  /* ---- Confirmation panel (the result) ---- */
+  .panel { background: var(--green-panel); color: #ffffff; padding: clamp(24px, 4vw, 34px) clamp(18px, 3vw, 28px); margin-top: 26px; text-align: center; }
+  .panel .lab { font-size: 15px; letter-spacing: .05em; text-transform: uppercase; font-weight: 700; opacity: .9; }
+  .panel .fig { font-weight: 700; font-size: clamp(30px, 6.5vw, 50px); line-height: 1.05; margin-top: 10px; letter-spacing: -.01em; }
+  .panel .fig .from { opacity: .72; }
+  .panel .fig .arrow { padding: 0 .18em; opacity: .85; }
+  .panel .sub { font-size: clamp(16px, 2.4vw, 20px); margin-top: 12px; font-weight: 700; }
+  .panel .base { font-size: 15px; margin-top: 8px; font-weight: 400; opacity: .92; }
+
+  /* ---- Big-number stats ---- */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: 22px; border-top: 1px solid var(--border); }
+  @media (max-width: 620px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+  .stat { padding: 16px 16px 16px 0; border-bottom: 1px solid var(--border); }
+  .stat .v { font-weight: 700; font-size: 34px; line-height: 1; letter-spacing: -.02em; color: var(--heading); }
+  .stat .v small { font-size: 18px; font-weight: 700; }
+  .stat .k { font-size: 14px; color: var(--secondary); margin-top: 6px; }
+
+  /* ---- Inset text ---- */
+  .inset { border-left: 5px solid var(--border); padding: 4px 0 4px 18px; margin: 20px 0; color: var(--body-tx); font-size: 16px; }
+  .inset.blue { border-left-color: var(--blue); }
+
+  /* ---- Summary-style explanation block ---- */
+  .explain { border: 1px solid var(--border); margin-top: 20px; }
+  .explain .hd { padding: 16px 18px; border-bottom: 1px solid var(--border); background: var(--grey-1); }
+  .explain .act { font-weight: 700; font-size: 19px; color: var(--heading); }
+  .explain .meta { margin-top: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+  .explain .nums { font-size: 15px; color: var(--secondary); font-weight: 700; }
+  .kv { display: grid; grid-template-columns: 1fr; }
+  .kv .row { padding: 16px 18px; border-bottom: 1px solid var(--border); }
+  .kv .row:last-child { border-bottom: 0; }
+  .kv .key { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--secondary); font-weight: 700; margin-bottom: 6px; }
+  .kv .val { font-size: 16px; color: var(--body-tx); }
+  .kv .val .quote { color: var(--secondary); }
+  .explain .result { padding: 14px 18px; background: var(--tag-green-bg); color: var(--tag-green-tx); font-weight: 700; font-size: 15px; display: flex; gap: 8px; align-items: center; }
+
+  /* ---- Renamed rows ---- */
+  .rm { margin-top: 18px; border-top: 1px solid var(--border); }
+  .rm .row { padding: 15px 0; border-bottom: 1px solid var(--border); }
+  .rm .names { font-size: 16px; line-height: 1.4; }
+  .rm .old { color: var(--secondary); text-decoration: line-through; }
+  .rm .new { font-weight: 700; color: var(--heading); }
+  .rm .arrow { color: var(--green); padding: 0 6px; font-weight: 700; }
+  .rm .line { margin-top: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+  .rm .nums { font-size: 15px; color: var(--secondary); font-weight: 700; }
+  .move { display: inline-block; font-weight: 700; font-size: 14px; padding: 2px 8px; }
+  .move.down { background: var(--tag-green-bg); color: var(--tag-green-tx); }
+  .move.up { background: var(--tag-red-bg); color: var(--tag-red-tx); }
+
+  /* ---- Table ---- */
+  .table-scroll { overflow-x: auto; margin-top: 8px; }
+  table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 16px; }
+  caption { text-align: left; }
+  th, td { text-align: left; padding: 11px 14px 11px 0; border-bottom: 1px solid var(--border); vertical-align: top; }
+  thead th { font-weight: 700; color: var(--heading); border-bottom: 2px solid var(--black); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.item { color: var(--body-tx); padding-right: 20px; }
+  .d-up { color: var(--red); font-weight: 700; } .d-down { color: var(--green); font-weight: 700; }
+
+  /* ---- Warning text ---- */
+  .warning { display: flex; gap: 14px; align-items: flex-start; margin-top: 18px; }
+  .warning .icon { flex: 0 0 auto; width: 35px; height: 35px; border-radius: 50%; background: var(--black); color: var(--ground); font-weight: 700; font-size: 24px; line-height: 35px; text-align: center; }
+  .warning .txt { font-weight: 700; font-size: 17px; color: var(--body-tx); }
+  .warning .txt .detail { font-weight: 400; color: var(--secondary); font-size: 15px; margin-top: 6px; }
+  .warning .txt .detail b { color: var(--heading); }
+
+  /* ---- Buttons / footer ---- */
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
+  .btn { display: inline-block; font-weight: 700; font-size: 17px; padding: 11px 16px; background: var(--green); color: #ffffff; text-decoration: none; border: 0; box-shadow: 0 2px 0 rgba(0,0,0,.35); }
+  .btn:hover { background: color-mix(in srgb, var(--green) 88%, #000); }
+  .btn code { color: #ffffff; font-family: inherit; }
+  footer { margin-top: 50px; border-top: 1px solid var(--border); padding-top: 18px; color: var(--secondary); font-size: 14px; line-height: 1.5; max-width: 66ch; }
+  .code { font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace; font-size: 14px; background: var(--grey-1); border: 1px solid var(--border); padding: 1px 6px; }
+</style>
+
+<header class="masthead">
+  <div class="inner">
+    <span class="wordmark">EF Version Explainer</span>
+    <span class="dept">Emission-factor version delta &middot; carbon (kg CO&#8322;e)</span>
+  </div>
+</header>
+
+<div class="phase">
+  <div class="inner">
+    <span class="tag">Prototype</span>
+    <span>A working tool. Figures use the real DEFRA 2025 and 2026 full-set workbooks.</span>
+  </div>
+</div>
+
+<main>
+  <h1>What changed between two DEFRA factor releases, and why</h1>
+  <p class="lead">Comparing <span class="v">DEFRA 2025<span class="arrow">&nbsp;&rarr;&nbsp;</span>2026</span> government conversion factors, and recomputing one product's footprint under each.</p>
+
+  <!-- RESULT PANEL -->
+  <div class="panel">
+    <div class="lab">Product footprint &middot; did not increase</div>
+    <div class="fig tnum"><span class="from">2.344</span><span class="arrow">&rarr;</span>2.305</div>
+    <div class="sub">kg CO&#8322;e &nbsp;(&#9660; 1.68% under the 2026 factors)</div>
+    <div class="base">Recomputed from the same bill of materials. Stays within a flat baseline.</div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="v tnum">85.7<small>%</small></div><div class="k">BOM coverage (6 of 7 lines)</div></div>
+    <div class="stat"><div class="v tnum">67</div><div class="k">Material movers past threshold</div></div>
+    <div class="stat"><div class="v tnum">460</div><div class="k">Relabels paired, not real movement</div></div>
+    <div class="stat"><div class="v tnum">1</div><div class="k">Held for review, never guessed</div></div>
+  </div>
+
+  <div class="inset">
+    Version scan: <strong>2,111</strong> factors in 2025 vs <strong>2,133</strong> in 2026, <strong>1,597</strong> present in both years. Of the raw 536 added and 514 removed, <strong>460</strong> were paired as DEFRA relabels, leaving <strong>76</strong> genuinely new and <strong>54</strong> genuinely retired.
+  </div>
+
+  <!-- THE WEDGE -->
+  <div class="section">
+    <div class="h2wrap"><h2>What changed and why</h2></div>
+    <p class="caption">The heart of the tool. Every material change gets a plain-English reason and a methodology note, using only the numbers passed in and DEFRA's own change notes. Where the notes are silent, it says so rather than inventing a reason.</p>
+
+    <div class="explain">
+      <div class="hd">
+        <div class="act">Electricity generated &middot; Electricity: UK</div>
+        <div class="meta">
+          <span class="tag">Scope 2</span>
+          <span class="nums tnum">0.17700 &rarr; 0.13096 kg CO&#8322;e</span>
+          <span class="move down tnum">&#9660; 26.0%</span>
+        </div>
+      </div>
+      <div class="kv">
+        <div class="row">
+          <div class="key">Why it changed &nbsp;&middot;&nbsp; <span style="color:var(--tag-grey-tx)">offline extract</span></div>
+          <div class="val">The factor fell 26.0% (0.177 &rarr; 0.13096). <span class="quote">Official note: "Revision to the calculation method for UK electricity (affected tabs: UK electricity; Transmission and distribution; indirect knock-on effects on other factors that include electricity including Rail, xEVs and Homeworking). A revised methodology has been introduced: the previous approach divided total electricity-related emissions from the UK Greenhouse Gas Inventory by total generation, which introduced a two-year lag&hellip;"</span></div>
+        </div>
+        <div class="row">
+          <div class="key">Methodology note</div>
+          <div class="val">Reported under the same GHG Protocol scope classification; the change is a factor-version update, so year-over-year comparisons should note the DEFRA release year (ISO 14064 comparability).</div>
+        </div>
+      </div>
+      <div class="result">&#9660; Target impact: this factor decreased, easing the product footprint.</div>
+    </div>
+  </div>
+
+  <!-- RENAMED AND MOVED -->
+  <div class="section">
+    <div class="h2wrap"><h2>Renamed and moved</h2></div>
+    <p class="caption">DEFRA renamed a factor <em>and</em> shifted its value past the threshold. The tool pairs the rename so it does not read as a brand-new factor, and still explains the movement. Shown: 3 of 420, from DEFRA's HGV naming change.</p>
+
+    <div class="rm">
+      <div class="row">
+        <div class="names"><span class="old">HGV (all diesel) &middot; All HGVs &middot; CNG</span><span class="arrow">&rarr;</span><span class="new">HGV (non-refrigerated, all diesel) &middot; CNG</span></div>
+        <div class="line"><span class="tag">Scope 1</span><span class="nums tnum">1.01203 &rarr; 0.84482</span><span class="move down tnum">&#9660; 16.5%</span></div>
+      </div>
+      <div class="row">
+        <div class="names"><span class="old">HGV (all diesel) &middot; All HGVs &middot; Diesel</span><span class="arrow">&rarr;</span><span class="new">HGV (non-refrigerated, all diesel) &middot; Diesel</span></div>
+        <div class="line"><span class="tag">Scope 1</span><span class="nums tnum">0.65975 &rarr; 0.89743</span><span class="move up tnum">&#9650; 36.0%</span></div>
+      </div>
+      <div class="row">
+        <div class="names"><span class="old">HGV (all diesel) &middot; All HGVs &middot; LPG</span><span class="arrow">&rarr;</span><span class="new">HGV (non-refrigerated, all diesel) &middot; LPG</span></div>
+        <div class="line"><span class="tag">Scope 1</span><span class="nums tnum">0.89121 &rarr; 1.02266</span><span class="move up tnum">&#9650; 14.7%</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTRIBUTORS -->
+  <div class="section">
+    <div class="h2wrap"><h2>Biggest contributors to the change</h2></div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Line item</th>
+            <th scope="col" class="num">Factor (old &rarr; new)</th>
+            <th scope="col" class="num">kg CO&#8322;e (old &rarr; new)</th>
+            <th scope="col" class="num">Change</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="item">Electricity generated, UK</td><td class="num">0.1770 &rarr; 0.1310</td><td class="num">0.15045 &rarr; 0.11132</td><td class="num d-down">&minus;0.03913</td></tr>
+          <tr><td class="item">Diesel (average biofuel blend)</td><td class="num">2.5708 &rarr; 2.5835</td><td class="num">0.12854 &rarr; 0.12918</td><td class="num d-up">+0.00064</td></tr>
+          <tr><td class="item">Paper &amp; board: board, primary</td><td class="num">1199.7 &rarr; 1198.2</td><td class="num">0.35992 &rarr; 0.35947</td><td class="num d-down">&minus;0.00045</td></tr>
+          <tr><td class="item">Aluminium cans &amp; foil, primary</td><td class="num">9115.9 &rarr; 9113.6</td><td class="num">1.64086 &rarr; 1.64044</td><td class="num d-down">&minus;0.00042</td></tr>
+          <tr><td class="item">Plastics: average, primary</td><td class="num">3172.5 &rarr; 3170.5</td><td class="num">0.06345 &rarr; 0.06341</td><td class="num d-down">&minus;0.00004</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- NEEDS REVIEW -->
+  <div class="section">
+    <div class="h2wrap"><h2>Needs review</h2></div>
+    <div class="warning">
+      <span class="icon" aria-hidden="true">!</span>
+      <span class="txt">
+        One line was left for a human, not guessed.
+        <span class="detail">It fell below the confidence threshold for an automatic match, and guessing an emission factor would risk a wrong number. Flagged: <b>Proprietary specialty resin (custom compound)</b> &middot; tonne &middot; best score 49.3.</span>
+      </span>
+    </div>
+  </div>
+
+  <footer>
+    Generated by EF Version Explainer on the real DEFRA 2025 and 2026 full-set workbooks. Explanations are grounded strictly in the official DEFRA change notes; where the report is silent, the tool says so rather than inventing a reason. Backend shown here is the offline explainer (set a Gemini or Claude API key for a live model).
+    <div class="actions">
+      <a class="btn" href="#">Open the dashboard &nbsp;&middot;&nbsp; <code>streamlit run app.py</code></a>
+    </div>
+    <p style="margin-top:14px">This tool is independent and is not affiliated with, or endorsed by, DEFRA, DESNZ, or GOV.UK. The visual style is inspired by the GOV.UK Design System for familiarity only.</p>
+  </footer>
+</main>
