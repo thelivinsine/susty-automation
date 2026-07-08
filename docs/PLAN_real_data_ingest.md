@@ -4,6 +4,12 @@ This is the one build that turns the tool from an impressive demo into something
 consultant opens every June (see `docs/VISION.md`, move #2). Written in plain
 English, in small steps, each with a way to SEE it work, per the house rules.
 
+> **Progress:** Steps 1, 2, 3, and 4 are SHIPPED (`src/ingest.py`,
+> `scripts/check_ingest.py`, `tests/test_ingest.py`, wired into `app.py`, and
+> impact-ranking in `pipeline.py`/`report.py`). Still open: the "find the header
+> row" tolerance (files with a title/blank rows above the headers), and the dated
+> printable memo (VISION move #3), which is a separate plan.
+
 ## The problem in one sentence
 
 Today the tool only accepts a perfectly clean file with exactly three columns
