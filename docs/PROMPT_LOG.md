@@ -508,7 +508,7 @@ pre-filled with the guessed mapping for the user to confirm or fix, and the Run
 button stays disabled until the mapping is complete and unambiguous. Set-aside rows
 are listed in a new "Rows set aside" section. The built-in sample still runs when
 nothing is uploaded. The microcopy gate caught two em dashes I introduced (the
-"— select —" placeholder and a caption), now fixed. Verified: app boots headless
+"(select a column)" placeholder and a caption), now fixed. Verified: app boots headless
 (HTTP 200, no errors) and a messy in-memory xlsx runs read->guess->build->full
 pipeline end to end on synthetic data (2 good rows matched, 2 set aside). Suite 38
 green.
