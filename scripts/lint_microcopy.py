@@ -37,6 +37,12 @@ ALLOWLIST = {
     os.path.join("scripts", "make_synthetic_data.py"),
 }
 
+# Directories holding verbatim source documents we archive as-is (the owner's
+# original playbook and spec). These are not our copy, so we never rewrite them.
+ALLOWLIST_PREFIXES = (
+    os.path.join("docs", "reference") + os.sep,
+)
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -108,7 +114,7 @@ def lint(paths=None):
     all_violations = []
     for path in files:
         rel = os.path.relpath(path, ROOT)
-        if rel in ALLOWLIST:
+        if rel in ALLOWLIST or rel.startswith(ALLOWLIST_PREFIXES):
             continue
         with open(path, encoding="utf-8") as fh:
             source = fh.read()
