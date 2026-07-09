@@ -403,3 +403,40 @@ the finer within-family pairing to the REFERENCE backlog.
 **Artifacts:** src/relabel.py, src/pipeline.py, src/report.py, app.py, run_demo.py,
 tests/test_relabel.py, docs/DECISIONS.md, docs/STATUS.md, docs/REFERENCE.md,
 docs/PROMPT_LOG.md.
+
+---
+
+### 2026-07-09 · P20
+Branch: `claude/tool-access-hosting-cz6hg4`.
+
+**Prompt (verbatim):** "how can I access the tool, is it hosted on github pages?"
+then, across the session, "I'm a non-tech developer... How do you suggest we make
+this tool accessible?", "can't there be a user authenticate system where user can
+create their own login with email and password on the screen?", "what if someone i
+don't know tries to use the tool but not approved? They would not contact me for
+access, they'll just move on, isn't it?", "is there a way to keep it open for
+anyone but keep the api costs hidden? also... the risks of exposing it", and "yes,
+go ahead with this plan then".
+
+**Response summary:** Explained that GitHub Pages can't host a Streamlit app
+(needs a live server) and that Streamlit Community Cloud is the home. Worked
+through access with the owner: hard-gating the entrance loses would-be users, and
+self-signup email/password would force a database + password machinery. Landed on:
+open to everyone on the free offline explainer, paid AI (Claude/Gemini) behind
+Streamlit's built-in Google sign-in plus a short approved-list in secrets, with an
+API spending cap as the hard backstop. Separated "the key is always hidden
+server-side" from "the bill is capped", since the owner was conflating them.
+Built it: new `src/auth.py` (degrades to open/offline when unconfigured); a
+`use_ai` flag threaded `app.py` -> `pipeline.run_pipeline` -> `explain.explain_change`
+(`force_offline`) so the free tier can never call the model even with a key set;
+sign-in UI and free-vs-AI banners in `app.py`; `.streamlit/secrets.toml.example`;
+a plain-English `docs/DEPLOY_GUIDE.md`; requirements bumped (streamlit>=1.42,
+Authlib). +6 access-gating tests (38 green), microcopy lint clean, headless app
+smoke test passes. Recorded as D15 (notes the deliberate, owner-approved bend of
+the "no login" house rule, kept lightweight via Streamlit's built-in sign-in).
+Deploy itself is the owner's click-through per the guide.
+
+**Artifacts:** src/auth.py, src/explain.py, src/pipeline.py, app.py,
+tests/test_access_gating.py, requirements.txt, .gitignore,
+.streamlit/secrets.toml.example, README.md, docs/DEPLOY_GUIDE.md,
+docs/DECISIONS.md, docs/STATUS.md, docs/PROMPT_LOG.md.

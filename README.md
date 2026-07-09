@@ -100,6 +100,26 @@ Whichever model runs, the grounding rules are enforced in code: it can only use
 the numbers and DEFRA text passed to it, and where the notes are silent it must
 say so rather than invent a reason.
 
+## Putting it online for non-technical users
+
+The tool is a Streamlit app, so it can't live on GitHub Pages (that only serves
+static files). The intended home is **Streamlit Community Cloud** (free), which
+gives you a shareable link users open in a browser, no install.
+
+Access is designed so the tool stays open while API cost stays controlled:
+
+- **Open to everyone** on the free, deterministic offline explanations.
+- **AI-written explanations behind Google sign-in**, unlocked only for people on
+  an approved list (set in the host's secrets). Signed-in-but-not-approved users,
+  and anonymous visitors, still get the free offline version.
+- A **spending cap** on the API account as the hard backstop.
+
+When no sign-in provider is configured (local `streamlit run`, the demo, the
+tests), the app runs exactly as before: the API key, if set, drives the explainer
+for everyone. The full click-by-click setup is in
+[`docs/DEPLOY_GUIDE.md`](docs/DEPLOY_GUIDE.md); the secrets template is
+[`.streamlit/secrets.toml.example`](.streamlit/secrets.toml.example).
+
 ## How it's built
 
 Deliberately boring and readable: Python + pandas + Streamlit + openpyxl +

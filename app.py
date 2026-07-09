@@ -31,6 +31,7 @@ from paths import resolve_paths          # noqa: E402
 from pipeline import run_pipeline         # noqa: E402
 from report import build_markdown_report  # noqa: E402
 from explain import active_backend        # noqa: E402
+from auth import sign_in_available, current_user, approval  # noqa: E402
 
 st.set_page_config(page_title="EF Version Explainer", layout="wide")
 
@@ -43,7 +44,45 @@ st.caption(
 
 defaults = resolve_paths()
 
+# --- Who's here, and may they use the paid AI explanations? ---
+# The tool is open to everyone on the free offline explainer. The AI-written
+# explanations cost API money, so they sit behind Google sign-in + an approved
+# list. When no sign-in provider is configured (local dev / demo), we keep the
+# old behaviour: the API key, if set, drives the explainer for everyone.
+signin_on = sign_in_available()
+user = current_user() if signin_on else None
+appr = approval(user["email"]) if user else {"allowed": False, "reason": "not-signed-in"}
+use_ai = True if not signin_on else appr["allowed"]
+
 with st.sidebar:
+    if signin_on:
+        st.header("Account")
+        if user:
+            st.write(f"Signed in as **{user['name'] or user['email']}**")
+            if appr["allowed"] and appr["reason"] == "open":
+                st.warning(
+                    "No approved list is set, so every signed-in user can spend "
+                    "the API key. Add emails under [access] in your secrets to "
+                    "lock this down before sharing widely."
+                )
+            elif appr["allowed"]:
+                st.success("You have access to AI explanations.")
+            else:
+                st.info(
+                    "You're on the free offline explanations. Ask the owner to "
+                    "add your email for AI-written explanations."
+                )
+            if st.button("Sign out"):
+                st.logout()
+        else:
+            st.write(
+                "Free to use. Sign in with Google to unlock AI-written, "
+                "client-ready explanations."
+            )
+            if st.button("Sign in with Google", type="primary"):
+                st.login()
+        st.divider()
+
     st.header("Inputs")
     if defaults["using_real_data"]:
         st.success("Using REAL DEFRA full-set workbooks found in data/.")
@@ -61,9 +100,13 @@ with st.sidebar:
     st.caption("Columns: line_item, quantity, unit")
     uploaded = st.file_uploader("Upload a BOM CSV", type=["csv"])
 
-    backend = active_backend()
+    backend = active_backend(force_offline=not use_ai)
     if backend["live"]:
-        st.caption(f"Explanation layer: {backend['provider']} ({backend['model']}) ✓")
+        st.caption(f"Explanation layer: {backend['provider']} ({backend['model']}), full AI ✓")
+    elif signin_on and not user:
+        st.caption("Explanation layer: free offline mode. Sign in to unlock AI explanations.")
+    elif signin_on and user and not appr["allowed"]:
+        st.caption("Explanation layer: free offline mode. Account not approved for AI yet.")
     else:
         st.caption(
             "Explanation layer: offline mode. Set GEMINI_API_KEY (Gemini) or "
@@ -74,17 +117,25 @@ with st.sidebar:
 
 
 @st.cache_data(show_spinner=False)
-def _run(old_p, new_p, pdf_p, bom_csv_bytes, bom_path, old_l, new_l):
+def _run(old_p, new_p, pdf_p, bom_csv_bytes, bom_path, old_l, new_l, use_ai):
     if bom_csv_bytes is not None:
         import io
 
         bom_df = pd.read_csv(io.BytesIO(bom_csv_bytes))
     else:
         bom_df = pd.read_csv(bom_path)
-    return run_pipeline(old_p, new_p, pdf_p, bom_df, old_l, new_l)
+    return run_pipeline(old_p, new_p, pdf_p, bom_df, old_l, new_l, use_ai=use_ai)
 
 
-if run or "results" not in st.session_state:
+# Recompute when the user clicks Run, on first load, OR when the explainer tier
+# changed (e.g. they just signed in and now qualify for AI). Both tiers are
+# cached, so toggling back and forth is instant and never re-spends the key.
+need_run = (
+    run
+    or "results" not in st.session_state
+    or st.session_state.get("results_use_ai") != use_ai
+)
+if need_run:
     with st.spinner("Loading, diffing, matching, recomputing, explaining…"):
         results = _run(
             defaults["defra_old"],
@@ -94,8 +145,10 @@ if run or "results" not in st.session_state:
             defaults["bom"],
             old_label,
             new_label,
+            use_ai,
         )
         st.session_state["results"] = results
+        st.session_state["results_use_ai"] = use_ai
 
 results = st.session_state["results"]
 s = results["summary"]
@@ -193,6 +246,23 @@ st.caption(
     "provided, otherwise the workbook's 'What's new' sheet). Where the notes are "
     "silent, the tool says so instead of inventing a reason."
 )
+
+# Tell the reader which tier they're looking at, and offer the unlock if free.
+showing_ai = bool(st.session_state.get("results_use_ai")) and active_backend()["live"]
+if showing_ai:
+    st.success("Showing full AI-written explanations.")
+elif signin_on and not user:
+    st.info(
+        "These are the free offline explanations (official DEFRA extracts, not "
+        "model-written). Sign in with Google in the sidebar to unlock AI-written, "
+        "client-ready explanations."
+    )
+elif signin_on and user and not appr["allowed"]:
+    st.info(
+        "These are the free offline explanations. Your account isn't approved for "
+        "AI explanations yet, ask the owner to add your email."
+    )
+
 if not results["explanations"]:
     st.write("No flagged, footprint-relevant factor changes.")
 for e in results["explanations"]:

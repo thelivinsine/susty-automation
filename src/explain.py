@@ -215,8 +215,15 @@ def _parse_json(text: str) -> dict:
     raise ValueError("No JSON object in model response")
 
 
-def active_backend() -> dict:
-    """Which explainer will run, given the current environment. For UI banners."""
+def active_backend(force_offline: bool = False) -> dict:
+    """Which explainer will run, given the current environment. For UI banners.
+
+    `force_offline=True` reports offline even when an API key is set. The app uses
+    this to keep the paid AI explanation behind sign-in: anyone can run the tool
+    on the free offline explainer, and only approved signed-in users spend the key.
+    """
+    if force_offline:
+        return {"provider": "offline", "model": None, "live": False}
     if os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"):
         return {"provider": "gemini", "model": GEMINI_MODEL, "live": True}
     if os.getenv("ANTHROPIC_API_KEY"):
@@ -231,9 +238,15 @@ def explain_change(
     pct: float,
     retrieved_text: str,
     context: dict | None = None,
+    force_offline: bool = False,
 ) -> dict:
-    """Explain one flagged factor change, grounded in the DEFRA changes report."""
-    provider = active_backend()["provider"]
+    """Explain one flagged factor change, grounded in the DEFRA changes report.
+
+    `force_offline=True` uses the deterministic offline explainer even when an API
+    key is set, so the app can serve free explanations to anyone and reserve the
+    paid model for approved, signed-in users.
+    """
+    provider = active_backend(force_offline)["provider"]
     if provider == "gemini":
         return _gemini_explain(material, old, new, pct, retrieved_text, context)
     if provider == "anthropic":

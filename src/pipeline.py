@@ -61,8 +61,15 @@ def run_pipeline(
     old_label: str = "old",
     new_label: str = "new",
     explain_flagged_only: bool = True,
+    use_ai: bool = True,
 ) -> dict:
-    """Run loader -> diff -> match -> recompute -> explain and return everything."""
+    """Run loader -> diff -> match -> recompute -> explain and return everything.
+
+    `use_ai=False` forces the free offline explainer even when an API key is set.
+    The app passes this for visitors who are not a signed-in, approved user, so the
+    tool is open to everyone while the paid model stays behind sign-in.
+    """
+    force_offline = not use_ai
     df_old = load_defra(defra_old_path, old_label)
     df_new = load_defra(defra_new_path, new_label)
     diff_df = diff_versions(df_old, df_new)
@@ -109,6 +116,7 @@ def run_pipeline(
             pct=row["pct_change"],
             retrieved_text=passage,
             context=context,
+            force_offline=force_offline,
         )
         explanations.append(
             {
@@ -171,6 +179,7 @@ def run_pipeline(
                 pct=rep["pct_change"],
                 retrieved_text=passage,
                 context=context,
+                force_offline=force_offline,
             )
             n_rose = int((g["pct_change"] > 0).sum())
             n_fell = int((g["pct_change"] < 0).sum())

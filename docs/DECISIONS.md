@@ -235,3 +235,48 @@ Not done here (still open, see REFERENCE backlog): the underlying sub-row
 mispairing from DEFRA's table reorder. Grouping makes it honest and readable; a
 finer within-family pairing (or DEFRA's own row map) would make the per-variant
 deltas trustworthy. Left rather than guessed.
+
+## D15. Hosting and access: open tool, paid AI behind Google sign-in
+
+The owner (non-technical, non-technical users) asked how to make the tool
+accessible. GitHub Pages is impossible (Streamlit needs a live server, Pages
+serves static files only); the home is Streamlit Community Cloud (free, gives a
+shareable link, no install). The owner's real worry was cost: if the link is
+open, can a stranger run up the API bill, and can the key leak?
+
+Decision, chosen with the owner across the session:
+- **Open front door.** Anyone can run the whole tool on the free deterministic
+  offline explainer. Gating the entrance loses curious would-be users who won't
+  email for access, so we don't gate the entrance.
+- **Paid AI behind sign-in.** The Claude/Gemini explanations (the only part that
+  spends the key) are unlocked by Google sign-in AND membership of an approved
+  list. Anonymous and signed-in-but-unapproved users get the free offline tier.
+- **Spending cap** on the API account is the hard backstop, independent of all
+  the above.
+
+This bends the `CLAUDE.md` "no login" hard constraint, done deliberately with
+the owner's explicit go-ahead, and kept as light as possible so it does not grow
+into a real login system:
+- We use Streamlit's BUILT-IN Google sign-in (`st.login` / `st.user`), so there
+  is **no user database, no password storage, no signup/reset flows** to own. The
+  "no database" constraint stays intact.
+- The approved list is a short `emails`/`domains` array in the host's secrets, not
+  a data store. Add/remove a user is a one-line secrets edit.
+- We rejected building an email+password signup: it would force a real database
+  and password-safety machinery (or a third-party auth service), the exact
+  heavyweight path the house rules avoid. Google sign-in gives the same
+  self-service feel with none of that.
+
+Mechanics (`use_ai` boolean, app -> `pipeline.run_pipeline(use_ai=)` ->
+`explain.explain_change(force_offline=)`): one flag threads the tier down to the
+explainer, enforced in code so the free tier can never call the model even with a
+key set (tested in `tests/test_access_gating.py`). Auth helpers in `src/auth.py`
+degrade to "open, offline for all" when no `[auth]` secret is configured, so local
+`streamlit run`, `run_demo.py`, and pytest behave exactly as before. When both
+`emails` and `domains` are empty, any signed-in user is allowed and the app warns
+the owner to lock it down. Owner-facing setup: `docs/DEPLOY_GUIDE.md`; safe
+secrets template: `.streamlit/secrets.toml.example`.
+
+Not done here: no payments/metering, no per-user quotas, no email/password path.
+If the owner later needs true self-signup, the documented next step is a hosted
+auth service (Supabase/Auth0), not a hand-built one.
