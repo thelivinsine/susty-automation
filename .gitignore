@@ -21,3 +21,6 @@ venv/
 
 # Secrets
 .env
+# Real login + API secrets live here on the host — never commit them.
+# The committed template is .streamlit/secrets.toml.example (safe to share).
+.streamlit/secrets.toml
