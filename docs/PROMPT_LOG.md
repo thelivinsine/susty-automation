@@ -588,3 +588,27 @@ Deploy itself is the owner's click-through per the guide.
 tests/test_access_gating.py, requirements.txt, .gitignore,
 .streamlit/secrets.toml.example, README.md, docs/DEPLOY_GUIDE.md,
 docs/DECISIONS.md, docs/STATUS.md, docs/PROMPT_LOG.md.
+
+---
+
+### 2026-07-09 · P29
+Branch: `claude/tool-access-hosting-cz6hg4`.
+
+**Prompt (verbatim):** "merge to main" then "document the session".
+
+**Response summary:** Shipped the hosting/access layer (P28) to `main`. Opened
+PR #15; the first squash-merge failed on merge conflicts because `main` had moved
+on (PR #14 shipped real-data ingest, touching the same `app.py`, `pipeline.py`,
+and docs). Rebased the branch onto the new `main` and resolved the overlaps by
+keeping BOTH features, not choosing between them: `app.py` now runs the ingest
+flow (upload + confirm-your-columns) AND the sign-in gate in one run path;
+`pipeline.py` keeps impact-ranking AND the `force_offline` gate on both
+explain_change calls; docs renumbered around main's newer entries (my decision
+became D17, handoff H14, prompt entry P28). Re-verified the merged result before
+merging: 44 tests green (main's ingest suite + my 6 access-gating tests),
+microcopy lint clean, headless app smoke test passes. Squash-merged PR #15
+(`31da74b`) and realigned the dev branch to the new `main` (force-with-lease, only
+already-merged history). Then documented the session (this entry, H15).
+
+**Artifacts:** docs/PROMPT_LOG.md, docs/STATUS.md (conflict resolution was in
+app.py, src/pipeline.py, docs/DECISIONS.md during the rebase, now on main).
