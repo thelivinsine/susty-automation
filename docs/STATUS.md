@@ -91,13 +91,39 @@ paired renames group into 11 readable families.
 
 ## Known gaps / next candidates
 Backlog now lives in `REFERENCE.md` (kept out of this snapshot). Short version:
-turning on the sign-in gate when the live link goes public (deferred, D18),
-header-row tolerance in ingest, VISION move #3 (the cited memo), GOV.UK theming,
-semantic relabels, and lockfile pinning.
+**the design-system build (`docs/PLAN_design_system.md`, now the top item: it
+closes 12 measured accessibility defects and delivers VISION move #3's cited,
+printable memo as part of the export pack)**, turning on the sign-in gate when the
+live link goes public (deferred, D18), header-row tolerance in ingest, semantic
+relabels, and lockfile pinning. "GOV.UK theming" is no longer a vague backlog
+line: the direction is locked (D19) and the work is specified end to end.
 
 ## Resume here
 Most recent handoffs (older ones rotate into `docs/archive/`):
 
+- H18 (2026-07-31): Front-end audit received, branding decided, design-system
+  work planned. Saved the external UI/UX/accessibility audit verbatim
+  (`docs/audit/`), which measured **12 defects** in the live app (5 critical) by
+  reading the real DOM: a footprint *decrease* painted red beside a green panel
+  saying the same thing positively, the primary CTA at 3.30:1, every caption at
+  3.69:1 (including the no-guess sentence), tables rendered to `<canvas>` so they
+  cannot be read by assistive tech or printed, and the sidebar auto-collapsing
+  below 768px taking every input and the only submit button with it. Independently
+  recomputed every contrast ratio the audit reported for its own palette: all
+  reproduce exactly. The audit proposed replacing the visual identity; the owner
+  reviewed both directions as working mockups on the same real figures and **kept
+  GOV.UK** (D19), so the two "Ledger" mockups are committed as the rejected
+  alternative rather than deleted. The owner separately approved implementing the
+  audit's fix for the three defects that sit underneath the look: a yellow
+  needs-review tint (GOV.UK's four tints leave no colour for "held for review"),
+  hue-encodes-epistemic-status with direction carried by glyph and word, and a
+  `--border-control` split because `#b1b4b6` is 2.08:1 and fails 1.4.11. Two
+  findings the audit could not have made, both now in the plan: that same
+  `--border` failure lives in our own approved mockup, and a table wider than its
+  `overflow-x:auto` container still gives the *page* a phantom horizontal scroll
+  (480px of blank space at 375px) unless the container carries `contain:paint`.
+  **Docs and mockups only, no pipeline or app code touched**; 44 tests green.
+  Next: implement `docs/PLAN_design_system.md`, starting with the token layer.
 - H17 (2026-07-31): Owner set the Google Cloud budget cap and chose to defer the
   sign-in gate on the live app, so the deploy runs OPEN with the cap as the only
   control. Recorded as D18 rather than left as an oversight, with the triggers
@@ -106,19 +132,6 @@ Most recent handoffs (older ones rotate into `docs/archive/`):
   D18 also corrects the D17 write-up: `src/auth.py` degrades to "open, offline for
   all" only when no API key is set, and to "open, AI for all" when one is.
   Docs-only, no code touched.
-- H16 (2026-07-31): Owner-facing session, no pipeline code changed. Walked the
-  owner through the two manual steps the sandbox cannot do: the GitHub default
-  branch is now `main` (verified via the API: `default_branch: "main"`), and the
-  app is deployed on Streamlit Community Cloud at <https://efdiff.streamlit.app/>
-  with a Gemini key created in Google AI Studio. Could not verify the live app:
-  the sandbox proxy denies CONNECT to `*.streamlit.app`, so the owner checks the
-  provider banner and the 2.344 to 2.305 demo figure. **Open risk flagged, not
-  yet fixed:** the deploy has `GEMINI_API_KEY` set with no `[auth]` section, and
-  `app.py:66` sets `use_ai = True` when sign-in is not configured, so the public
-  URL currently spends the owner's key for every anonymous visitor. Fix is either
-  the `[auth]` + `[access]` secrets from `docs/DEPLOY_GUIDE.md` or removing the
-  key. README refreshed with the live link, a Vision section, and a correction
-  (it still claimed "no login, no cloud" after D17 shipped both).
 
 Next likely task: header-row tolerance in ingest, then VISION move #3 (a dated,
 cited, printable memo as the first-class output). Deferred by owner decision, not

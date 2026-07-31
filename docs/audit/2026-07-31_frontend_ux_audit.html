@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EF Version Explainer — Front-End, UI/UX &amp; Branding Audit</title>
+<meta name="description" content="Principal-level front-end, UI/UX, accessibility and branding audit of the Emission-Factor Version Explainer, with a proposed design system and handbook strategy.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   EF VERSION EXPLAINER — AUDIT REPORT
+   Aesthetic direction: "Audit Ledger".
+   Warm paper, hairline rules, numbered findings with monospace
+   IDs, editorial serif display. Restrained and dense — the
+   document should feel like something you sign, not a dashboard.
+   ============================================================ */
+
+/* ---------- 1. TOKENS ---------- */
+:root{
+  /* spacing scale (8px base) */
+  --s-1:4px;  --s-2:8px;  --s-3:12px; --s-4:16px; --s-5:24px;
+  --s-6:32px; --s-7:48px; --s-8:64px; --s-9:96px; --s-10:128px;
+  --pad-card:28px;
+  --measure:74ch;
+  --radius:3px;
+  --radius-lg:6px;
+
+  /* type */
+  --font-display:"Newsreader", Georgia, "Times New Roman", serif;
+  --font-ui:"Public Sans", "Helvetica Neue", Helvetica, sans-serif;
+  --font-mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --t-micro:0.6875rem;  /* 11px  — labels, IDs        */
+  --t-small:0.8125rem;  /* 13px  — table, captions    */
+  --t-body:1rem;        /* 16px  — prose              */
+  --t-lead:1.125rem;    /* 18px  — lede               */
+  --t-h4:1.125rem;
+  --t-h3:1.4375rem;
+  --t-h2:2rem;
+  --t-h1:3rem;
+  --t-display:4rem;
+
+  --ease:cubic-bezier(.2,.7,.3,1);
+  --dur-fast:120ms;
+  --dur:220ms;
+}
+
+/* Light — "Ledger" */
+html.light{
+  --paper:#FBFAF7;
+  --surface:#FFFFFF;
+  --surface-2:#F4F2ED;
+  --ink:#14181C;        /* 17.09:1 on paper */
+  --ink-2:#3D444C;      /*  9.45:1 */
+  --ink-3:#5C646E;      /*  5.74:1 — smallest permitted text colour */
+  --rule:#E2DED6;       /* decorative hairline */
+  --border:#8F8A80;     /*  3.29:1 — interactive borders, meets 1.4.11 */
+  --brand:#0B5750;      /*  8.07:1 */
+  --brand-deep:#073F3A; /* 11.30:1 */
+  --brand-wash:#E6F0EE;
+  --signal:#8A5A05;     /*  5.67:1 — review / caution */
+  --signal-wash:#FBF0DA;
+  --neutral-wash:#EEEBE4;
+  --shadow-1:0 1px 2px rgba(20,24,28,.05);
+  --shadow-2:0 2px 4px rgba(20,24,28,.05),0 8px 24px rgba(20,24,28,.06);
+  --grain-op:.035;
+  color-scheme:light;
+}
+
+/* Dark — "Ledger Dark" */
+html.dark{
+  --paper:#0E1215;
+  --surface:#161B20;
+  --surface-2:#1D242A;
+  --ink:#F2F0EB;        /* 16.52:1 on paper */
+  --ink-2:#C6CBD1;      /* 11.53:1 */
+  --ink-3:#8E979F;      /*  6.34:1 */
+  --rule:#262D34;
+  --border:#646B75;     /*  3.50:1 */
+  --brand:#4FBFA8;      /*  8.38:1 */
+  --brand-deep:#8FD9C9;
+  --brand-wash:#12302C;
+  --signal:#E0A93E;     /*  8.88:1 */
+  --signal-wash:#332711;
+  --neutral-wash:#1C2228;
+  --shadow-1:0 1px 2px rgba(0,0,0,.5);
+  --shadow-2:0 2px 4px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.5);
+  --grain-op:.03;
+  color-scheme:dark;
+}
+
+/* ---------- 2. RESET / BASE ---------- */
+*,*::before,*::after{box-sizing:border-box}
+h1,h2,h3,h4,h5,h6{font-stretch:normal;margin:0}
+body,p,ul,ol,figure,dl,dd{margin:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--paper);
+  color:var(--ink-2);
+  font-family:var(--font-ui);
+  font-size:var(--t-body);
+  line-height:1.65;
+  font-feature-settings:"kern" 1;
+  -webkit-font-smoothing:antialiased;
+  transition:background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+/* paper grain — atmosphere without imagery */
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  opacity:var(--grain-op);
+  background-image:radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0);
+  background-size:4px 4px;color:var(--ink);
+}
+main,header,footer{position:relative;z-index:1}
+a{color:var(--brand);text-underline-offset:.18em;text-decoration-thickness:1px}
+a:hover{color:var(--brand-deep)}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:2px}
+code,kbd{font-family:var(--font-mono);font-size:.875em}
+strong{color:var(--ink);font-weight:600}
+em{font-style:italic}
+hr{border:0;border-top:1px solid var(--rule);margin:var(--s-7) 0}
+
+/* ---------- 3. LAYOUT ---------- */
+.wrap{max-width:1180px;margin:0 auto;padding:0 var(--s-5)}
+.prose{max-width:var(--measure)}
+.section{padding:var(--s-9) 0;border-top:1px solid var(--rule)}
+.section:first-of-type{border-top:0}
+.grid{display:grid;gap:var(--s-5)}
+/* grid/flex children default to min-width:auto and refuse to shrink below their
+   content — the classic source of phantom horizontal scroll. Reset explicitly. */
+.grid>*,.split>*,.flow>*{min-width:0}
+pre,.tw,.card,.callout{max-width:100%}
+.g-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:var(--s-7);align-items:start}
+@media (max-width:1023px){
+  .split{grid-template-columns:1fr;gap:var(--s-5)}
+  .g-4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .g-3{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:640px){
+  .g-2,.g-3,.g-4{grid-template-columns:1fr}
+  .section{padding:var(--s-7) 0}
+  :root{--t-h1:2.125rem;--t-display:2.5rem;--t-h2:1.5rem;--t-h3:1.1875rem;--pad-card:20px}
+}
+
+/* ---------- 4. TYPOGRAPHY ---------- */
+h1,h2,h3{font-family:var(--font-display);color:var(--ink);font-weight:600;line-height:1.12;letter-spacing:-.012em}
+h1{font-size:var(--t-h1)}
+h2{font-size:var(--t-h2);margin-bottom:var(--s-4)}
+h3{font-size:var(--t-h3);margin:var(--s-6) 0 var(--s-3)}
+h4{font-family:var(--font-ui);font-size:var(--t-h4);font-weight:600;color:var(--ink);margin:var(--s-5) 0 var(--s-2);line-height:1.35}
+p+p{margin-top:var(--s-4)}
+.lede{font-family:var(--font-display);font-size:var(--t-lead);line-height:1.55;color:var(--ink-2)}
+.eyebrow{
+  font-family:var(--font-mono);font-size:var(--t-micro);font-weight:500;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--brand);
+  display:flex;align-items:center;gap:var(--s-3);margin-bottom:var(--s-4);
+}
+.eyebrow::after{content:"";flex:1;height:1px;background:var(--rule)}
+.num{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--ink-3)}
+.small{font-size:var(--t-small);line-height:1.6}
+ul.list,ol.list{padding-left:1.15em;margin-top:var(--s-3)}
+ul.list li,ol.list li{margin-bottom:var(--s-2)}
+ul.list li::marker{color:var(--brand)}
+ol.list li::marker{color:var(--brand);font-family:var(--font-mono);font-size:.85em}
+dl.defs{margin-top:var(--s-4)}
+dl.defs dt{font-weight:600;color:var(--ink);margin-top:var(--s-4)}
+dl.defs dd{margin-left:0;color:var(--ink-2)}
+
+/* ---------- 5. MASTHEAD ---------- */
+.masthead{padding:var(--s-8) 0 var(--s-7);border-bottom:2px solid var(--ink)}
+.masthead .rule-top{height:6px;background:var(--brand);width:120px;margin-bottom:var(--s-5)}
+.masthead h1{font-size:var(--t-display);letter-spacing:-.022em;max-width:16ch}
+.masthead .sub{margin-top:var(--s-4);max-width:62ch}
+.meta-strip{
+  display:flex;flex-wrap:wrap;gap:var(--s-2) var(--s-6);margin-top:var(--s-6);
+  padding-top:var(--s-4);border-top:1px solid var(--rule);
+  font-family:var(--font-mono);font-size:var(--t-micro);letter-spacing:.04em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.meta-strip b{color:var(--ink);font-weight:500}
+
+/* theme toggle */
+.toggle{
+  position:fixed;top:var(--s-4);right:var(--s-4);z-index:50;
+  display:inline-flex;align-items:center;gap:var(--s-2);
+  min-height:44px;padding:0 var(--s-4);
+  background:var(--surface);color:var(--ink);
+  border:1px solid var(--border);border-radius:999px;
+  font-family:var(--font-mono);font-size:var(--t-micro);letter-spacing:.08em;
+  text-transform:uppercase;cursor:pointer;box-shadow:var(--shadow-1);
+  transition:transform var(--dur-fast) var(--ease),box-shadow var(--dur-fast) var(--ease);
+}
+.toggle:hover{transform:translateY(-1px);box-shadow:var(--shadow-2)}
+.toggle .dot{width:9px;height:9px;border-radius:50%;background:var(--brand)}
+
+/* ---------- 6. CARDS ---------- */
+.card{
+  background:var(--surface);border:1px solid var(--rule);border-radius:var(--radius-lg);
+  padding:var(--pad-card);box-shadow:var(--shadow-1);
+}
+.card h4:first-child{margin-top:0}
+.card.flush{padding:0;overflow:hidden}
+.callout{
+  border-left:4px solid var(--brand);background:var(--brand-wash);
+  border-radius:0 var(--radius-lg) var(--radius-lg) 0;padding:var(--pad-card);
+}
+.callout.warn{border-left-color:var(--signal);background:var(--signal-wash)}
+.callout .k{
+  font-family:var(--font-mono);font-size:var(--t-micro);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--brand-deep);display:block;margin-bottom:var(--s-3);
+}
+.callout.warn .k{color:var(--signal)}
+html.dark .callout .k{color:var(--brand)}
+
+/* stat tiles */
+.stat{background:var(--surface);border:1px solid var(--rule);border-radius:var(--radius-lg);padding:var(--s-5)}
+.stat .v{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:2.25rem;
+  line-height:1;font-weight:500;color:var(--ink);letter-spacing:-.02em}
+.stat .v.sig{color:var(--signal)}
+.stat .v.br{color:var(--brand)}
+.stat .l{display:block;margin-top:var(--s-3);font-size:var(--t-small);color:var(--ink-3)}
+.stat .n{display:block;margin-top:var(--s-2);font-size:var(--t-micro);color:var(--ink-3);line-height:1.5}
+
+/* ---------- 7. TABLES ---------- */
+.tw{overflow-x:auto;border:1px solid var(--rule);border-radius:var(--radius-lg);background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:var(--t-small);min-width:640px}
+caption{text-align:left;padding:var(--s-4) var(--s-5) 0;color:var(--ink-3);font-size:var(--t-small);caption-side:top}
+th,td{padding:var(--s-3) var(--s-4);text-align:left;vertical-align:top;border-bottom:1px solid var(--rule)}
+thead th{
+  position:sticky;top:0;background:var(--surface-2);color:var(--ink);
+  font-family:var(--font-ui);font-weight:600;font-size:var(--t-micro);
+  letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;
+  border-bottom:1px solid var(--border);
+}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--surface-2)}
+td.n,th.n{text-align:right;font-family:var(--font-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+td.id{font-family:var(--font-mono);font-weight:500;color:var(--ink);white-space:nowrap}
+.sc{font-family:var(--font-mono);font-size:var(--t-micro);color:var(--ink-3);white-space:nowrap}
+
+/* ---------- 8. BADGES ---------- */
+.b{
+  display:inline-flex;align-items:center;gap:.4em;
+  font-family:var(--font-mono);font-size:var(--t-micro);font-weight:500;
+  letter-spacing:.06em;text-transform:uppercase;
+  padding:.25em .6em;border-radius:var(--radius);white-space:nowrap;
+  border:1px solid transparent;
+}
+.b::before{content:attr(data-g);font-size:1em;line-height:1}
+.b-crit{background:var(--signal-wash);color:var(--signal);border-color:var(--signal)}
+.b-high{background:var(--signal-wash);color:var(--signal)}
+.b-med{background:var(--neutral-wash);color:var(--ink-2)}
+.b-ok{background:var(--brand-wash);color:var(--brand-deep)}
+html.dark .b-ok{color:var(--brand)}
+.b-fail{background:var(--signal-wash);color:var(--signal);border-color:var(--signal)}
+
+/* ---------- 9. FINDING BLOCKS ---------- */
+.finding{border-top:1px solid var(--rule);padding:var(--s-5) 0}
+.finding:first-of-type{border-top:0}
+.finding .hd{display:flex;flex-wrap:wrap;align-items:baseline;gap:var(--s-3);margin-bottom:var(--s-2)}
+.finding .fid{font-family:var(--font-mono);font-size:var(--t-small);font-weight:700;color:var(--brand)}
+.finding .ft{font-family:var(--font-display);font-size:1.0625rem;font-weight:600;color:var(--ink);line-height:1.3}
+.finding .ev{
+  font-family:var(--font-mono);font-size:var(--t-micro);color:var(--ink-3);
+  background:var(--surface-2);border-left:2px solid var(--border);
+  padding:var(--s-2) var(--s-3);margin:var(--s-3) 0;border-radius:0 var(--radius) var(--radius) 0;
+  overflow-x:auto;
+}
+.fix{margin-top:var(--s-3);padding-left:var(--s-4);border-left:2px solid var(--brand)}
+.fix b{display:block;font-size:var(--t-micro);font-family:var(--font-mono);letter-spacing:.1em;
+  text-transform:uppercase;color:var(--brand);margin-bottom:var(--s-1)}
+
+/* ---------- 10. SWATCHES ---------- */
+.sw-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:var(--s-3);margin-top:var(--s-4)}
+.sw{border:1px solid var(--rule);border-radius:var(--radius-lg);overflow:hidden;background:var(--surface)}
+.sw .chip{height:64px;display:block}
+.sw .info{padding:var(--s-3);font-family:var(--font-mono);font-size:var(--t-micro);line-height:1.7}
+.sw .info b{display:block;color:var(--ink);font-weight:500;letter-spacing:.04em}
+.sw .info span{color:var(--ink-3)}
+
+/* ---------- 11. CODE ---------- */
+pre{
+  background:var(--surface-2);border:1px solid var(--rule);border-left:3px solid var(--brand);
+  border-radius:0 var(--radius) var(--radius) 0;padding:var(--s-4);overflow-x:auto;
+  font-family:var(--font-mono);font-size:var(--t-small);line-height:1.6;color:var(--ink-2);
+  margin-top:var(--s-3);
+}
+pre b{color:var(--brand);font-weight:500}
+pre i{color:var(--ink-3);font-style:normal}
+
+/* ---------- 12. FLOW DIAGRAM ---------- */
+.flow{display:flex;flex-wrap:wrap;gap:var(--s-2);align-items:stretch;margin-top:var(--s-4)}
+.step{
+  flex:1 1 150px;background:var(--surface);border:1px solid var(--rule);
+  border-top:3px solid var(--brand);border-radius:var(--radius);padding:var(--s-4);
+}
+.step.gap{border-top-color:var(--signal);background:var(--signal-wash)}
+.step .sn{font-family:var(--font-mono);font-size:var(--t-micro);color:var(--ink-3);letter-spacing:.1em}
+.step .st{display:block;font-weight:600;color:var(--ink);margin:var(--s-1) 0 var(--s-2);font-size:.9375rem;line-height:1.3}
+.step p{font-size:var(--t-small);color:var(--ink-3);line-height:1.55}
+
+/* ---------- 13. FOOTER ---------- */
+footer{border-top:2px solid var(--ink);padding:var(--s-7) 0 var(--s-9);margin-top:var(--s-8)}
+footer .sig{font-family:var(--font-display);font-size:var(--t-lead);color:var(--ink);max-width:56ch}
+
+/* ---------- 14. MOTION ---------- */
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.section>.wrap>*{animation:rise .5s var(--ease) both}
+.section>.wrap>*:nth-child(2){animation-delay:.05s}
+.section>.wrap>*:nth-child(3){animation-delay:.1s}
+.section>.wrap>*:nth-child(4){animation-delay:.14s}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
+    transition-duration:.001ms!important;scroll-behavior:auto!important}
+}
+
+/* ---------- 15. PRINT ---------- */
+@media print{
+  html.dark{--paper:#fff;--surface:#fff;--ink:#000;--ink-2:#222;--ink-3:#555;--rule:#ccc}
+  body::before,.toggle{display:none!important}
+  body{background:#fff!important;color:#111!important;font-size:10.5pt}
+  .section{padding:18pt 0;break-inside:auto}
+  .card,.callout,.stat,.tw{break-inside:avoid;box-shadow:none}
+  h2,h3{break-after:avoid}
+  table{min-width:0;font-size:9pt}
+  a::after{content:" (" attr(href) ")";font-size:8pt;color:#555}
+  a[href^="#"]::after{content:""}
+}
+</style>
+</head>
+<body>
+
+<button class="toggle" id="themeToggle" type="button" aria-pressed="false">
+  <span class="dot" aria-hidden="true"></span><span id="themeLabel">Dark</span>
+</button>
+
+<!-- ============ MASTHEAD ============ -->
+<header class="masthead">
+  <div class="wrap">
+    <div class="rule-top" aria-hidden="true"></div>
+    <p class="eyebrow" style="color:var(--ink-3)">Design Audit &middot; Rev. A</p>
+    <h1>Emission&#8209;Factor Version Explainer</h1>
+    <p class="lede sub">A front&#8209;end, UI/UX, accessibility and branding audit of the current build — and the design system required to turn it from a working analysis script into a reference&#8209;grade operational handbook a consultant can put their name on.</p>
+    <div class="meta-strip">
+      <span>Subject <b>efdiff.streamlit.app</b></span>
+      <span>Method <b>Live DOM &amp; computed-style inspection</b></span>
+      <span>Viewport tested <b>756 &times; 402 CSS px @ DPR 2</b></span>
+      <span>Standard <b>WCAG 2.1 AA</b></span>
+      <span>Date <b>31 July 2026</b></span>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- ============ 0. EXECUTIVE SUMMARY ============ -->
+<section class="section" id="summary">
+  <div class="wrap">
+    <p class="eyebrow">00 &middot; Executive summary</p>
+
+    <div class="callout">
+      <span class="k">The one-sentence finding</span>
+      <p style="font-family:var(--font-display);font-size:1.375rem;line-height:1.45;color:var(--ink);max-width:60ch">
+        The analytical product is already differentiated and defensible. The interface is not — it is the framework's
+        default, and it currently <em>contradicts</em> the product's core promise in three places a client will
+        see first.
+      </p>
+    </div>
+
+    <div class="split" style="margin-top:var(--s-7)">
+      <div>
+        <h3 style="margin-top:0">What is working</h3>
+        <ul class="list">
+          <li><strong>The information is right.</strong> Relabel reconciliation, threshold-based mover detection, coverage and a dedicated <code>needs_review</code> section are all surfaced on one page. Most tools in this category surface none of them.</li>
+          <li><strong>The epistemic discipline is stated in the UI</strong>, not just in the code: <em>"Where the notes are silent, the tool says so instead of inventing a reason."</em></li>
+          <li><strong>The headline structure is correct</strong> — old footprint, new footprint, delta, coverage, movers — and it appears above the fold.</li>
+          <li><strong>Input handling is honest.</strong> "Any column names are fine… You confirm which is which below. Nothing is assumed silently." That sentence is the product's thesis and it is already written.</li>
+        </ul>
+      </div>
+      <div>
+        <h3 style="margin-top:0">What is undermining it</h3>
+        <ul class="list">
+          <li><strong>A favourable result is painted red.</strong> The <span class="num">&minus;1.68%</span> delta renders in <code>#BD4043</code> on a red wash, three centimetres from a green panel saying the footprint did not increase. The two signals disagree.</li>
+          <li><strong>The primary action is a red button</strong> (<code>#FF4B4B</code>, framework default) at <span class="num">3.30:1</span> contrast. On a carbon tool, "Run analysis" is styled as a destructive action and fails WCAG&nbsp;1.4.3.</li>
+          <li><strong>The discipline that justifies the price is the least legible text on the page.</strong> Every caption is set at <code>opacity:.6</code> &rarr; <span class="num">3.69:1</span>, failing AA. That includes the "we do not invent reasons" sentence.</li>
+          <li><strong>Tables are painted to <code>&lt;canvas&gt;</code></strong>. They cannot be read by assistive tech, selected, searched by the browser, or printed. For an audit tool, that is a category error.</li>
+          <li><strong>The deliverable is a Markdown button.</strong> The consultant's actual job — producing a defensible client pack — ends at the least prominent control on the page.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Audit scorecard</h3>
+    <div class="grid g-4" style="margin-top:var(--s-4)">
+      <div class="stat"><span class="v sig">3.30</span><span class="l">Primary CTA contrast</span><span class="n">Required 4.5:1 &middot; WCAG 1.4.3</span></div>
+      <div class="stat"><span class="v sig">3.69</span><span class="l">Caption text contrast</span><span class="n">Required 4.5:1 &middot; affects all explanatory copy</span></div>
+      <div class="stat"><span class="v sig">12</span><span class="l">Verified defects</span><span class="n">5 critical &middot; 4 high &middot; 3 medium</span></div>
+      <div class="stat"><span class="v br">0</span><span class="l">Brand-owned design decisions</span><span class="n">Type, colour and chrome are all framework defaults</span></div>
+    </div>
+
+    <div class="callout warn" style="margin-top:var(--s-6)">
+      <span class="k">Priority call</span>
+      <p>Four fixes — <strong>invert the delta colour semantics, restyle the primary CTA, lift caption opacity, and replace the canvas grids with semantic tables</strong> — remove every critical defect in this report and cost roughly one engineering day inside Streamlit's theming layer. Do those before any redesign work. Everything after &sect;04 is the twelve-week story.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ EVIDENCE ============ -->
+<section class="section" id="evidence">
+  <div class="wrap">
+    <p class="eyebrow">Evidence register</p>
+    <h2>Verified defects</h2>
+    <p class="prose muted small">Every row below was measured in the live application by reading computed styles and element geometry from the DOM, not inferred from a screenshot. Contrast ratios are calculated per WCAG 2.1 relative-luminance formula, with <code>opacity</code> and alpha-channel backgrounds composited against their actual parent. Geometry was captured at a <span class="num">756&times;402</span> CSS&nbsp;px viewport — the only viewport available in this session.</p>
+
+    <div class="tw" style="margin-top:var(--s-5)">
+      <table>
+        <caption>Table 1 — Measured defects, ordered by severity</caption>
+        <thead>
+          <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Defect</th>
+            <th scope="col">Measured value</th>
+            <th scope="col">Criterion</th>
+            <th scope="col">Severity</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="id">A&#8209;01</td>
+            <td><strong>Delta chip inverts meaning.</strong> A footprint <em>decrease</em> renders as <code>#BD4043</code> on <code>#FFEAEA</code> — the framework's "bad" treatment — beside a green success panel reporting the same fact positively.</td>
+            <td class="n">red / good</td>
+            <td class="sc">1.4.1 + trust</td>
+            <td><span class="b b-crit" data-g="&#9679;">Critical</span></td>
+          </tr>
+          <tr>
+            <td class="id">A&#8209;02</td>
+            <td><strong>Primary CTA fails contrast.</strong> "Run analysis": <code>#FFFFFF</code> on <code>#FF4B4B</code>.</td>
+            <td class="n">3.30:1</td>
+            <td class="sc">1.4.3</td>
+            <td><span class="b b-crit" data-g="&#9679;">Critical</span></td>
+          </tr>
+          <tr>
+            <td class="id">A&#8209;03</td>
+            <td><strong>All caption copy fails contrast.</strong> <code>[data-testid="stCaptionContainer"]</code> carries <code>opacity:.6</code>, compositing <code>#31333F</code> to <code>#83858C</code> on white. Applies to the version-scan line, the method note and the no-guess statement.</td>
+            <td class="n">3.69:1</td>
+            <td class="sc">1.4.3</td>
+            <td><span class="b b-crit" data-g="&#9679;">Critical</span></td>
+          </tr>
+          <tr>
+            <td class="id">A&#8209;04</td>
+            <td><strong>Data tables are canvas bitmaps.</strong> Three <code>stDataFrame</code> instances render through <code>&lt;canvas class="data-grid-canvas"&gt;</code>. No accessible row/column structure, no text selection, no browser find, no print output, no reflow.</td>
+            <td class="n">3 grids</td>
+            <td class="sc">1.3.1 / 4.1.2</td>
+            <td><span class="b b-crit" data-g="&#9679;">Critical</span></td>
+          </tr>
+          <tr>
+            <td class="id">A&#8209;05</td>
+            <td><strong>Relabel-family disclosures have empty accessible names.</strong> Eleven <code>&lt;details&gt;</code> elements return an empty <code>&lt;summary&gt;</code> string — the reconciliation feature is invisible to a screen-reader user.</td>
+            <td class="n">11 elements</td>
+            <td class="sc">2.4.6 / 4.1.2</td>
+            <td><span class="b b-crit" data-g="&#9679;">Critical</span></td>
+          </tr>
+          <tr>
+            <td class="id">A&#8209;06</td>
+            <td><strong>Contributors grid overflows its column.</strong> Intrinsic grid width exceeds the container, clipping <code>co2e_new</code> and <code>line_delta</code> with no visible affordance that more columns exist.</td>
+            <td class="n">1236px in 714px</td>
+            <td class="sc">1.4.10</td>
+            <td><span class="b b-high" data-g="&#9650;">High</span></td>
+          </tr>
+          <tr>
+            <td class="id">A&#8209;07</td>
+            <td><strong>File input is unlabelled.</strong> <code>&lt;input type="file"&gt;</code> has <code>aria-label = null</code> and zero associated <code>&lt;label&gt;</code> elements, unlike the two text inputs which are correctly labelled.</td>
+            <td class="n">0 labels</td>
+            <td class="sc">3.3.2 / 4.1.2</td>
+            <td><span class="b b-high" data-g="&#9650;">High</span></td>
+          </tr>
+          <tr>
+            <td class="id">A&#8209;08</td>
+            <td><strong>Secondary button border invisible.</strong> "Download report (Markdown)" uses <code>rgba(49,51,63,.2)</code> &rarr; <code>#DCDCE0</code> on white. The export control — the end of the entire workflow — has the weakest boundary on the page.</td>
+            <td class="n">1.45:1</td>
+            <td class="sc">1.4.11</td>
+            <td><span class="b b-high" data-g="&#9650;">High</span></td>
+          </tr>
+          <tr>
+            <td class="id">A&#8209;09</td>
+            <td><strong>Primary CTA is clipped below the sidebar breakpoint.</strong> At the tested viewport the "Run analysis" button measures 26&times;256&nbsp;px — a vertically collapsed box — and the sidebar containing every input auto-hides, leaving the app apparently read-only.</td>
+            <td class="n">26&times;256px</td>
+            <td class="sc">1.4.10 / 2.5.5</td>
+            <td><span class="b b-high" data-g="&#9650;">High</span></td>
+          </tr>
+          <tr>
+            <td class="id">A&#8209;10</td>
+            <td><strong>Grid toolbar targets undersized.</strong> Show/hide columns, Download CSV, Search and Fullscreen icon buttons each measure 22&times;22&nbsp;CSS&nbsp;px.</td>
+            <td class="n">22&times;22px</td>
+            <td class="sc">2.5.5 (AAA) / 2.5.8 (2.2 AA)</td>
+            <td><span class="b b-med" data-g="&#9642;">Medium</span></td>
+          </tr>
+          <tr>
+            <td class="id">A&#8209;11</td>
+            <td><strong>Three different message types share one green style.</strong> A data-source notice, a result assessment and a mode confirmation all render as <code>stAlertContainer</code> with <code>rgba(33,195,84,.1)</code> and <code>#158237</code> text. Severity is not distinguishable without reading.</td>
+            <td class="n">3 &times; identical</td>
+            <td class="sc">1.4.1</td>
+            <td><span class="b b-med" data-g="&#9642;">Medium</span></td>
+          </tr>
+          <tr>
+            <td class="id">A&#8209;12</td>
+            <td><strong>Heading order is non-sequential.</strong> Document order runs <code>H2</code> (sidebar "Inputs") &rarr; <code>H1</code> &rarr; <code>H3</code>. No <code>H2</code> exists in the main region, so the four result sections sit at the same level with no parent.</td>
+            <td class="n">H2&rarr;H1&rarr;H3</td>
+            <td class="sc">1.3.1 / 2.4.6</td>
+            <td><span class="b b-med" data-g="&#9642;">Medium</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Passing checks worth recording</h3>
+    <div class="grid g-3" style="margin-top:var(--s-4)">
+      <div class="card"><h4 style="margin-top:0">Body text contrast</h4><p class="small muted"><code>#31333F</code> on white = <span class="num">12.53:1</span>. Comfortably AAA. Only the <code>opacity:.6</code> caption layer breaks the chain.</p></div>
+      <div class="card"><h4 style="margin-top:0">Text input labelling</h4><p class="small muted">"Old version label" and "New version label" both expose correct <code>aria-label</code> and a bound <code>&lt;label&gt;</code>. The pattern exists — it is simply not applied to the file input.</p></div>
+      <div class="card"><h4 style="margin-top:0">Copy quality</h4><p class="small muted">Sidebar and method microcopy is specific, plain and non-defensive. It is better than most enterprise ESG tooling. It just needs to be legible and promoted.</p></div>
+    </div>
+
+    <div class="callout warn" style="margin-top:var(--s-6)">
+      <span class="k">Not verified &mdash; scope limits</span>
+      <p class="small">The browser window in this session was fixed at <span class="num">756&times;402</span> CSS&nbsp;px, so <strong>rendering at 1280&nbsp;px and above is <code>[NEEDS VERIFICATION]</code></strong>; the widescreen layout may resolve A&#8209;06 and A&#8209;09. Not tested: real keyboard tab order, screen-reader output, focus-visible styling, error and empty states, upload-to-result latency, and the quality of the Gemini explanation layer. Findings A&#8209;01 to A&#8209;12 are independent of viewport except where noted.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 1. USER FLOW ============ -->
+<section class="section" id="flow">
+  <div class="wrap">
+    <p class="eyebrow">01 &middot; User flow &amp; architecture</p>
+    <h2>The app models a calculation. The consultant runs a case.</h2>
+    <p class="prose lede">Everything the interface knows about is one anonymous, unnamed, unrepeatable calculation. Everything the user is accountable for is a named client, a dated deliverable, a review trail and a comparison against what they signed last year. That gap is the root cause of most friction below.</p>
+
+    <h3>Current journey, as built</h3>
+    <div class="flow">
+      <div class="step"><span class="sn">01</span><span class="st">Set labels</span><p>Two free-text fields, "2025" and "2026". Nothing binds them to the workbooks actually loaded.</p></div>
+      <div class="step"><span class="sn">02</span><span class="st">Upload inventory</span><p>CSV/XLSX, 200&nbsp;MB cap. Unlabelled input (A&#8209;07).</p></div>
+      <div class="step gap"><span class="sn">03</span><span class="st">Confirm columns</span><p>Promised in the copy — "You confirm which is which below" — but not visible in the default state. The promise arrives before the affordance.</p></div>
+      <div class="step"><span class="sn">04</span><span class="st">Run analysis</span><p>One button at the foot of a scrolling sidebar. Disappears entirely below 768&nbsp;px (A&#8209;09).</p></div>
+      <div class="step"><span class="sn">05</span><span class="st">Read one long page</span><p>KPIs &rarr; relabels &rarr; contributors &rarr; explanations &rarr; needs&#8209;review &rarr; export. No navigation, no anchors, no return path.</p></div>
+      <div class="step gap"><span class="sn">06</span><span class="st">Download Markdown</span><p>Terminal step, lowest visual weight on the page, single format, no provenance stamp.</p></div>
+    </div>
+
+    <h3>Six structural gaps</h3>
+
+    <div class="finding">
+      <div class="hd"><span class="fid">F&#8209;01</span><span class="ft">There is no run identity</span></div>
+      <p class="prose">A consultant who re&#8209;bases twelve clients produces twelve runs a year and must be able to say, in twelve months, exactly which workbook version, which mapping and which overrides produced a given figure. The app has no run ID, no timestamp, no client name and no persistence. Every session is unattributable.</p>
+      <div class="fix"><b>Fix</b>Introduce a first-class <code>Run</code> object: <code>client &middot; product &middot; old-version &middot; new-version &middot; mapping-hash &middot; factor-set checksum &middot; operator &middot; UTC timestamp &middot; run-id</code>. Stamp it into the page header, every export and every copied figure. This single object unlocks history, comparison, sign-off and reproducibility — it is the highest-leverage change in this report.</div>
+    </div>
+
+    <div class="finding">
+      <div class="hd"><span class="fid">F&#8209;02</span><span class="ft">Configuration and action share one collapsing rail</span></div>
+      <p class="prose">The sidebar holds version labels, upload, method configuration <em>and</em> the only submit control. It scrolls, so the CTA sits below the fold; it auto-collapses under the framework's breakpoint, so on a tablet the application presents as a read&#8209;only report with no way to change anything.</p>
+      <div class="fix"><b>Fix</b>Separate <em>setup</em> from <em>commit</em>. Keep parameters in the rail; move the primary action to a persistent action bar pinned to the result canvas that also carries run state (<em>Ready &middot; Running &middot; Complete &middot; Stale</em>). Below 768&nbsp;px the rail becomes a full-screen sheet reached from that bar, so the action is never the thing that disappears.</div>
+    </div>
+
+    <div class="finding">
+      <div class="hd"><span class="fid">F&#8209;03</span><span class="ft">Staleness is invisible</span></div>
+      <p class="prose">Reactive frameworks re&#8209;execute on input change without announcing it. A user who edits a version label after reading results cannot tell whether the numbers on screen correspond to the inputs on screen. In a tool whose entire value is traceability, an ambiguous "is this current?" state is disqualifying.</p>
+      <div class="fix"><b>Fix</b>Explicit state machine on the run header — <code>idle &rarr; queued &rarr; running &rarr; complete &rarr; stale</code>. On <code>stale</code>, dim result surfaces to 60% <em>with a visible banner and a Re&#8209;run control</em>, and disable export. Never silently recompute a figure a user may already have copied.</div>
+    </div>
+
+    <div class="finding">
+      <div class="hd"><span class="fid">F&#8209;04</span><span class="ft">The trust gate is placed after the answer</span></div>
+      <p class="prose">"Needs review (never guessed)" — the section that determines whether the headline number is defensible — is the second&#8209;to&#8209;last thing on the page, below the AI explanations. Coverage of <span class="num">85.7%</span> is reported as a bare KPI: the <span class="num">14.3%</span> that did not match is a number with no door behind it.</p>
+      <div class="fix"><b>Fix</b>Promote reconciliation ahead of interpretation. Order: <em>Result &rarr; Confidence &rarr; Movers &rarr; Explanations &rarr; Export</em>. Make the coverage tile a control: clicking <span class="num">85.7%</span> opens the unmatched lines. Make the review count a queue with an explicit resolved/total counter, and let export state depend on it.</div>
+    </div>
+
+    <div class="finding">
+      <div class="hd"><span class="fid">F&#8209;05</span><span class="ft">No year-over-year memory</span></div>
+      <p class="prose">The product's premise is an <em>annual</em> ritual. The interface has no concept of "last year", so the mapping work, the accepted relabels and the reviewer's judgement calls are re-done from zero every cycle — which is precisely the week of Excel archaeology the product exists to eliminate.</p>
+      <div class="fix"><b>Fix</b>Persist mapping and review decisions per client. On the next run, pre-fill and mark each carried-forward decision as <em>inherited from Run #&hellip;</em>, requiring re-confirmation only where the underlying factor changed. Target: second-year runs need confirmation on the delta only.</div>
+    </div>
+
+    <div class="finding">
+      <div class="hd"><span class="fid">F&#8209;06</span><span class="ft">A single scroll with no addressable positions</span></div>
+      <p class="prose">Six major regions on one document with no navigation and no anchors. A consultant cannot send a colleague "look at the electricity mover" — there is no URL for it. All disclosure widgets are closed by default, so the page's information scent is uniformly flat.</p>
+      <div class="fix"><b>Fix</b>Sticky section rail (Result &middot; Confidence &middot; Movers &middot; Explanations &middot; Review &middot; Export) with scroll-spy and a per-finding deep link (<code>/run/8f2c/mover/electricity-generated-uk</code>). Open the top three movers by default; leave the long tail collapsed.</div>
+    </div>
+
+    <h3>Proposed information architecture</h3>
+    <div class="tw">
+      <table>
+        <caption>Table 2 — Target navigation model</caption>
+        <thead><tr><th scope="col">Route</th><th scope="col">Purpose</th><th scope="col">Answers the question</th></tr></thead>
+        <tbody>
+          <tr><td class="id">/runs</td><td>Run register — every calculation ever performed, filterable by client and vintage</td><td>"What did we tell this client last year, and who signed it?"</td></tr>
+          <tr><td class="id">/runs/:id</td><td>The result canvas: headline, confidence, movers, explanations, export</td><td>"Did it move, by how much, and can I defend it?"</td></tr>
+          <tr><td class="id">/runs/:id/review</td><td>Keyboard-first review queue for unmatched and low-confidence lines</td><td>"What does the tool refuse to decide for me?"</td></tr>
+          <tr><td class="id">/factors</td><td>Factor library — search any DEFRA activity across both vintages, with relabel lineage</td><td>"What happened to this specific factor?"</td></tr>
+          <tr><td class="id">/factors/relabels</td><td>The eleven relabel families as a browsable, citable reference</td><td>"Is this a rename or new science?"</td></tr>
+          <tr><td class="id">/method</td><td>Thresholds, matching algorithm, confidence cut-offs, changelog</td><td>"What exactly is this tool doing on my behalf?"</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small muted" style="margin-top:var(--s-3)"><code>/factors</code> and <code>/method</code> are what convert a run-once utility into something a consultant opens on a Tuesday because they need to look something up. That is the difference between a tool and a handbook.</p>
+  </div>
+</section>
+
+<!-- ============ 2. UI & HIERARCHY ============ -->
+<section class="section" id="ui">
+  <div class="wrap">
+    <p class="eyebrow">02 &middot; Interface, hierarchy &amp; accessibility</p>
+    <h2>Four numbers at 36&nbsp;px, and none of them is the answer</h2>
+    <p class="prose lede">The KPI row gives equal typographic weight to the old footprint, the new footprint, coverage and mover count. Three of those are diagnostics. One of them — the change — is the thing the user came for, and it is rendered as a small red chip beneath a secondary figure.</p>
+
+    <h3>Visual hierarchy</h3>
+    <div class="split">
+      <div class="card">
+        <h4 style="margin-top:0">Current weighting</h4>
+        <ul class="list small">
+          <li><code>stMetricValue</code> = 36&nbsp;px for all four tiles</li>
+          <li>Delta chip = 14&nbsp;px, red, subordinate</li>
+          <li><code>H1</code> page title consumes the largest type on screen and carries no information after the first read</li>
+          <li>Three green panels compete with the KPI row for attention</li>
+          <li>The eleven relabel families — a genuine differentiator — are one collapsed grey strip</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">Proposed three-tier density model</h4>
+        <dl class="defs small">
+          <dt>Tier 1 — Verdict (one object)</dt>
+          <dd>A single result card: new footprint at display size, the change as the second-largest element with an explicit word (<em>"down 1.68% &middot; 0.04&nbsp;kg lighter"</em>), and a confidence line — <em>"85.7% of inventory matched &middot; 1 line needs review"</em> — that is a link, not a decoration.</dd>
+          <dt>Tier 2 — Ledger (scannable)</dt>
+          <dd>Movers as a real table: 13&nbsp;px, tabular figures, right-aligned numerics, one row per line item, sorted by absolute impact, with a confidence badge per row. Density is a feature here — do not pad it.</dd>
+          <dt>Tier 3 — Evidence (on demand)</dt>
+          <dd>A drawer per row: the two factor values, the arithmetic, the DEFRA citation verbatim or the explicit "not explained in the notes" state, the match method and score, and a <em>Copy with provenance</em> action.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <h3>Component-level corrections</h3>
+    <div class="tw">
+      <table>
+        <caption>Table 3 — Component remediation</caption>
+        <thead><tr><th scope="col">Component</th><th scope="col">Current</th><th scope="col">Required</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="id">Delta chip</td>
+            <td>Red wash, arrow glyph only, framework "down = bad" semantics</td>
+            <td>Direction by glyph <em>and</em> word; hue never encodes direction (see &sect;04). Add <code>aria-label="down 1.68 percent, 0.04 kilograms lighter"</code>.</td>
+          </tr>
+          <tr>
+            <td class="id">Data grid</td>
+            <td><code>&lt;canvas&gt;</code>, inaccessible, unprintable, overflowing</td>
+            <td>Semantic <code>&lt;table&gt;</code> with <code>&lt;caption&gt;</code>, <code>scope="col"</code>, <code>aria-sort</code> on sortable headers. Virtualise only above ~500 rows, and keep a DOM fallback for print and export.</td>
+          </tr>
+          <tr>
+            <td class="id">Column headers</td>
+            <td>Raw field names: <code>line_item</code>, <code>factor_old</code>, <code>co2e_new</code>, <code>line_delta</code>, <code>match_score</code>, <code>match_method</code></td>
+            <td>Human labels with units and a definition popover: "Line item", "Factor 2025 (kg CO&#8322;e/unit)", "Impact on footprint (kg CO&#8322;e)". The schema is an implementation detail; do not make the client read it.</td>
+          </tr>
+          <tr>
+            <td class="id">Enum values</td>
+            <td><code>below_threshold</code> rendered verbatim in the review table</td>
+            <td>"Match score 49.3 — below the 60 confidence threshold, so nothing was assumed." State the rule at the point of consequence.</td>
+          </tr>
+          <tr>
+            <td class="id">Numeric precision</td>
+            <td>Four decimal places everywhere: <span class="num">1199.7254</span>, <span class="num">9115.9013</span>, <span class="num">0.0634</span></td>
+            <td>Significant-figure discipline by magnitude, <code>font-variant-numeric:tabular-nums</code>, right alignment, thin-space thousands grouping. Full precision belongs in the drawer and the export, not the scan view.</td>
+          </tr>
+          <tr>
+            <td class="id">Status panels</td>
+            <td>Three semantically different messages, one green style</td>
+            <td>Four distinct roles: <em>Info</em> (neutral, source notice), <em>Assessment</em> (brand, result reading), <em>Attention</em> (signal, needs review), <em>Blocked</em> (signal, bordered). Icon + label + colour, never colour alone.</td>
+          </tr>
+          <tr>
+            <td class="id">Disclosure</td>
+            <td>11 <code>&lt;details&gt;</code> with empty accessible names, all closed</td>
+            <td>Named summaries ("Electricity — 42 factors renamed, no methodology change"), first three open, family count in the summary, and a <em>Expand all</em> control for print.</td>
+          </tr>
+          <tr>
+            <td class="id">Export control</td>
+            <td>Ghost button, 1.45:1 border, one format</td>
+            <td>Primary-weight action with a readiness state, format menu, and a pre-export completeness checklist (see &sect;05).</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>WCAG 2.1 AA remediation</h3>
+    <p class="prose">Each item below is non-negotiable and maps to a defect ID. Streamlit exposes enough theming and <code>st.markdown</code> surface to resolve every one of them without leaving the framework.</p>
+
+    <pre><i>/* A-03 — captions: remove the blanket opacity, use a real token */</i>
+[data-testid="stCaptionContainer"]{
+  opacity:<b>1</b>;                 <i>/* was .6 → 3.69:1 */</i>
+  color:<b>#5C646E</b>;             <i>/* 5.74:1 on paper — passes AA at 13px */</i>
+}
+
+<i>/* A-02 / A-08 — buttons: brand primary, visible secondary boundary */</i>
+[data-testid="stBaseButton-primary"]{
+  background:<b>#0B5750</b>; color:#fff;   <i>/* 8.42:1 — passes AA and AAA */</i>
+  min-height:44px; border-radius:3px;
+}
+[data-testid="stBaseButton-secondary"],
+[data-testid="stDownloadButton"] button{
+  border:1px solid <b>#8F8A80</b>;         <i>/* 3.43:1 — passes 1.4.11 */</i>
+  min-height:44px;
+}
+
+<i>/* A-10 — grid toolbar targets: 22px → 44px hit area, glyph unchanged */</i>
+[data-testid="stElementToolbarButton"]{
+  min-width:44px; min-height:44px;
+  display:inline-grid; place-items:center;
+}
+
+<i>/* focus visibility — apply globally, never remove the ring */</i>
+:focus-visible{ outline:2px solid <b>#0B5750</b>; outline-offset:2px }
+@media (prefers-contrast:more){ :focus-visible{ outline-width:3px } }</pre>
+
+    <pre><i># A-07 — label the file input</i>
+st.file_uploader(
+    <b>"Upload an inventory file"</b>,
+    type=["csv","xlsx"],
+    <b>label_visibility="visible"</b>,      <i># do not hide it; the caption is not a label</i>
+    help="Column names are confirmed in the next step. Nothing is inferred silently.",
+)
+
+<i># A-05 / A-12 — named summaries and a sequential heading spine</i>
+st.header("Result")                      <i># H2 — was missing entirely</i>
+st.subheader("Biggest contributors")     <i># H3 under a real H2</i>
+with st.expander(<b>f"Electricity — {n} factors renamed, no methodology change"</b>):
+    ...</pre>
+
+    <div class="grid g-2" style="margin-top:var(--s-6)">
+      <div class="callout">
+        <span class="k">Screen-reader contract</span>
+        <p class="small">The result region must be an <code>aria-live="polite"</code> landmark that announces one sentence on completion: <em>"Analysis complete. Footprint 2.3 kilograms, down 1.68 percent. 85.7 percent coverage. 1 line needs review."</em> Never announce the whole table. Announce staleness the same way.</p>
+      </div>
+      <div class="callout">
+        <span class="k">Colour independence &mdash; 1.4.1</span>
+        <p class="small">Every state carries three signals: a glyph, a text label and a hue. Test by rendering the page in greyscale — if a user cannot separate <em>cited</em> from <em>needs review</em> without colour, the state is under-specified. This matters commercially: the review flag is the product.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3. LAYOUT ============ -->
+<section class="section" id="layout">
+  <div class="wrap">
+    <p class="eyebrow">03 &middot; Layout, grid &amp; responsiveness</p>
+    <h2>The tablet build loses its controls; the table loses its columns</h2>
+    <p class="prose lede">Two measured failures define the responsive story. The sidebar auto-collapses below the framework breakpoint and takes every input and the submit button with it. The contributors grid asks for 1236&nbsp;px inside a 714&nbsp;px column and silently truncates the two columns that carry the answer.</p>
+
+    <h3>Breakpoint strategy</h3>
+    <div class="tw">
+      <table>
+        <caption>Table 4 — Layout behaviour by breakpoint</caption>
+        <thead><tr><th scope="col">Range</th><th scope="col">Shell</th><th scope="col">Result canvas</th><th scope="col">Tabular data</th></tr></thead>
+        <tbody>
+          <tr><td class="id">&lt; 640</td><td>Single column. Parameters in a bottom sheet; persistent action bar pinned to the viewport foot.</td><td>Verdict card full-bleed; section rail becomes a horizontal chip scroller.</td><td>Row cards: line item as heading, four labelled figure pairs beneath. No horizontal scroll, ever.</td></tr>
+          <tr><td class="id">640 &ndash; 1023</td><td>Parameters as a dismissible overlay rail; action bar stays docked.</td><td>Verdict card plus a two-up KPI grid.</td><td>Priority columns (item, impact, confidence) with an expandable row for the rest.</td></tr>
+          <tr><td class="id">1024 &ndash; 1439</td><td>Persistent 280&nbsp;px rail + fluid canvas.</td><td>Verdict card spans; section rail sticky at 200&nbsp;px.</td><td>Full grid, sticky header row, horizontal scroll only if the user has added optional columns.</td></tr>
+          <tr><td class="id">&ge; 1440</td><td>Rail + canvas + 380&nbsp;px evidence drawer, all visible simultaneously.</td><td>Canvas capped at 1180&nbsp;px measure; drawer pins the selected mover beside the ledger.</td><td>Full grid with the evidence drawer open — the target working posture for a consultant on a laptop.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Spatial system</h3>
+    <div class="grid g-2">
+      <div class="card">
+        <h4 style="margin-top:0">Grid</h4>
+        <p class="small">12-column fluid grid, 24&nbsp;px gutters at &ge;1024, 16&nbsp;px below. Content measure capped at 1180&nbsp;px; prose capped at 74&nbsp;ch regardless of viewport. Tables are permitted to break the prose measure and only the prose measure.</p>
+        <pre style="margin-top:var(--s-3)">--space-section:96px;
+--gap-lg:24px;
+--gap-sm:16px;
+--pad-card:28px;
+--rail:280px;
+--drawer:380px;
+--measure:74ch;</pre>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">Vertical rhythm</h4>
+        <p class="small">Single 8&nbsp;px scale — 4, 8, 12, 16, 24, 32, 48, 64, 96, 128. Section separation is <em>rule + 96&nbsp;px</em>, never a background colour change; alternating tinted bands read as marketing and are wrong for a reference document. Card padding is constant at 28&nbsp;px so density differences come from type size, not from box geometry.</p>
+        <p class="small" style="margin-top:var(--s-3)"><strong>Reserve height for every async region.</strong> The current build swaps skeleton bars for inputs after hydration, shifting the rail. Fixed-height placeholders keep CLS below 0.1.</p>
+      </div>
+    </div>
+
+    <h3>Print &mdash; a first-class target</h3>
+    <p class="prose">This audience prints. The output goes into a client file, a board pack, or an assurance folder. A canvas-rendered table prints as a blank rectangle, which means the current build's core artefact cannot be committed to paper at all. Treat print as a supported breakpoint with its own acceptance test.</p>
+    <pre>@media print{
+  <b>details{ open:true }</b>              <i>/* set open="" server-side; disclosure must not hide evidence on paper */</i>
+  .rail,.action-bar,.toolbar{ display:none }
+  table{ break-inside:auto } tr{ break-inside:avoid }
+  thead{ display:table-header-group }   <i>/* repeat headers across pages */</i>
+  .verdict::after{
+    content:"Run " attr(data-run-id) " &middot; " attr(data-timestamp) " &middot; DEFRA "
+            attr(data-old) "&rarr;" attr(data-new);
+    font:11px/1.4 var(--font-mono);
+  }
+  a[href^="http"]::after{ content:" (" attr(href) ")" }
+}</pre>
+
+    <h3>Performance</h3>
+    <ul class="list">
+      <li><strong>LCP &lt; 2.5&nbsp;s.</strong> The verdict card is the LCP element and must render from server-side data, not after a client round-trip. The observed cold start shows a bare spinner for several seconds with no structural skeleton — replace it with a laid-out skeleton that matches final geometry.</li>
+      <li><strong>CLS &lt; 0.1.</strong> Reserve height for the rail, the KPI row and each table. The current build's skeleton-to-content swap shifts the whole sidebar.</li>
+      <li><strong>INP &lt; 200&nbsp;ms.</strong> Sorting, filtering and expanding must not trigger a server round-trip. Ship the mover set to the client once and interact locally; reserve server work for re-computation.</li>
+      <li><strong>Payload.</strong> Load the factor library on demand per route, not with the result page. <code>[NEEDS VERIFICATION]</code> — bundle size was not measured in this session.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 4. BRANDING ============ -->
+<section class="section" id="brand">
+  <div class="wrap">
+    <p class="eyebrow">04 &middot; Branding &amp; design system</p>
+    <h2>Hue should encode confidence, not direction</h2>
+    <p class="prose lede">Defect A&#8209;01 is not a bug in a stylesheet. It is what happens when a finance dashboard's colour convention — down is red, up is green — is applied to carbon, where down is the goal. The fix is not to swap the two colours. It is to stop using hue for direction at all.</p>
+
+    <div class="callout" style="margin-top:var(--s-5)">
+      <span class="k">The rule</span>
+      <p><strong>Direction is encoded by glyph, sign and word. Hue is reserved exclusively for epistemic status: how much you can trust the number.</strong> A footprint that rises is not "bad" — it may be the correct, well-cited answer. A footprint that falls on a low-confidence match is the genuinely alarming case, and today it is painted the calmest colour on the page.</p>
+    </div>
+
+    <div class="grid g-3" style="margin-top:var(--s-5)">
+      <div class="card">
+        <h4 style="margin-top:0"><span class="b b-ok" data-g="&#10003;">Cited</span></h4>
+        <p class="small">Verdigris. The change is explained verbatim in the DEFRA notes and the citation is one click away. This is the resting state and should dominate a healthy run.</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0"><span class="b b-med" data-g="&#9642;">Not explained</span></h4>
+        <p class="small">Graphite. The factor moved; the notes are silent. Deliberately neutral, deliberately unalarming — this is honest, not a failure — but never invisible.</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0"><span class="b b-crit" data-g="&#9679;">Needs review</span></h4>
+        <p class="small">Ochre. The only loud colour in the system, spent on the one thing a human must decide. Its scarcity is what gives it force.</p>
+      </div>
+    </div>
+
+    <h3>Why not green</h3>
+    <p class="prose">Generic eco-green on white is the visual grammar of sustainability <em>marketing</em>, and this audience has learned to distrust it. They are not buying optimism; they are buying something they can defend in a room where someone is trying to poke holes in it. The palette below borrows from the objects that already carry that authority: ledgers, assurance reports, laboratory notebooks.</p>
+    <ul class="list">
+      <li><strong>Deep verdigris</strong> — sustainability adjacency without the lime. Reads institutional. Hits 8.42:1 on white, so it works as a primary action colour without a contrast compromise.</li>
+      <li><strong>Warm paper, not clinical white</strong> — signals <em>document</em> rather than <em>dashboard</em>. It is the difference between a screen you monitor and a page you sign.</li>
+      <li><strong>Ochre, not red</strong> — red is spent currency in this domain and carries "error". The review flag is not an error; it is the tool working correctly.</li>
+      <li><strong>Graphite as a real semantic value</strong> — "we do not know" needs its own colour, or it collapses into either reassurance or alarm. Neither is true.</li>
+    </ul>
+
+    <h4>Palette &mdash; light (&ldquo;Ledger&rdquo;)</h4>
+    <div class="sw-row">
+      <div class="sw"><span class="chip" style="background:#FBFAF7;border-bottom:1px solid var(--rule)"></span><span class="info"><b>Paper</b><span>#FBFAF7 &middot; canvas</span></span></div>
+      <div class="sw"><span class="chip" style="background:#14181C"></span><span class="info"><b>Ink</b><span>#14181C &middot; 17.09:1</span></span></div>
+      <div class="sw"><span class="chip" style="background:#3D444C"></span><span class="info"><b>Ink 2</b><span>#3D444C &middot; 9.45:1</span></span></div>
+      <div class="sw"><span class="chip" style="background:#5C646E"></span><span class="info"><b>Ink 3</b><span>#5C646E &middot; 5.74:1</span></span></div>
+      <div class="sw"><span class="chip" style="background:#0B5750"></span><span class="info"><b>Brand</b><span>#0B5750 &middot; 8.07:1</span></span></div>
+      <div class="sw"><span class="chip" style="background:#073F3A"></span><span class="info"><b>Brand deep</b><span>#073F3A &middot; 11.30:1</span></span></div>
+      <div class="sw"><span class="chip" style="background:#8A5A05"></span><span class="info"><b>Signal</b><span>#8A5A05 &middot; 5.67:1</span></span></div>
+      <div class="sw"><span class="chip" style="background:#8F8A80"></span><span class="info"><b>Border</b><span>#8F8A80 &middot; 3.29:1</span></span></div>
+    </div>
+
+    <h4>Palette &mdash; dark (&ldquo;Ledger Dark&rdquo;)</h4>
+    <div class="sw-row">
+      <div class="sw"><span class="chip" style="background:#0E1215"></span><span class="info"><b>Paper</b><span>#0E1215 &middot; canvas</span></span></div>
+      <div class="sw"><span class="chip" style="background:#161B20"></span><span class="info"><b>Surface</b><span>#161B20 &middot; cards</span></span></div>
+      <div class="sw"><span class="chip" style="background:#F2F0EB"></span><span class="info"><b>Ink</b><span>#F2F0EB &middot; 16.52:1</span></span></div>
+      <div class="sw"><span class="chip" style="background:#C6CBD1"></span><span class="info"><b>Ink 2</b><span>#C6CBD1 &middot; 11.53:1</span></span></div>
+      <div class="sw"><span class="chip" style="background:#8E979F"></span><span class="info"><b>Ink 3</b><span>#8E979F &middot; 6.34:1</span></span></div>
+      <div class="sw"><span class="chip" style="background:#4FBFA8"></span><span class="info"><b>Brand</b><span>#4FBFA8 &middot; 8.38:1</span></span></div>
+      <div class="sw"><span class="chip" style="background:#E0A93E"></span><span class="info"><b>Signal</b><span>#E0A93E &middot; 8.88:1</span></span></div>
+      <div class="sw"><span class="chip" style="background:#646B75"></span><span class="info"><b>Border</b><span>#646B75 &middot; 3.50:1</span></span></div>
+    </div>
+    <p class="small muted" style="margin-top:var(--s-3)">Every ratio above was computed against its own theme's canvas using the WCAG 2.1 relative-luminance formula. The two accent colours have separate light and dark variants precisely because a hue that passes on one canvas routinely fails on the other. Verify contrast at the <em>component</em> level after composition, not at the token level — that is exactly how defect A&#8209;03 escaped.</p>
+
+    <h3>Typography</h3>
+    <div class="split">
+      <div class="card">
+        <h4 style="margin-top:0">Stack</h4>
+        <dl class="defs small">
+          <dt style="font-family:var(--font-display);font-size:1.25rem">Newsreader &mdash; display</dt>
+          <dd>Headings, the verdict figure, and pull statements. An editorial serif gives the product a document voice rather than a SaaS voice. Load the <code>wght</code> axis only.</dd>
+          <dt>Public Sans &mdash; interface</dt>
+          <dd>All UI text, labels, tables and prose. Open apertures, unambiguous <code>1/l/I</code>, and a genuinely neutral tone. Chosen over the framework default because it is a public-sector information typeface — the register this product wants.</dd>
+          <dt class="num" style="font-family:var(--font-mono)">JetBrains Mono &mdash; figures</dt>
+          <dd><strong>Mandatory for every number, factor ID, run ID, checksum and match score.</strong> Tabular by construction, so columns align without extra work, and it makes a figure visually distinct from prose — which is exactly the distinction this audience cares about.</dd>
+        </dl>
+      </div>
+      <div>
+        <div class="card">
+          <h4 style="margin-top:0">Scale &amp; rules</h4>
+          <div class="tw" style="border:0">
+            <table style="min-width:0">
+              <thead><tr><th scope="col">Role</th><th scope="col">Size</th><th scope="col">Face</th></tr></thead>
+              <tbody>
+                <tr><td>Verdict figure</td><td class="n">64/1.0</td><td>Newsreader 600</td></tr>
+                <tr><td>Section H2</td><td class="n">32/1.12</td><td>Newsreader 600</td></tr>
+                <tr><td>Sub H3</td><td class="n">23/1.15</td><td>Newsreader 600</td></tr>
+                <tr><td>Card H4</td><td class="n">18/1.35</td><td>Public Sans 600</td></tr>
+                <tr><td>Body</td><td class="n">16/1.65</td><td>Public Sans 400</td></tr>
+                <tr><td>Table / caption</td><td class="n">13/1.6</td><td>Public Sans 400</td></tr>
+                <tr><td>Label / ID</td><td class="n">11/1.5</td><td>JetBrains Mono 500</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <ul class="list small" style="margin-top:var(--s-4)">
+            <li><strong>Never below 13&nbsp;px.</strong> 11&nbsp;px is permitted only for uppercase mono labels at &ge;5.7:1.</li>
+            <li><code>font-variant-numeric: tabular-nums</code> on every numeric cell, without exception.</li>
+            <li><code>h1,h2,h3{font-stretch:normal}</code> as a defensive reset — variable serifs widen unpredictably at heavy weights.</li>
+            <li>Request only the <code>wght</code> axis from the font CDN; extra axes cause inconsistent rendering across browsers.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <h3>Micro-interactions</h3>
+    <p class="prose">Eight, each earning its place. Motion here has one job: make provenance feel continuous, so that drilling from a number to its evidence never feels like a page change. Everything below collapses to an instant state change under <code>prefers-reduced-motion</code>.</p>
+    <div class="tw">
+      <table>
+        <caption>Table 5 — Motion specification</caption>
+        <thead><tr><th scope="col">Interaction</th><th scope="col">Behaviour</th><th scope="col">Spec</th><th scope="col">Purpose</th></tr></thead>
+        <tbody>
+          <tr><td class="id">Verdict reveal</td><td>Figure counts from old value to new; delta chip fades in 80&nbsp;ms behind it</td><td class="sc">420ms &middot; ease-out</td><td>Makes the <em>movement</em> legible, not just the endpoint</td></tr>
+          <tr><td class="id">Row &rarr; drawer</td><td>Selected row's identifier animates into the drawer header; row stays highlighted</td><td class="sc">220ms &middot; shared element</td><td>Preserves the thread from figure to evidence</td></tr>
+          <tr><td class="id">Citation peek</td><td>Hover or focus on a cited badge shows the DEFRA sentence in a popover</td><td class="sc">120ms in &middot; 240ms out</td><td>Verification without losing scan position</td></tr>
+          <tr><td class="id">Copy with provenance</td><td>Cell flashes brand wash; toast confirms "figure + run ID + source row copied"</td><td class="sc">180ms &middot; 2.5s toast</td><td>Prevents naked numbers escaping into email</td></tr>
+          <tr><td class="id">Review queue</td><td><kbd>J</kbd>/<kbd>K</kbd> move, <kbd>A</kbd> accept, <kbd>R</kbd> reject; resolved row collapses upward, counter decrements</td><td class="sc">160ms &middot; ease-in</td><td>Turns adjudication into a rhythm, not a form</td></tr>
+          <tr><td class="id">Stale results</td><td>Canvas desaturates to 60% and a re-run banner slides in from the top</td><td class="sc">200ms</td><td>Makes "these numbers no longer match these inputs" unmissable</td></tr>
+          <tr><td class="id">Sticky condense</td><td>Run header shrinks to a single line carrying figure, delta and run ID</td><td class="sc">Scroll-linked, rAF-gated</td><td>The answer stays on screen through a long ledger</td></tr>
+          <tr><td class="id">Export readiness</td><td>Meter fills as checklist items resolve; button gains primary weight only at 100%</td><td class="sc">300ms &middot; ease-out</td><td>Makes completeness a visible goal state</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <pre>let ticking = false;
+window.addEventListener('scroll', () =&gt; {
+  if (!ticking) { requestAnimationFrame(condenseHeader); ticking = true; }
+}, <b>{ passive: true }</b>);
+function condenseHeader(){ <i>/* all DOM writes here */</i> ticking = false; }</pre>
+
+    <h3>Product chrome</h3>
+    <p class="prose">The application currently renders inside the hosting platform's frame: a Share control, a star, an edit pencil, a repository icon, a kebab menu and a permanent dark "Manage app" badge overlapping the lower-right of the content. A consultant screen-sharing this with a client is showing them someone else's product. Before any external use, the deployment needs an owned shell — product name, client name, run ID and export action in a real header — and the platform chrome suppressed. <code>[NEEDS VERIFICATION: confirm which chrome elements the hosting tier permits hiding.]</code></p>
+  </div>
+</section>
+
+<!-- ============ 5. HANDBOOK ============ -->
+<section class="section" id="handbook">
+  <div class="wrap">
+    <p class="eyebrow">05 &middot; High-utility handbook strategy</p>
+    <h2>Twelve patterns that make software feel like a reference</h2>
+    <p class="prose lede">A tool answers a question and is closed. A handbook is opened because it is the place where the answer lives. The difference is almost entirely interface: whether every number carries its origin, whether uncertainty has a first-class home, and whether the artefact you hand a client comes out of the product rather than out of a copy-paste.</p>
+
+    <h3 style="margin-top:var(--s-6)">A. Provenance</h3>
+    <div class="grid g-2">
+      <div class="card">
+        <h4 style="margin-top:0">P1 &middot; Every figure carries a stamp</h4>
+        <p class="small">No number appears anywhere — screen, drawer, export, clipboard — without its chain: source workbook and sheet, row reference, DEFRA factor ID, vintage, match method, match score, run ID, UTC timestamp. Hover reveals it; <em>Copy with provenance</em> carries it into whatever the consultant pastes into.</p>
+        <pre style="margin-top:var(--s-3);font-size:11px">0.13096 kg CO₂e/kWh
+DEFRA 2026 · Electricity generated · UK · Scope 2
+Sheet "UK electricity" row 14 · exact match (100)
+Run 8f2c41 · 2026-07-31T09:14Z</pre>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">P2 &middot; Citation-first explanations</h4>
+        <p class="small">The DEFRA sentence appears <em>above</em> the generated prose, quoted verbatim with its source location, visually distinguished as evidence rather than commentary. The AI layer is explicitly framed as a reading aid, not the authority. When the notes are silent, that state gets its own designed treatment — a neutral panel reading <strong>"Not explained in the DEFRA notes"</strong> with the raw before/after values — rather than an absence or an apology.</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">P3 &middot; The method note is a destination</h4>
+        <p class="small">Thresholds, matching algorithm, confidence cut-off and their version history live at a stable URL, written once. Every threshold mentioned anywhere in the UI links to its definition. When a client asks "what counts as a mover?", the consultant sends a link rather than an explanation.</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">P4 &middot; Definitions in place</h4>
+        <p class="small">Dotted-underline popovers on <em>relabel family</em>, <em>mover</em>, <em>coverage</em>, <em>Scope 2</em>, <em>flat baseline</em>. One sentence plus a link. Junior analysts learn the domain from the tool; senior ones stop being asked.</p>
+      </div>
+    </div>
+
+    <h3>B. Uncertainty as a feature</h3>
+    <div class="grid g-2">
+      <div class="card">
+        <h4 style="margin-top:0">P5 &middot; The review queue is a gate</h4>
+        <p class="small">Unmatched and below-threshold lines get a dedicated, keyboard-first queue with a visible <em>n of m resolved</em> counter. Export is not blocked, but exporting with unresolved items requires an explicit acknowledgement that is <strong>recorded in the export itself</strong>. The consultant can always ship; they can never ship silently.</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">P6 &middot; Coverage opens</h4>
+        <p class="small"><span class="num">85.7%</span> becomes a control. Clicking it lists the <span class="num">14.3%</span> — every unmatched line, its best candidate, its score, and why the score fell short. A coverage figure with no door behind it is a number the consultant cannot defend.</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">P7 &middot; Confidence is visible in the ledger</h4>
+        <p class="small">Every mover row shows its match method and score inline, not only in a drawer. The reader should be able to scan the ledger and see, without a click, which rows rest on an exact match and which rest on a judgement.</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">P8 &middot; Empty and edge states instruct</h4>
+        <p class="small">"No movers crossed the threshold" is a finding, not a blank region — say so, state the threshold, and offer to lower it. Zero-coverage uploads explain which columns were expected. Every dead end names the next action.</p>
+      </div>
+    </div>
+
+    <h3>C. The artefact</h3>
+    <div class="grid g-2">
+      <div class="card">
+        <h4 style="margin-top:0">P9 &middot; A client-ready export pack</h4>
+        <p class="small">Markdown alone serves the developer, not the consultant. Ship four artefacts from one action: <strong>XLSX</strong> (movers, full mapping, review log, method sheet), <strong>PDF memo</strong> (verdict, top movers, citations, sign-off block), <strong>Markdown</strong> (for internal notes), <strong>JSON</strong> (for the client's own systems). All four carry the same run ID, so any figure in any of them can be traced to the same source.</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">P10 &middot; Pre-export checklist</h4>
+        <p class="small">A short, honest gate before download: review queue resolved &middot; column mapping confirmed &middot; relabel families accepted &middot; unexplained movers acknowledged &middot; client and vintage named. Unchecked items are listed in the export's front matter. This is the interface expression of the product's whole thesis.</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">P11 &middot; Sign-off ledger</h4>
+        <p class="small">Who ran it, who reviewed it, what was overridden and why — appended, never edited. Twelve months later this is the difference between "I believe that was a rename" and "here is the record". It costs one table and it is the reason a firm standardises on the tool.</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">P12 &middot; Reproducibility on one control</h4>
+        <p class="small"><em>Re-run this exact configuration</em> — same mapping, same overrides, new factor set. A permalink restores the full run. The annual ritual becomes: open last year's run, press re-run, adjudicate only what changed. That is the ten-minute task the vision describes, and it is reachable from where the product already stands.</p>
+      </div>
+    </div>
+
+    <div class="callout" style="margin-top:var(--s-6)">
+      <span class="k">The design principle underneath all twelve</span>
+      <p><strong>The interface must never be more confident than the computation.</strong> The engine already refuses to guess. Right now the interface guesses on its behalf — by painting a favourable number in an alarm colour, by hiding the no-guess statement at 3.69:1, by placing the review queue after the conclusion, and by shipping a Markdown file with no run identity. Align the interface's confidence with the engine's, and the product's differentiator becomes something a client can see rather than something the consultant has to explain.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ROADMAP ============ -->
+<section class="section" id="roadmap">
+  <div class="wrap">
+    <p class="eyebrow">06 &middot; Sequenced backlog</p>
+    <h2>What to do, in what order</h2>
+    <div class="tw">
+      <table>
+        <caption>Table 6 — Prioritised remediation, with defect and pattern references</caption>
+        <thead><tr><th scope="col">Pri</th><th scope="col">Work</th><th scope="col">Refs</th><th scope="col">Effort</th><th scope="col">Why now</th></tr></thead>
+        <tbody>
+          <tr><td class="id">P0</td><td>Invert delta semantics: hue for confidence, glyph + word for direction</td><td class="sc">A-01</td><td class="n">0.5d</td><td>The single most visible contradiction of the product's promise</td></tr>
+          <tr><td class="id">P0</td><td>Theme the primary CTA to brand; raise caption opacity to a real token; give secondary buttons a 3:1 border</td><td class="sc">A-02, A-03, A-08</td><td class="n">0.5d</td><td>Three AA failures closed in one theme file</td></tr>
+          <tr><td class="id">P0</td><td>Replace canvas grids with semantic tables; label the file input; name the eleven disclosures</td><td class="sc">A-04, A-05, A-07</td><td class="n">2d</td><td>Makes the core artefact readable, printable and legally defensible</td></tr>
+          <tr><td class="id">P1</td><td>Introduce the <code>Run</code> object and stamp it everywhere</td><td class="sc">F-01, P1</td><td class="n">3d</td><td>Unlocks history, sign-off, reproducibility and the export pack</td></tr>
+          <tr><td class="id">P1</td><td>Reorder to Result &rarr; Confidence &rarr; Movers &rarr; Explanations &rarr; Export; make coverage a control</td><td class="sc">F-04, P6</td><td class="n">2d</td><td>Puts the trust gate before the conclusion</td></tr>
+          <tr><td class="id">P1</td><td>Human column labels, unit columns, significant-figure formatting, definition popovers</td><td class="sc">A-09 &hellip; P4</td><td class="n">2d</td><td>Removes the schema from the client's field of view</td></tr>
+          <tr><td class="id">P1</td><td>Persistent action bar with explicit run state; fix the sub-768&nbsp;px control loss</td><td class="sc">F-02, F-03, A-09</td><td class="n">3d</td><td>Restores usability on tablet and removes stale-result ambiguity</td></tr>
+          <tr><td class="id">P2</td><td>Export pack (XLSX / PDF / MD / JSON) with pre-export checklist</td><td class="sc">P9, P10</td><td class="n">5d</td><td>Turns output into the deliverable the consultant is actually paid for</td></tr>
+          <tr><td class="id">P2</td><td>Review queue with keyboard adjudication and resolved counter</td><td class="sc">P5</td><td class="n">4d</td><td>Makes the no-guess discipline operable at inventory scale</td></tr>
+          <tr><td class="id">P2</td><td>Design system implementation: tokens, type scale, dark mode, motion spec</td><td class="sc">&sect;04</td><td class="n">5d</td><td>Ends framework-default drift and gives the product an owned identity</td></tr>
+          <tr><td class="id">P3</td><td><code>/factors</code> library and <code>/method</code> reference; run history with year-over-year inheritance</td><td class="sc">F-05, P3</td><td class="n">8d</td><td>The step from tool to handbook — the thing users open unprompted</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small muted" style="margin-top:var(--s-3)">Effort figures are indicative for one experienced full-stack engineer working within the existing framework, and exclude design production. <code>[UNCERTAIN]</code> — no access to the codebase, so estimates assume the current architecture is not a constraint on the P1 and P2 items.</p>
+
+    <h3>Validation checklist</h3>
+    <div class="grid g-3" style="margin-top:var(--s-4)">
+      <div class="card"><h4 style="margin-top:0">Accessibility</h4><ul class="list small"><li>All text &ge;4.5:1; UI boundaries &ge;3:1</li><li>Full keyboard path: upload &rarr; run &rarr; review &rarr; export</li><li>Visible focus on every control, never suppressed</li><li>Tables expose row/column semantics to AT</li><li>Greyscale render still distinguishes all states</li><li>Targets &ge;44&times;44&nbsp;px</li></ul></div>
+      <div class="card"><h4 style="margin-top:0">Responsiveness</h4><ul class="list small"><li>375 / 768 / 1024 / 1280 / 1440 all pass</li><li>No horizontal scroll below 640&nbsp;px</li><li>Controls reachable at every width</li><li>Print produces a complete, expanded document</li><li>200% zoom without loss of function</li></ul></div>
+      <div class="card"><h4 style="margin-top:0">Product integrity</h4><ul class="list small"><li>No figure renders without provenance</li><li>Stale state always visible</li><li>Unresolved review items recorded in exports</li><li>Every threshold links to its definition</li><li>Any run reproducible from its permalink</li></ul></div>
+    </div>
+
+    <h3>Risks &amp; uncertainties</h3>
+    <ul class="list small">
+      <li><code>[NEEDS VERIFICATION]</code> Desktop rendering at &ge;1280&nbsp;px was not observable; A&#8209;06 and A&#8209;09 may present differently or resolve entirely at that width.</li>
+      <li><code>[NEEDS VERIFICATION]</code> Keyboard tab order, focus-visible styling and screen-reader output were inferred from DOM structure, not from assistive-technology testing. Commission a manual NVDA/VoiceOver pass before any accessibility claim is made externally.</li>
+      <li><code>[NEEDS VERIFICATION]</code> Replacing the framework's canvas data grid may require leaving its native dataframe component. Feasibility inside the current stack is unconfirmed.</li>
+      <li><code>[UNCERTAIN]</code> The relabel-pairing and threshold logic were read from the interface's own summary text, not from source. All statements here concern presentation only and make no claim about analytical correctness.</li>
+      <li><code>[NEEDS VERIFICATION]</code> Suppressing hosting-platform chrome may depend on the deployment tier. Confirm before promising an owned shell for client-facing use.</li>
+      <li><strong>Non-technical risk:</strong> the accessibility defects above are the kind that surface in enterprise procurement questionnaires. Closing the P0 set is cheap now and expensive under a VPAT request later.</li>
+    </ul>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p class="eyebrow">Closing</p>
+    <p class="sig">The engine already refuses to guess. Every recommendation in this document exists to make the interface keep the same promise — so that the discipline a consultant is paying for is the first thing their client sees, not the last thing they have to explain.</p>
+    <div class="meta-strip" style="margin-top:var(--s-6)">
+      <span>Sections <b>06</b></span>
+      <span>Verified defects <b>12</b></span>
+      <span>Handbook patterns <b>12</b></span>
+      <span>Standard <b>WCAG 2.1 AA</b></span>
+      <span>Status <b>Rev. A &mdash; for review</b></span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(() => {
+  'use strict';
+  const root = document.documentElement;
+  const btn  = document.getElementById('themeToggle');
+  const lbl  = document.getElementById('themeLabel');
+  const mq   = window.matchMedia('(prefers-color-scheme: dark)');
+  // In-memory only: no browser storage is used anywhere in this document.
+  let userChoice = null;
+
+  const apply = (dark) => {
+    root.classList.toggle('dark', dark);
+    root.classList.toggle('light', !dark);
+    btn.setAttribute('aria-pressed', String(dark));
+    lbl.textContent = dark ? 'Light' : 'Dark';
+    btn.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
+  };
+
+  // Tier 1: user choice (session) → Tier 2: OS preference → Tier 3: light fallback.
+  apply(mq.matches);
+  mq.addEventListener('change', (e) => { if (userChoice === null) apply(e.matches); });
+  btn.addEventListener('click', () => { userChoice = !root.classList.contains('dark'); apply(userChoice); });
+})();
+</script>
+</body>
+</html>
