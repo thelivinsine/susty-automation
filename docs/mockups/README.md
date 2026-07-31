@@ -36,9 +36,11 @@ The **alternative** direction, proposed by the July 2026 front-end audit
 ochre reserved for review, editorial serif display, monospace for every figure.
 Called "Audit Ledger" in that document.
 
-These exist so the identity decision can be made by looking rather than by
-reading a description. **GOV.UK remains the chosen direction** (see
-`docs/PLAN_design_system.md`); these keep that choice reversible on evidence.
+These were built so the identity decision could be made by looking rather than by
+reading a description. **The decision is settled: GOV.UK won** (owner, 2026-07-31,
+recorded as DECISIONS **D19**). These two files are the **rejected alternative**,
+kept so a future revisit starts from artefacts rather than from an argument. They
+are not built, not themed, and nothing in the app reads from them.
 
 - **`ledger_report_view.html`** is mockup A: the *same* report, the *same*
   numbers and the *same* copy as `govuk_report_view.html`, so the only variable

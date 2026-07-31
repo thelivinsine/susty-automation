@@ -363,3 +363,59 @@ degrading to "open, offline for all" when no `[auth]` secret is set. That is onl
 true when no API key is set. With a key present and sign-in unconfigured, the
 degrade is "open, AI for all", which is exactly the situation this decision
 covers.
+
+## D19. Branding: GOV.UK wins, the audit's palette is rejected (LOCKED direction)
+
+The July 2026 front-end audit (`docs/audit/2026-07-31_frontend_ux_audit.html`)
+proposed replacing the visual direction with a system it calls "Audit Ledger":
+warm paper `#FBFAF7`, deep verdigris `#0B5750`, ochre `#8A5A05`, an editorial
+serif, and a monospace face for every figure. That would have retired the GOV.UK
+idiom pinned in `docs/mockups/govuk_report_view.html`.
+
+**Decision: keep GOV.UK.** Taken by the owner on 2026-07-31 after looking at both
+directions built as working mockups on the same real pipeline figures, not after
+reading a description of them. The rejected alternative is kept in the repo
+(`docs/mockups/ledger_report_view.html`, `docs/mockups/ledger_result_canvas.html`)
+so any future revisit starts from artefacts rather than from an argument.
+
+Why GOV.UK, on the measured evidence:
+- **Zero external requests.** Arial and the system stack. The Ledger direction
+  needs three families vendored or pulled from a CDN. For a tool whose users
+  handle confidential client inventories, a font CDN call is a real cost.
+- **The strongest focus state in either candidate**, the yellow block with the
+  black underline. Nothing in the alternative improved on it.
+- **Higher body contrast**, `#0b0c0c` at 19.59:1 against `#14181C` at 17.09:1.
+- An institutional association with the DEFRA and DESNZ source material, which is
+  the register this audience already works in.
+
+What the audit was right about, and is grafted on anyway (the look is settled, the
+defects underneath it are not):
+1. **A yellow needs-review tint**, `#fff7bf` on `#594d00` (7.77:1). GOV.UK's four
+   tints are blue, green, red and grey, so "held for review" has no colour of its
+   own. Yellow over GOV.UK orange deliberately: orange neighbours red and would
+   blur the boundary that keeps **red for genuine errors only**. Holding a line
+   for review is D2 working, not a failure.
+2. **Hue encodes epistemic status; direction is glyph, sign and word.** This
+   deletes `.d-up`, `.d-down`, `.move.up` and `.move.down` from the mockup CSS, a
+   deliberate deviation from the approved file. Those four rules are the root
+   cause of the audit's most severe finding: a footprint *decrease* rendered as an
+   alarm, beside a green panel reporting the same fact as good news. The GOV.UK
+   confirmation panel stays, with its meaning restated as "the run completed and
+   this is the answer", not "good news".
+3. **`--border #b1b4b6` is 2.08:1 on white and fails WCAG 1.4.11.** The audit
+   could not catch this because it inspected the live app, not the mockup. Split
+   the token: `#b1b4b6` for decorative table rules, `#0b0c0c` for interactive
+   boundaries, which is what GOV.UK Frontend does for input borders.
+
+One implementation rule fell out of building the rejected mockups and applies
+regardless of palette: a table wider than its `overflow-x:auto` container still
+contributes its width to the initial containing block, so the page gains a phantom
+horizontal scroll into blank space even though the table scrolls correctly inside.
+Measured at 375px: 480px of empty scroll. `contain: paint` on the scroll container
+is the fix, and grid or flex children need `min-width: 0` for the same class of
+reason.
+
+Do not re-open the palette without new evidence. Rebuilding the comparison is
+cheap now that both mockups exist.
+
+Plan: `docs/PLAN_design_system.md`.

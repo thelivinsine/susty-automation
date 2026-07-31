@@ -31,15 +31,83 @@ which is what `docs/VISION.md` move #3 already asks for.
 
 ## Decisions taken by the owner
 
-1. **Visual identity: keep GOV.UK.** `docs/mockups/govuk_report_view.html` stays
-   the approved direction. The audit's alternative palette is **not** implemented
-   in the app, but **is** to be rendered as mockups so the choice can be revisited
-   against real numbers rather than against a description.
+1. **Visual identity: GOV.UK. Settled, see below.**
 2. **Scope: the 12 defects + design system + IA reorder + the multi-format export
    pack.** Deferred: run history, year-over-year mapping memory, the keyboard
    review queue, the `/factors` library.
 3. **Fonts:** the GOV.UK choice settles this. Arial and the system stack, so
    **zero external font requests**, consistent with the existing mockup.
+
+## The branding decision: GOV.UK, confirmed 2026-07-31
+
+**Chosen: the GOV.UK direction in `docs/mockups/govuk_report_view.html`.
+Rejected: the "Audit Ledger" system proposed by the audit.** Recorded as
+DECISIONS **D19**.
+
+This was not settled from a description. Both candidate directions were built as
+working, self-contained mockups rendering the *same* real pipeline figures, and
+the owner chose after looking at them:
+
+- `docs/mockups/govuk_report_view.html` (the incumbent)
+- `docs/mockups/ledger_report_view.html` (the same report, same copy, Ledger skin)
+- `docs/mockups/ledger_result_canvas.html` (Ledger, plus the proposed structure)
+
+The two Ledger files stay in the repo as the **rejected alternative**, kept so a
+future revisit starts from artefacts rather than from an argument. They are not
+built, not themed, and not referenced by the app.
+
+### What this settles
+
+- **Palette:** GOV.UK. Black `#0b0c0c`, blue `#1d70b8`, green `#00703c`, red
+  `#d4351c`, greys `#f3f2f1` / `#e7e6e5` / `#b1b4b6`, secondary `#505a5f`, focus
+  yellow `#ffdd00`, plus the mockup's existing dark theme.
+- **Type:** Arial and the system stack. **Zero external font requests**, which
+  matters for a tool whose users handle confidential client data, and which was
+  one of the reasons the incumbent won.
+- **Focus state:** GOV.UK's yellow block with the black underline, kept as-is. It
+  is the strongest focus treatment in either candidate.
+- **Components:** the mockup's masthead, phase banner, confirmation panel, big
+  number stat row, inset text, summary and key-value explanation block, tables,
+  warning text and buttons become the component library.
+
+### What still gets grafted on from the audit
+
+Choosing GOV.UK settles the look. It does not settle the three defects the audit
+identified underneath the look, all of which still apply:
+
+1. **A yellow needs-review tint**, `#fff7bf` on `#594d00` (**7.77:1**). GOV.UK's
+   four tints are blue, green, red and grey, which leaves no colour for "held for
+   review". Yellow is chosen over GOV.UK orange (`#fcd6c3` on `#6e3619`, 7.05:1)
+   deliberately: orange sits next to red in hue and would blur the boundary that
+   keeps **red for genuine errors only**. A review flag is the tool working
+   correctly, not failing.
+2. **The hue rule.** Hue encodes epistemic status; direction is carried by glyph,
+   sign and word. This deletes `.d-up`, `.d-down`, `.move.up` and `.move.down`
+   from the mockup CSS. It is a deliberate deviation from the approved file,
+   because those four rules are the root cause of the audit's most severe finding:
+   a footprint *decrease* painted as an alarm.
+3. **The interactive border fix.** `--border #b1b4b6` is **2.08:1** on white and
+   fails WCAG 1.4.11. Split it: `#b1b4b6` stays for decorative table rules, and
+   interactive boundaries use `#0b0c0c`, which is what GOV.UK Frontend itself does
+   for input borders.
+
+The GOV.UK confirmation panel also stays, with its meaning restated: green there
+means "the run completed and this is the answer", not "good news". Direction lives
+inside the panel as glyph and word, and the baseline judgement moves out into a
+separate assessment message.
+
+### Why the alternative was worth building anyway
+
+Two findings came out of building the rejected mockups that carry into the work:
+
+- The `--border` failure above, which the audit could not have caught because it
+  inspected the live app rather than the mockup file.
+- A table wider than its `overflow-x:auto` container still contributes its width
+  to the initial containing block, so the **page** gains a phantom horizontal
+  scroll into blank space even though the table scrolls correctly inside. At 375px
+  that was 480px of empty scroll. `contain: paint` on the scroll container fixes
+  it. This applies directly to `render_table` and is now a required rule, not a
+  nicety.
 
 ## One constraint conflict, and how it is resolved
 
@@ -95,7 +163,8 @@ scrapes through and is left alone.
 
 **Net:** GOV.UK is a sound choice and needs three things grafted on from the audit:
 a **yellow needs-review tint** (`#fff7bf` on `#594d00`, **7.77:1**), the
-**hue-encodes-confidence rule**, and the **interactive border fix**.
+**hue-encodes-confidence rule**, and the **interactive border fix**. This is the
+evidence behind the decision recorded above, which is now settled.
 
 ## The defects to close
 
@@ -169,7 +238,7 @@ the drawer and the export.
 | `scripts/lint_microcopy.py` | extend | Scan `.css` and `.html`; allowlist `docs/audit/` |
 | `tests/test_design_system.py` | new | Contrast, escaping, table semantics |
 | `tests/test_export_pack.py` | new | Four artifacts, one shared run id |
-| `docs/mockups/ledger_*.html` | new | Two mockups of the audit's recommended branding |
+| `docs/mockups/ledger_*.html` | **done** | The rejected alternative, kept as a record. Not built. |
 
 `app.py` keeps calling `run_pipeline` exactly as it does now. **No pipeline,
 matching, diff or explanation logic changes in this pass**, so the analytical test
@@ -197,7 +266,12 @@ them is diagnosable rather than mysterious.
 **2. Semantic tables (A-04, A-06).** `render_table(df, columns, caption,
 numeric_cols)` emits a real `<table>` with `<caption>`, `scope="col"` headers and
 right-aligned tabular numerics, inside an `overflow-x:auto` container so the
-contributors grid stops clipping.
+contributors grid stops clipping. That container **must also carry
+`contain: paint`**: without it a table wider than the container still contributes
+its width to the initial containing block, and the page gains a phantom
+horizontal scroll into blank space even though the table scrolls correctly
+inside. Measured at 375px while building the mockups: 480px of empty scroll
+without it, 0 with it.
 
 *Security, and it is not optional.* BOM line items come from a user-uploaded file
 and this renders through `unsafe_allow_html`. Every cell goes through
@@ -236,23 +310,22 @@ checklist lists what is unresolved, and anything unchecked is written into the
 export's front matter. The consultant can always ship; they can never ship
 silently.
 
-**6. Mockups of the audit's recommended branding.** Two self-contained files, no
-external requests, rendered from the real figures in
-`docs/mockups/report_data_snapshot.json` so they are directly comparable to the
-GOV.UK mockup:
+**6. Mockups of the audit's recommended branding. DONE, and the answer was no.**
+Both files were built and reviewed, and the owner chose GOV.UK (see the branding
+decision above and DECISIONS D19). They stay in the repo as the rejected
+alternative, documented in `docs/mockups/README.md`, and are **not** a build
+target. Nothing in the implementation reads from them.
 
-- `docs/mockups/ledger_report_view.html`: the same report, same numbers, in the
-  audit's palette, light and dark. A true A/B against the GOV.UK view.
-- `docs/mockups/ledger_result_canvas.html`: the audit's *proposed structure*
-  rather than the current one (verdict card, coverage-as-control, semantic movers
-  table with per-row confidence badges, evidence drawer, action bar). Doubles as
-  the design-system reference sheet, showing every token, badge, alert role and
-  component state in both themes.
+What to take from them into the GOV.UK build, since they were verified in headless
+Chromium at 375 to 1440px:
 
-`docs/mockups/README.md` gains a section explaining that these render the audit's
-recommendation, that GOV.UK remains the implemented direction, and that they exist
-to make that choice reversible on evidence. It also carries the measured
-comparison table above, including the `--border` failure.
+- The `contain: paint` rule in note 2, which is load-bearing.
+- The badge, alert-role, empty-state and stale-state *inventory*: the set of
+  states the app needs is the same regardless of palette. Only the hex values
+  change.
+- `.shell > *, .with-drawer > * { min-width: 0 }`. Grid and flex children default
+  to `min-width:auto` and refuse to shrink below their content, which is the other
+  phantom-scroll source.
 
 **7. Microcopy gate.** `scripts/lint_microcopy.py` scans only `.py` and `.md`, so
 new `.css` and `.html` files carrying visible copy would slip the no-em-dash rule.
