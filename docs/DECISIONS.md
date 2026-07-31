@@ -461,6 +461,16 @@ declaration reproduces the defect at **248px** of blank scroll. (D19 recorded
 fix.) Chrome's headless window floors at ~500px, so a true narrow viewport needs
 an iframe, which is worth knowing before anyone re-runs this.
 
+**The app itself was checked in a browser too**, which earlier sessions assumed
+the sandbox could not do. The proxy blocks the live deploy, not localhost, so
+`streamlit run` plus Playwright works (see `REFERENCE.md` for the recipe). At
+375, 768 and 1440: zero phantom scroll, zero canvas grids, three real tables, the
+primary action at `rgb(0,112,60)` and 44px tall, captions at `rgb(80,90,95)` and
+full opacity, and no tap target under 44px. It also caught three things no unit
+test could: a column ratio that crushed the primary button at 375px, a glyph
+running into its figure, and the panel rounding to 1 decimal beside a sentence
+using 2. Run the browser pass before calling an interface change done.
+
 **4. The PDF question is settled as print-ready HTML.** The audit asked for a
 PDF. `pdfplumber` only reads them and CLAUDE.md rules out reportlab and
 weasyprint, so the pack ships an HTML memo the browser prints to PDF, which is

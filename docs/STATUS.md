@@ -159,8 +159,13 @@ Most recent handoffs (older ones rotate into `docs/archive/`):
   including the 7.77:1 yellow tint and the 19.59:1 border, reproduce exactly),
   and in headless Chromium at a true 375px viewport the memo shows zero phantom
   horizontal scroll, while removing `contain: paint` reproduces the defect at
-  248px. Tests went 44 to 144. Nothing in the pipeline, matching, diff or
-  explanation layer was touched.
+  248px. **The running app was checked in a browser as well**, which earlier
+  sessions assumed was impossible here (the proxy blocks the live deploy, not
+  localhost, so `streamlit run` plus Playwright works; recipe in `REFERENCE.md`).
+  At 375, 768 and 1440: zero phantom scroll, zero canvas grids, green CTA at
+  44px, captions at 7.07:1, no tap target under 44px. That pass caught three
+  defects no unit test could, all fixed. Tests went 44 to 144. Nothing in the
+  pipeline, matching, diff or explanation layer was touched.
 - H18 (2026-07-31): Front-end audit received, branding decided, design-system
   work planned. Saved the external UI/UX/accessibility audit verbatim
   (`docs/audit/`), which measured **12 defects** in the live app (5 critical) by

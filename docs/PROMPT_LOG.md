@@ -819,3 +819,15 @@ than quietly dropped.
 (D20), `docs/REFERENCE.md`, `docs/STATUS.md` (H19),
 `docs/archive/STATUS_2026-W31.md`, this file. Commits 6e902c5, 3c0fbbb, bc89bdb,
 ce7c7a3.
+
+**Correction appended to P33.** The entry above, and every earlier session,
+treated in-browser verification as the owner's job because the sandbox proxy
+denies CONNECT to `*.streamlit.app`. That is true of the DEPLOY only. Localhost is
+reachable, Chromium is preinstalled, and `pip install playwright` supplies the
+driver, so the running app was checked at 375, 768 and 1440 after all. It caught
+three defects the 144 tests could not: a column ratio that crushed the primary
+button to a quarter width at 375px, a direction glyph running into its figure,
+and the result panel rounding to 1 decimal beside a sentence using 2. All three
+fixed in commit 1a1d857. The recipe and its two traps (the screenshot flag fires
+before Streamlit's websocket content arrives; Chrome's headless window floors at
+about 500px) are in `REFERENCE.md` so this is not rediscovered next time.

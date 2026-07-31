@@ -74,9 +74,21 @@ How to apply it:
   `[access]` blocks from `.streamlit/secrets.toml.example` per
   `docs/DEPLOY_GUIDE.md`.
 - Sandbox network: live Gemini calls and `*.streamlit.app` are both blocked from
-  the web sandbox (the proxy denies CONNECT), so anything deployment-specific has
-  to be verified by the owner. Local tests and the repo remain fully verifiable
-  here.
+  the web sandbox (the proxy denies CONNECT), so anything about the DEPLOY has to
+  be verified by the owner. Local tests and the repo remain fully verifiable here.
+- **Browser verification IS possible in the sandbox, contrary to what earlier
+  sessions assumed.** The proxy blocks the live deploy, not localhost. Chromium
+  ships at `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`, `pip install
+  playwright` in a venv gets the driver (dev-only, deliberately NOT in
+  `requirements.txt`), and `streamlit run app.py --server.headless true` on
+  127.0.0.1 is reachable with `--no-proxy-server`. This is how the design system
+  was checked at 375, 768 and 1440. Two traps worth knowing:
+  - `chrome --headless --screenshot` fires at the load event, so it captures
+    Streamlit's grey loading skeleton. You have to wait for real content, which
+    is what Playwright's `wait_for_selector` is for.
+  - Chrome's headless window floors at about 500px, so `--window-size=375` does
+    not give a 375px viewport. Playwright's `viewport=` does; with raw Chrome,
+    put the page in a 375px iframe instead.
 
 ## Research / product-evaluation notes
 
