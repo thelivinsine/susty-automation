@@ -2,6 +2,8 @@
 
 **Explain the delta when emission factors change.**
 
+**Live app:** <https://efdiff.streamlit.app/>
+
 Every year the official databases that convert activity (a litre of diesel, a
 kWh of grid electricity) into kg CO₂e quietly update their numbers. When they do,
 every company's carbon footprint silently shifts, and someone has to work out
@@ -23,8 +25,33 @@ bill-of-materials**, it:
    **grounded strictly in the official DEFRA "major changes" report**, and says
    "no official reason found" instead of inventing one.
 
-The wedge is step 5. Big platforms recompute the new number; nobody explains a
-version delta in a client-ready, methodology-sound way.
+The wedge is step 5, on the long tail. The headline movers (the grid-electricity
+drop, aviation, rail) get free write-ups within days of each release. What nobody
+produces is complete, per-factor, reproducible coverage against *your* register.
+
+## Goal, purpose, vision
+
+**Goal.** Turn the annual DEFRA factor update from a week of manual Excel
+archaeology into a report you can read in ten minutes and hand to a client.
+
+**Purpose.** Serve the UK solo or boutique carbon consultant, the person who
+personally re-bases a client inventory every year and has to defend each number.
+Two things here are built for exactly that and are hard to get elsewhere: the
+relabel-family reconciliation that collapses DEFRA's ~500 added and ~500 removed
+rows into a handful of readable rename families, and the no-guess discipline
+enforced in code (an unconfident match is flagged `needs_review`, and a change the
+DEFRA notes do not explain says so verbatim instead of inventing a reason). That
+discipline is the point: it is what lets a consultant put their name on the
+output, and what a raw chatbot prompt cannot give them.
+
+**Vision.** A world where updating to the new year's factors is a reviewed,
+cited, ten-minute task instead of a week of guesswork, and where "why did this
+number move?" always has a traceable answer.
+
+The honest current state, and the roadmap out of it, live in
+[`docs/VISION.md`](docs/VISION.md): a six-persona expert panel judged the tool
+"partly useful" until it eats a real inventory rather than a toy 5-line BOM.
+Real-data ingest has since shipped. The cited, dated, printable memo has not.
 
 ## Quickstart
 
@@ -123,7 +150,10 @@ for everyone. The full click-by-click setup is in
 ## How it's built
 
 Deliberately boring and readable: Python + pandas + Streamlit + openpyxl +
-pdfplumber + rapidfuzz + the Anthropic SDK. No database, no login, no cloud.
+pdfplumber + rapidfuzz + the Gemini and Anthropic SDKs. No database and no web
+framework. Data lives as local files in `data/`. The only two additions to that
+rule are the optional Google sign-in that guards the paid AI tier and the
+Streamlit Cloud deployment that hosts the app.
 See [`CLAUDE.md`](CLAUDE.md) for the full design and the domain rules.
 
 ```

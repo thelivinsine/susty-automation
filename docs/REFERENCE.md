@@ -54,8 +54,19 @@ How to apply it:
   read as added/removed; would need DEFRA's own relabel notes.
 - Package-manager pin + lockfile for reproducible installs (deps are audited now,
   but still unpinned `>=` in requirements.txt).
-- Live Gemini runs only on the owner's machine (endpoint blocked in the web
-  sandbox).
+- **Open wallet on the live deploy (do this first).** The app is public at
+  <https://efdiff.streamlit.app/> with `GEMINI_API_KEY` set and no `[auth]`
+  section. `app.py:66` reads `use_ai = True if not signin_on else ...`, so with
+  sign-in unconfigured every anonymous visitor gets AI explanations on the
+  owner's key. That is D17's documented behavior and correct for a local run, but
+  on a public URL it removes the cost control D17 exists to provide. Fix: add the
+  `[auth]` + `[access]` secrets per `docs/DEPLOY_GUIDE.md`, or remove the key so
+  the public app serves the free offline explainer only. A billing budget alert on
+  the Google project is the backstop either way, not the fix.
+- Sandbox network: live Gemini calls and `*.streamlit.app` are both blocked from
+  the web sandbox (the proxy denies CONNECT), so anything deployment-specific has
+  to be verified by the owner. Local tests and the repo remain fully verifiable
+  here.
 
 ## Research / product-evaluation notes
 

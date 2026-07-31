@@ -17,6 +17,12 @@ movement shown as an honest range and a "mixed direction" flag where sub-factors
 move both ways. Explanation backend is Gemini (or Claude, or offline), selected by
 API key loaded from a git-ignored `.env`.
 
+**Live:** the app is deployed on Streamlit Community Cloud at
+<https://efdiff.streamlit.app/> (owner-run, first deploy 2026-07-31). The GitHub
+default branch is now `main`, so Streamlit redeploys from `main` on every merge.
+The sandbox cannot reach `*.streamlit.app` (proxy denies CONNECT), so live
+verification is the owner's.
+
 Gates: `pytest` green (44 tests, including the grounding trap, a real-workbook
 test, the microcopy gate, the relabel suite (detection + family grouping), the
 material-relabel explanation path, the retrieval-quality gold set, loader/diff
@@ -78,13 +84,26 @@ paired renames group into 11 readable families.
 
 ## Known gaps / next candidates
 Backlog now lives in `REFERENCE.md` (kept out of this snapshot). Short version:
-dedupe the ~420 renamed-and-moved entries, theme the Streamlit app to the
-GOV.UK-familiar mockup, semantic relabels, lockfile pinning, and Gemini being
-reachable only on the owner's machine.
+locking down the API key on the live deploy, header-row tolerance in ingest,
+VISION move #3 (the cited memo), GOV.UK theming, semantic relabels, and lockfile
+pinning.
 
 ## Resume here
 Most recent handoffs (older ones rotate into `docs/archive/`):
 
+- H16 (2026-07-31): Owner-facing session, no pipeline code changed. Walked the
+  owner through the two manual steps the sandbox cannot do: the GitHub default
+  branch is now `main` (verified via the API: `default_branch: "main"`), and the
+  app is deployed on Streamlit Community Cloud at <https://efdiff.streamlit.app/>
+  with a Gemini key created in Google AI Studio. Could not verify the live app:
+  the sandbox proxy denies CONNECT to `*.streamlit.app`, so the owner checks the
+  provider banner and the 2.344 to 2.305 demo figure. **Open risk flagged, not
+  yet fixed:** the deploy has `GEMINI_API_KEY` set with no `[auth]` section, and
+  `app.py:66` sets `use_ai = True` when sign-in is not configured, so the public
+  URL currently spends the owner's key for every anonymous visitor. Fix is either
+  the `[auth]` + `[access]` secrets from `docs/DEPLOY_GUIDE.md` or removing the
+  key. README refreshed with the live link, a Vision section, and a correction
+  (it still claimed "no login, no cloud" after D17 shipped both).
 - H15 (2026-07-09): Merged the hosting/access layer to `main` (PR #15, `31da74b`).
   It collided with the real-data ingest work (PR #14) that landed first, so the
   branch was rebased onto the new `main` and the overlap resolved by keeping BOTH
@@ -94,41 +113,10 @@ Most recent handoffs (older ones rotate into `docs/archive/`):
   tests green after the merge, lint clean, app boots. Dev branch realigned to the
   merged `main`. Next open items unchanged: header-row tolerance in ingest, then
   VISION move #3 (a dated, cited, printable memo as the first-class output).
-- H14 (2026-07-09): Owner asked how to make the tool accessible to non-technical
-  users, and whether it lives on GitHub Pages (it can't: Streamlit needs a server).
-  Built the hosting/access layer (D17): open to everyone on the free offline
-  explainer, paid AI behind Streamlit's built-in Google sign-in + an approved list
-  in secrets, spending cap as backstop. New `src/auth.py`; `use_ai`/`force_offline`
-  flag threaded app -> pipeline -> explain; `app.py` sign-in UI and free-vs-AI
-  banners; `.streamlit/secrets.toml.example`; owner-facing `docs/DEPLOY_GUIDE.md`;
-  requirements bumped (streamlit>=1.42, Authlib). +6 tests (44 green), lint clean.
-  No sign-in configured => behaves exactly as before. Deploy to Streamlit Cloud is
-  the owner's click-through (guide provided); no repo settings changed here.
-- H13 (2026-07-08): Reframed the project goal around GENUINE USEFULNESS via a
-  six-persona brainstorm (`docs/VISION.md`): primary audience is the UK
-  solo/boutique DEFRA consultant, getting-hired is a side effect. Then shipped
-  VISION move #2 (real-data ingest) in three steps: `src/ingest.py` (forgiving
-  reader), a confirm-your-columns step in `app.py`, and impact-ranking of
-  explanations by the user's own footprint. Suite 38 green; app boots clean.
-  Next likely: the "find the header row" tolerance for files with a title above
-  the headers, then VISION move #3 (a dated, cited, printable memo as the
-  first-class output).
-- H12 (2026-07-08): Grouped the renamed-and-moved output into rename families
-  (D10 follow-up, D14). On real data the HGV rename spanned 420 material variants
-  (DEFRA also reordered the sub-tables, so the greedy matcher scattered +-100%
-  deltas); those now collapse to ~10 grounded family explanations with an honest
-  value-movement range and a "mixed direction" flag, not 420 fabricated single-
-  direction blocks (and ~10 API calls, not 420). New `relabel.group_relabels`;
-  report/app/run_demo render families; +6 tests (32 green). Footprint math
-  untouched (relabels stay review-only, D9).
-- H11 (2026-07-08): Owner asked to commit the two source docs shared at project
-  start and to make `main` the default branch (P17). Added the build playbook and
-  the MVP spec PDF under `docs/reference/`, shipped via PR #10. Default-branch
-  switch is a manual owner step (no repo-settings tool / no direct GitHub API here):
-  GitHub repo Settings, Branches, set default to `main`. Docs/reference only, no
-  code touched.
 
-Next likely task: theme the Streamlit app to the GOV.UK-familiar look using the
-saved mockup (`docs/mockups/govuk_report_view.html`). Lower-priority: a finer
-within-family relabel pairing to make per-variant deltas trustworthy (or DEFRA's
-own row map), lockfile pinning, or semantic relabels (needs DEFRA's relabel notes).
+Next likely task: close the open-wallet risk on the live deploy (configure
+`[auth]` + `[access]`, or drop the key so the public app runs offline-only).
+After that: header-row tolerance in ingest, then VISION move #3 (a dated, cited,
+printable memo). Lower-priority: GOV.UK theming from the saved mockup
+(`docs/mockups/govuk_report_view.html`), a finer within-family relabel pairing to
+make per-variant deltas trustworthy, lockfile pinning, or semantic relabels.
