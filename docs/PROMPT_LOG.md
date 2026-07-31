@@ -612,3 +612,48 @@ already-merged history). Then documented the session (this entry, H15).
 
 **Artifacts:** docs/PROMPT_LOG.md, docs/STATUS.md (conflict resolution was in
 app.py, src/pipeline.py, docs/DECISIONS.md during the rebase, now on main).
+
+---
+
+### 2026-07-31 · P30
+Branch: `claude/immediate-action-items-7eyk9z` (reset onto current `main`, which
+had merged PRs #14 to #16 the stale base lacked).
+
+**Prompt (verbatim):** "what's one immediate action item from me?" then a run of
+follow-ups while the owner worked through the GitHub and Google consoles on a
+phone ("I don't see default branch in the above url", "show me where it is !",
+"it's done now. The default branch is main now", "give me a clear action on how
+to publish the app first", "when creating an API in google console for this
+project, I'm being asked what restictions should i enable for this API key. What
+should I do?", "that's done too. The app is deployed on streamlit. Can you access
+this: https://efdiff.streamlit.app/"), ending with "can you document the session
+and give me a short description of the app explaining the goal, purpose and the
+vision?"
+
+**Response summary:** An owner-facing session: the two remaining steps were both
+outside the sandbox, so the work was navigation, verification, and one risk
+finding. (1) Default branch: named it as the single open action item, then walked
+the owner to the control after two wrong guesses of mine (it is not on Settings,
+Branches, which now holds only protection rules). Confirmed the result via the
+API rather than taking it on trust: `default_branch` is `main`. (2) Publish:
+recommended Streamlit Community Cloud and verified every prerequisite in the repo
+first (app.py at root, requirements complete, the two real workbooks committed at
+3.8 MB total, keys read through `os.getenv` so Streamlit secrets reach them with
+no code change). (3) API key: steered the owner out of Google Cloud Console, where
+the console was demanding a service-account binding, to AI Studio, and gave the
+correct restrictions for the Console path anyway (restrict to Generative Language
+API, application restrictions None, because referrer and IP restrictions both
+break a server-side caller). (4) Live check: could not reach the app. The proxy
+denied CONNECT to `efdiff.streamlit.app:443`, reported plainly rather than
+guessed at, with a four-point self-check handed to the owner instead. (5) While
+reading the reset tree I found a live risk and flagged it without fixing it
+unasked: `app.py:66` sets `use_ai = True` whenever sign-in is not configured, so
+a public deploy holding `GEMINI_API_KEY` with no `[auth]` section spends the
+owner's key for every anonymous visitor. This is the documented D17 behavior, but
+its consequence on a public URL is new. Recorded as the next task. Docs: this
+entry, H16, the STATUS live/gaps sections, the REFERENCE backlog, H11 to H14
+rotated into the W28 archive, and README refreshed (live link, a Vision section,
+and a correction of the stale "no login, no cloud" line that D17 had invalidated).
+
+**Artifacts:** docs/STATUS.md, docs/PROMPT_LOG.md, docs/REFERENCE.md, README.md,
+docs/archive/STATUS_2026-W28.md, docs/archive/README.md.
