@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import html
 
-from .format import human_column, sig_figs
+from .format import direction, human_column, sig_figs, signed
 
 # Above this many rows a real <table> stops being pleasant to use and
 # Streamlit's virtualised grid is the better tool. app.py switches on this and
@@ -39,6 +39,7 @@ BADGE_KINDS = {
     "review": "yellow",     # held for a human, never guessed
     "error": "red",         # something genuinely went wrong
     "neutral": "blue",      # a plain label, for example a scope
+    "done": "green",        # a run that finished, not a judgement on the answer
 }
 
 
@@ -65,11 +66,17 @@ def write(*fragments):
 # Tables
 # ---------------------------------------------------------------------------
 
-def table(df, caption, columns=None, numeric_cols=(), figures=4, empty_text=None):
+def table(df, caption, columns=None, numeric_cols=(), direction_cols=(),
+          figures=4, empty_text=None):
     """A real, readable, printable table.
 
     caption is required, not decorative: it is what tells a screen-reader user
     what the table is before they enter it, and what labels the table in print.
+
+    direction_cols get a glyph, an explicit sign and a hidden word instead of a
+    bare number, so which way a value moved survives greyscale and a screen
+    reader. Everything in those cells is derived from the number itself, never
+    from user text, so this does not open a hole in the escaping rule.
 
     The scroll container carries `contain: paint` as well as `overflow-x: auto`.
     Without it a table wider than its container still contributes its width to
@@ -78,7 +85,8 @@ def table(df, caption, columns=None, numeric_cols=(), figures=4, empty_text=None
     wide with the rule absent, 0 with it present.
     """
     cols = [str(c) for c in (columns if columns is not None else df.columns)]
-    numeric = {str(c) for c in numeric_cols}
+    moving = {str(c) for c in direction_cols}
+    numeric = {str(c) for c in numeric_cols} | moving
 
     if len(df) == 0:
         return alert(empty_text or "Nothing to show here.", kind="none")
@@ -94,7 +102,14 @@ def table(df, caption, columns=None, numeric_cols=(), figures=4, empty_text=None
         cells = []
         for col in cols:
             value = row.get(col)
-            if col in numeric:
+            if col in moving:
+                way = direction(value)
+                cells.append(
+                    f'<td class="num">'
+                    f'{movement(value, way["glyph"], way["word"], figure=signed(value, figures))}'
+                    f"</td>"
+                )
+            elif col in numeric:
                 cells.append(f'<td class="num">{esc(sig_figs(value, figures))}</td>')
             else:
                 cells.append(f'<td class="item">{esc(value)}</td>')

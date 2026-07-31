@@ -306,24 +306,82 @@ def test_streamlit_internals_are_labelled_with_the_verified_version():
     )
 
 
-def test_app_boots_and_injects_the_stylesheet_exactly_once():
-    """The layer is worthless if it never reaches the page.
+@pytest.fixture(scope="module")
+def rendered_app():
+    """Run app.py headlessly, once, and hand back what it drew.
 
-    Runs app.py headlessly through Streamlit's own test harness: the real
-    script, the real pipeline, the real injection path. Guards two things at
-    once, that the app still boots after a design change, and that the
-    session_state guard in inject_styles() emits one style block rather than
-    one per rerun.
+    Streamlit's own test harness runs the real script through the real pipeline,
+    so this is the whole page as a visitor would receive it rather than a mock.
     """
     from streamlit.testing.v1 import AppTest
 
     app = AppTest.from_file(os.path.join(ROOT, "app.py"), default_timeout=300).run()
     assert not app.exception, f"app.py raised on boot: {app.exception}"
+    return app
 
-    styles = [str(block.value) for block in app.markdown if "<style>" in str(block.value)]
+
+def _page(app):
+    return "\n".join(str(block.value) for block in app.markdown)
+
+
+def test_app_injects_the_stylesheet_exactly_once(rendered_app):
+    """The layer is worthless if it never reaches the page.
+
+    Also guards the session_state flag in inject_styles(): Streamlit reruns the
+    whole script on every interaction, so a missing guard would stack a style
+    block per rerun.
+    """
+    styles = [
+        str(block.value) for block in rendered_app.markdown if "<style>" in str(block.value)
+    ]
     assert len(styles) == 1, f"expected one injected style block, found {len(styles)}"
     assert "--border-control" in styles[0], "tokens.css did not reach the page"
     assert "stCaptionContainer" in styles[0], "components.css did not reach the page"
+
+
+def test_the_page_reads_result_confidence_movers_explanations_export(rendered_app):
+    """The IA reorder, asserted.
+
+    Confidence sits second on purpose: the trust gate has to arrive before the
+    conclusion gets acted on, not two sections after it. Previously the coverage
+    figure was a metric tile beside the headline and the review list was near the
+    bottom of the page.
+    """
+    headings = re.findall(r"<h2>([^<]+)</h2>", _page(rendered_app))
+    assert headings == ["Result", "Confidence", "Movers", "Explanations", "Export"]
+
+
+def test_the_page_uses_real_tables_not_canvas_grids(rendered_app):
+    """Defect A-04: Streamlit paints its grids to <canvas>, so they cannot be
+    read by assistive tech, selected, searched or printed."""
+    page = _page(rendered_app)
+    assert page.count("<table>") >= 3
+    assert page.count("<caption>") == page.count("<table>"), "a table has no caption"
+    assert 'scope="col"' in page
+    assert not rendered_app.dataframe, (
+        "a canvas-rendered dataframe reached the page; below "
+        "SEMANTIC_TABLE_MAX_ROWS the semantic table is the default"
+    )
+
+
+def test_the_page_never_carries_direction_by_colour_alone(rendered_app):
+    """Every movement on the page also states which way it went, in words."""
+    page = _page(rendered_app)
+    assert page.count("visually-hidden") >= 2, "no spoken direction found on the page"
+    for word in ("fell", "rose", "did not change"):
+        if f", {word}</span>" in page:
+            break
+    else:
+        raise AssertionError("no direction word reached the page")
+
+
+def test_every_disclosure_on_the_page_is_named(rendered_app):
+    """Defect A-05: disclosures whose only label was a chevron."""
+    page = _page(rendered_app)
+    summaries = re.findall(r"<summary>(.*?)</summary>", page, re.S)
+    assert summaries, "no disclosures rendered"
+    unnamed = [s for s in summaries if len(s.strip()) < 3]
+    assert not unnamed, f"unnamed disclosures: {unnamed}"
 
 
 def test_every_token_used_by_components_is_defined():
