@@ -54,15 +54,15 @@ How to apply it:
   read as added/removed; would need DEFRA's own relabel notes.
 - Package-manager pin + lockfile for reproducible installs (deps are audited now,
   but still unpinned `>=` in requirements.txt).
-- **Open wallet on the live deploy (do this first).** The app is public at
-  <https://efdiff.streamlit.app/> with `GEMINI_API_KEY` set and no `[auth]`
-  section. `app.py:66` reads `use_ai = True if not signin_on else ...`, so with
-  sign-in unconfigured every anonymous visitor gets AI explanations on the
-  owner's key. That is D17's documented behavior and correct for a local run, but
-  on a public URL it removes the cost control D17 exists to provide. Fix: add the
-  `[auth]` + `[access]` secrets per `docs/DEPLOY_GUIDE.md`, or remove the key so
-  the public app serves the free offline explainer only. A billing budget alert on
-  the Google project is the backstop either way, not the fix.
+- **Turn on the sign-in gate (deferred by the owner, D18).** The live app runs
+  open: `GEMINI_API_KEY` is set with no `[auth]` section, and `app.py:66` reads
+  `use_ai = True if not signin_on else ...`, so anonymous visitors get AI
+  explanations on the owner's key. The Google Cloud budget cap is set, which is
+  the D17 backstop, and the owner chose to leave the gate off for now. Turn it on
+  when the link is shared publicly, when the budget alert fires, or when anyone
+  relies on the tool. It is a secrets edit, not a code change: the `[auth]` +
+  `[access]` blocks from `.streamlit/secrets.toml.example` per
+  `docs/DEPLOY_GUIDE.md`.
 - Sandbox network: live Gemini calls and `*.streamlit.app` are both blocked from
   the web sandbox (the proxy denies CONNECT), so anything deployment-specific has
   to be verified by the owner. Local tests and the repo remain fully verifiable
