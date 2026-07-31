@@ -147,7 +147,7 @@ def movement(value, glyph, word, figure=None):
     painted a falling footprint as an alarm.
     """
     shown = esc(figure if figure is not None else "")
-    mark = f'<span class="dir" aria-hidden="true">{esc(glyph)}</span>' if glyph else ""
+    mark = f'<span class="dir" aria-hidden="true">{esc(glyph)}</span> ' if glyph else ""
     return (
         f'<span class="move tnum">{mark}{shown}'
         f'<span class="visually-hidden">, {esc(word)}</span></span>'

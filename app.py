@@ -291,10 +291,11 @@ st.caption(
 # --- Action bar (A-09) ------------------------------------------------------
 # The one commit control, in the canvas, carrying run state. It stays reachable
 # at every width because it is not inside the sidebar that auto-collapses.
-action_left, action_right = st.columns([1, 3])
-with action_left:
-    run = st.button("Run analysis", type="primary", disabled=not ingest_ready, width="stretch")
-run_state = action_right.empty()
+# Deliberately NOT in columns. A fixed column ratio that looks tidy at 1440px
+# crushes the button into a quarter of a 375px screen, which is the same class of
+# mistake as hiding it in the sidebar. Stacked, it is legible at every width.
+run = st.button("Run analysis", type="primary", disabled=not ingest_ready)
+run_state = st.empty()
 
 
 @st.cache_data(show_spinner=False)
@@ -374,7 +375,8 @@ write(
     f'<div class="lab">Product footprint</div>'
     f'<div class="fig tnum">{sig_figs(s["total_old"])} to {sig_figs(s["total_new"])}</div>'
     f'<div class="sub">kg CO2e &nbsp; '
-    f'{movement(absolute, way["glyph"], way["word"], figure=signed_pct(pct) if pct is not None else "")}'
+    # Two decimals so the headline figure and the sentence underneath it agree.
+    f'{movement(absolute, way["glyph"], way["word"], figure=signed_pct(pct, 2) if pct is not None else "")}'
     f"</div>"
     f'<div class="base">{change_words} {coverage_words}</div>'
     "</div>"

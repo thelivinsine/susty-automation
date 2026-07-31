@@ -398,7 +398,8 @@ def _result_html(summary, labels, absolute, way, partial):
         f'<div class="fig tnum">{esc(sig_figs(summary["total_old"]))} to '
         f'{esc(sig_figs(summary["total_new"]))}</div>'
         f'<div class="sub">kg CO2e &nbsp; <span class="move tnum">{glyph}'
-        f'{esc(signed_pct(pct) if pct is not None else "")}'
+        # Two decimals so the headline figure and the sentence underneath agree.
+        f'{esc(signed_pct(pct, 2) if pct is not None else "")}'
         f'<span class="visually-hidden">, {esc(way["word"])}</span></span></div>'
         f'<div class="base">{esc(words)} {esc(coverage_words)}</div></div>'
         f'<p class="caption">Recomputed from the same bill of materials under '
