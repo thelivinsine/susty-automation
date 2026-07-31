@@ -257,7 +257,9 @@ def test_no_rule_encodes_direction_as_colour():
     to epistemic status (cited, not explained, needs review, error). Direction is
     a glyph, a sign and a word.
     """
-    css = _components_css()
+    # Comments are stripped first: the file explains at length why these rules
+    # are absent, and quoting them in prose is not the same as shipping them.
+    css = _strip_comments(_components_css())
     banned = [".d-up", ".d-down", ".move.up", ".move.down", ".delta-up", ".delta-down"]
     present = [name for name in banned if name in css]
     assert not present, (
