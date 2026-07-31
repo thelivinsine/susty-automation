@@ -33,8 +33,14 @@ from report import build_markdown_report  # noqa: E402
 from explain import active_backend        # noqa: E402
 from ingest import read_table, guess_mapping, build_inventory  # noqa: E402
 from auth import sign_in_available, current_user, approval  # noqa: E402
+from ui import inject_styles  # noqa: E402
 
 st.set_page_config(page_title="EF Version Explainer", layout="wide")
+
+# The owned design layer (src/ui/). Streamlit's own chrome is themed by
+# .streamlit/config.toml; this adds the tokens and the accessibility fixes the
+# front-end audit measured. Must come before anything is rendered.
+inject_styles()
 
 
 @st.cache_data(show_spinner=False)

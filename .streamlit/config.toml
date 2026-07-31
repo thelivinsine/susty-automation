@@ -1,0 +1,27 @@
+# Streamlit theme: the GOV.UK palette the owner chose (DECISIONS D19).
+#
+# Why this file exists at all: Streamlit paints its own chrome (the primary
+# button, the sidebar, the spinner) before any CSS we inject has loaded. Without
+# this, the primary action flashes Streamlit's default red, which the front-end
+# audit measured at 3.30:1 and which is the wrong hue anyway under our rule that
+# red is reserved for genuine errors.
+#
+# These values MUST stay in step with src/ui/tokens.css. The mapping:
+#   primaryColor            = --action-bg   (GOV.UK green)
+#   backgroundColor         = --ground
+#   secondaryBackgroundColor= --grey-1
+#   textColor               = --body-tx
+#
+# The theme is pinned light on purpose. Streamlit follows the reader's system
+# setting only when no custom theme is set, and our injected CSS cannot read
+# that setting, so a dark-mode visitor would get a half-dark page. tokens.css
+# still carries the full dark theme for the standalone print memo, which we
+# render end to end and which opts in with data-theme="auto".
+
+[theme]
+base = "light"
+primaryColor = "#00703c"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f3f2f1"
+textColor = "#0b0c0c"
+font = "sans serif"

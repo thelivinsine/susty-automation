@@ -1,0 +1,253 @@
+/* ============================================================================
+   tokens.css - the single source of truth for colour, space and measure.
+
+   Lifted out of docs/mockups/govuk_report_view.html, which the owner chose as
+   the visual identity (DECISIONS D19), then extended with the three fixes the
+   front-end audit found underneath the look (docs/PLAN_design_system.md):
+
+     1. a yellow "needs review" tint, because GOV.UK's four tints have no
+        colour for "held for review" and grey also reads as "inactive",
+     2. --border-control, because --border #b1b4b6 is 2.08:1 on white and
+        fails WCAG 1.4.11 as any interactive boundary,
+     3. paired action/panel colours, so text on a coloured surface is a
+        declared pair that the contrast test can check rather than a hardcoded
+        white that happens to work in one theme.
+
+   THE LOAD-BEARING RULE
+   Hue encodes epistemic status: cited (green), not explained (grey), needs
+   review (yellow), error (red). Direction of travel is carried by glyph, sign
+   and word, never by colour. A footprint that falls is not "good news" and a
+   footprint that rises is not an error.
+
+   HOW TO EDIT SAFELY
+   Every text pair and every interactive boundary carries an @contrast
+   annotation. tests/test_design_system.py parses them, computes the WCAG 2.1
+   ratio in both themes, and fails the build below 4.5:1 for text or 3:1 for a
+   UI boundary. Add a token pair, add its annotation. That test is the reason
+   the 3.69:1 captions and the 2.08:1 borders cannot come back.
+
+   THEMES
+   Light is the default and is what the Streamlit app uses, pinned to match
+   .streamlit/config.toml so our CSS and Streamlit's own chrome never disagree.
+   Dark is opt-in: a standalone document (the print-ready memo, the mockups)
+   sets data-theme="auto" to follow the reader's system setting, or
+   data-theme="dark" to force it. The app sets neither, so it stays light.
+
+   In the dark block --black means "the ink colour", not literally black. That
+   inversion is inherited from the mockup so the component CSS works unchanged
+   in both themes.
+   ========================================================================= */
+
+:root {
+  /* ---- Ground and ink ---- */
+  --black: #0b0c0c;
+  --white: #ffffff;
+  --ground: #ffffff;
+  --grey-1: #f3f2f1;              /* section wash */
+  --grey-2: #e7e6e5;              /* deeper wash, table stripes */
+  --heading: var(--black);
+  --body-tx: var(--black);
+  --secondary: #505a5f;           /* captions, meta, key labels */
+
+  /* @contrast text: --body-tx on --ground */
+  /* @contrast text: --body-tx on --grey-1 */
+  /* @contrast text: --body-tx on --grey-2 */
+  /* @contrast text: --heading on --ground */
+  /* @contrast text: --heading on --grey-1 */
+  /* @contrast text: --secondary on --ground */
+  /* @contrast text: --secondary on --grey-1 */
+  /* @contrast text: --secondary on --grey-2 */
+
+  /* ---- Rules and boundaries ----
+     --border is DECORATIVE ONLY (table rules, dividers). It is 2.08:1 on white
+     and must never bound a control. Every interactive edge uses
+     --border-control, which is the colour GOV.UK Frontend itself uses for
+     input borders, so the fix stays authentic to the idiom. */
+  --border: #b1b4b6;
+  --border-control: #0b0c0c;
+
+  /* @contrast ui: --border-control on --ground */
+  /* @contrast ui: --border-control on --grey-1 */
+  /* @contrast ui: --border-control on --grey-2 */
+
+  /* ---- Links ----
+     --blue is 5.17:1 on white and 4.62:1 on --grey-1, but only 4.15:1 on
+     --grey-2, which fails. Rather than allow it on one wash and not the other,
+     the rule is simply: links on any tinted surface use --blue-dark. */
+  --blue: #1d70b8;
+  --blue-dark: #003078;
+
+  /* @contrast text: --blue on --ground */
+  /* @contrast text: --blue-dark on --grey-1 */
+  /* @contrast text: --blue-dark on --grey-2 */
+
+  /* ---- Accents ---- */
+  --green: #00703c;
+  --red: #d4351c;                 /* genuine errors only, never a result */
+
+  /* ---- Primary action (A-02: Streamlit's default red is 3.30:1) ---- */
+  --action-bg: #00703c;
+  --action-tx: #ffffff;
+
+  /* @contrast text: --action-tx on --action-bg */
+  /* @contrast ui: --action-bg on --ground */
+
+  /* ---- Confirmation panel ----
+     Green here means "the run completed and this is the answer", not "good
+     news". Direction lives inside the panel as glyph and word. */
+  --panel-bg: #00703c;
+  --panel-tx: #ffffff;
+  --panel-quiet: #f3f2f1;         /* the neutral partial-coverage variant */
+  --panel-quiet-tx: #0b0c0c;
+
+  /* @contrast text: --panel-tx on --panel-bg */
+  /* @contrast text: --panel-quiet-tx on --panel-quiet */
+
+  /* ---- Focus: GOV.UK's yellow block with a black underline ----
+     The yellow alone is 1.27:1 on white, so the underline is what carries the
+     3:1 boundary, not decoration. --focus-edge is that underline. */
+  --focus: #ffdd00;
+  --focus-tx: #0b0c0c;
+  --focus-edge: #0b0c0c;
+
+  /* @contrast text: --focus-tx on --focus */
+  /* @contrast ui: --focus-edge on --ground */
+  /* @contrast ui: --focus-edge on --grey-1 */
+
+  /* ---- Status tints. Hue is spent here and nowhere else. ---- */
+  --tag-blue-bg: #d2e2f1;  --tag-blue-tx: #14477d;   /* neutral label, scope */
+  --tag-green-bg: #cce2d8; --tag-green-tx: #005a30;  /* cited: a verbatim DEFRA reason */
+  --tag-grey-bg: #eeefef;  --tag-grey-tx: #383f43;   /* not explained: the notes are silent */
+  --tag-yellow-bg: #fff7bf; --tag-yellow-tx: #594d00; /* needs review: held, never guessed */
+  --tag-red-bg: #f6d7d2;   --tag-red-tx: #942514;    /* error */
+
+  /* @contrast text: --tag-blue-tx on --tag-blue-bg */
+  /* @contrast text: --tag-green-tx on --tag-green-bg */
+  /* @contrast text: --tag-grey-tx on --tag-grey-bg */
+  /* @contrast text: --tag-yellow-tx on --tag-yellow-bg */
+  /* @contrast text: --tag-red-tx on --tag-red-bg */
+
+  /* ---- Type ---- */
+  --font: arial, "Helvetica Neue", "Nimbus Sans", "Liberation Sans", sans-serif;
+  --font-body: 18px;
+  --font-small: 16px;
+  --font-table: 15px;
+  --font-meta: 14px;
+
+  /* ---- Space: one 8px-family rhythm, no ad-hoc margins ---- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+  --space-10: 128px;
+
+  /* ---- Measure ---- */
+  --measure: 74ch;                /* prose cap. Tables may break it, nothing else may. */
+  --rail: 280px;
+  --pad-card: 28px;
+}
+
+/* Explicit light, for a document that pins the theme rather than inheriting it. */
+:root[data-theme="light"] {
+  --black: #0b0c0c;
+  --white: #ffffff;
+  --ground: #ffffff;
+  --grey-1: #f3f2f1;
+  --grey-2: #e7e6e5;
+  --heading: #0b0c0c;
+  --body-tx: #0b0c0c;
+  --secondary: #505a5f;
+  --border: #b1b4b6;
+  --border-control: #0b0c0c;
+  --blue: #1d70b8;
+  --blue-dark: #003078;
+  --green: #00703c;
+  --red: #d4351c;
+  --action-bg: #00703c;
+  --action-tx: #ffffff;
+  --panel-bg: #00703c;
+  --panel-tx: #ffffff;
+  --panel-quiet: #f3f2f1;
+  --panel-quiet-tx: #0b0c0c;
+  --focus: #ffdd00;
+  --focus-tx: #0b0c0c;
+  --focus-edge: #0b0c0c;
+  --tag-blue-bg: #d2e2f1;  --tag-blue-tx: #14477d;
+  --tag-green-bg: #cce2d8; --tag-green-tx: #005a30;
+  --tag-grey-bg: #eeefef;  --tag-grey-tx: #383f43;
+  --tag-yellow-bg: #fff7bf; --tag-yellow-tx: #594d00;
+  --tag-red-bg: #f6d7d2;   --tag-red-tx: #942514;
+}
+
+:root[data-theme="dark"] {
+  --black: #ffffff;
+  --white: #1a1a1a;
+  --ground: #0b0c0c;
+  --grey-1: #1c1d1f;
+  --grey-2: #2a2b2d;
+  --heading: #ffffff;
+  --body-tx: #ffffff;
+  --secondary: #b6bbbe;
+  --border: #5c5f61;
+  --border-control: #b6bbbe;
+  --blue: #5694ca;
+  --blue-dark: #99c1ea;
+  --green: #57a97a;
+  --red: #ea6d5b;
+  --action-bg: #57a97a;
+  --action-tx: #0b0c0c;
+  --panel-bg: #005a30;
+  --panel-tx: #ffffff;
+  --panel-quiet: #1c1d1f;
+  --panel-quiet-tx: #ffffff;
+  --focus: #ffdd00;
+  --focus-tx: #0b0c0c;
+  --focus-edge: #ffffff;
+  --tag-blue-bg: #17324d;  --tag-blue-tx: #9fc3e8;
+  --tag-green-bg: #14331f; --tag-green-tx: #6fce9b;
+  --tag-grey-bg: #26282a;  --tag-grey-tx: #c5c9cb;
+  --tag-yellow-bg: #332d00; --tag-yellow-tx: #f3d97a;
+  --tag-red-bg: #3a1a14;   --tag-red-tx: #f0a99b;
+}
+
+/* Follow the reader's system setting, but only where a document opts in.
+   The Streamlit app deliberately does not, because Streamlit's own chrome is
+   pinned light in .streamlit/config.toml and a half-dark page is worse than a
+   light one. Standalone documents we render end to end set data-theme="auto". */
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="auto"] {
+    --black: #ffffff;
+    --white: #1a1a1a;
+    --ground: #0b0c0c;
+    --grey-1: #1c1d1f;
+    --grey-2: #2a2b2d;
+    --heading: #ffffff;
+    --body-tx: #ffffff;
+    --secondary: #b6bbbe;
+    --border: #5c5f61;
+    --border-control: #b6bbbe;
+    --blue: #5694ca;
+    --blue-dark: #99c1ea;
+    --green: #57a97a;
+    --red: #ea6d5b;
+    --action-bg: #57a97a;
+    --action-tx: #0b0c0c;
+    --panel-bg: #005a30;
+    --panel-tx: #ffffff;
+    --panel-quiet: #1c1d1f;
+    --panel-quiet-tx: #ffffff;
+    --focus: #ffdd00;
+    --focus-tx: #0b0c0c;
+    --focus-edge: #ffffff;
+    --tag-blue-bg: #17324d;  --tag-blue-tx: #9fc3e8;
+    --tag-green-bg: #14331f; --tag-green-tx: #6fce9b;
+    --tag-grey-bg: #26282a;  --tag-grey-tx: #c5c9cb;
+    --tag-yellow-bg: #332d00; --tag-yellow-tx: #f3d97a;
+    --tag-red-bg: #3a1a14;   --tag-red-tx: #f0a99b;
+  }
+}
