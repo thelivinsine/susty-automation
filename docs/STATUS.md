@@ -23,6 +23,12 @@ default branch is now `main`, so Streamlit redeploys from `main` on every merge.
 The sandbox cannot reach `*.streamlit.app` (proxy denies CONNECT), so live
 verification is the owner's.
 
+**Access on the live deploy (D18):** it runs OPEN. `GEMINI_API_KEY` is set with no
+`[auth]` section, so anonymous visitors get AI explanations on the owner's key.
+The Google Cloud budget cap is set (the D17 backstop) and the owner deliberately
+deferred the sign-in gate. Turn it on when the link goes public, when the budget
+alert fires, or when anyone relies on the tool. Secrets edit, no code change.
+
 Gates: `pytest` green (44 tests, including the grounding trap, a real-workbook
 test, the microcopy gate, the relabel suite (detection + family grouping), the
 material-relabel explanation path, the retrieval-quality gold set, loader/diff
@@ -72,25 +78,34 @@ paired renames group into 11 readable families.
   parsing path (DECISIONS D12).
 - Dependency-audit gate (`scripts/audit_deps.py`): CI-only `pip-audit` over the
   requirements' transitive closure, fails on any known CVE (DECISIONS D13).
-- Hosting + access layer (DECISIONS D15): open tool for everyone on the free
+- Hosting + access layer (DECISIONS D17, D18): open tool for everyone on the free
   offline explainer; paid AI (Claude/Gemini) behind Streamlit's built-in Google
   sign-in plus an approved-list in secrets. One `use_ai` flag threads the tier
   from `app.py` through `pipeline.run_pipeline` to `explain.explain_change`
-  (`force_offline`), so the free tier can never spend the key. Auth helpers in
-  `src/auth.py` degrade to "open, offline for all" when no `[auth]` secret is set,
-  so local run / demo / tests are unchanged. Owner guide `docs/DEPLOY_GUIDE.md`,
+  (`force_offline`), so the free tier can never spend the key. With no `[auth]`
+  secret configured there is no gate at all: the app runs open, and the API key,
+  if one is set, drives explanations for everyone (offline for everyone if not).
+  Local run / demo / tests are therefore unchanged. Owner guide `docs/DEPLOY_GUIDE.md`,
   secrets template `.streamlit/secrets.toml.example`.
 - Docs: WORKING_PREFERENCES, DECISIONS, PROMPT_LOG, this file.
 
 ## Known gaps / next candidates
 Backlog now lives in `REFERENCE.md` (kept out of this snapshot). Short version:
-locking down the API key on the live deploy, header-row tolerance in ingest,
-VISION move #3 (the cited memo), GOV.UK theming, semantic relabels, and lockfile
-pinning.
+turning on the sign-in gate when the live link goes public (deferred, D18),
+header-row tolerance in ingest, VISION move #3 (the cited memo), GOV.UK theming,
+semantic relabels, and lockfile pinning.
 
 ## Resume here
 Most recent handoffs (older ones rotate into `docs/archive/`):
 
+- H17 (2026-07-31): Owner set the Google Cloud budget cap and chose to defer the
+  sign-in gate on the live app, so the deploy runs OPEN with the cap as the only
+  control. Recorded as D18 rather than left as an oversight, with the triggers
+  that should flip it (link shared publicly, budget alert fires, anyone relies on
+  the tool) and the note that turning it on is a secrets edit, not a code change.
+  D18 also corrects the D17 write-up: `src/auth.py` degrades to "open, offline for
+  all" only when no API key is set, and to "open, AI for all" when one is.
+  Docs-only, no code touched.
 - H16 (2026-07-31): Owner-facing session, no pipeline code changed. Walked the
   owner through the two manual steps the sandbox cannot do: the GitHub default
   branch is now `main` (verified via the API: `default_branch: "main"`), and the
@@ -104,19 +119,10 @@ Most recent handoffs (older ones rotate into `docs/archive/`):
   the `[auth]` + `[access]` secrets from `docs/DEPLOY_GUIDE.md` or removing the
   key. README refreshed with the live link, a Vision section, and a correction
   (it still claimed "no login, no cloud" after D17 shipped both).
-- H15 (2026-07-09): Merged the hosting/access layer to `main` (PR #15, `31da74b`).
-  It collided with the real-data ingest work (PR #14) that landed first, so the
-  branch was rebased onto the new `main` and the overlap resolved by keeping BOTH
-  features: `app.py` runs ingest (upload + confirm-your-columns) AND the sign-in
-  gate in one path; `pipeline.py` keeps impact-ranking AND `force_offline` on both
-  explain calls; docs renumbered (hosting decision is D17, its handoff H14). 44
-  tests green after the merge, lint clean, app boots. Dev branch realigned to the
-  merged `main`. Next open items unchanged: header-row tolerance in ingest, then
-  VISION move #3 (a dated, cited, printable memo as the first-class output).
 
-Next likely task: close the open-wallet risk on the live deploy (configure
-`[auth]` + `[access]`, or drop the key so the public app runs offline-only).
-After that: header-row tolerance in ingest, then VISION move #3 (a dated, cited,
-printable memo). Lower-priority: GOV.UK theming from the saved mockup
+Next likely task: header-row tolerance in ingest, then VISION move #3 (a dated,
+cited, printable memo as the first-class output). Deferred by owner decision, not
+forgotten: the sign-in gate on the live deploy (D18), to be turned on when the
+link goes public. Lower-priority: GOV.UK theming from the saved mockup
 (`docs/mockups/govuk_report_view.html`), a finer within-family relabel pairing to
 make per-variant deltas trustworthy, lockfile pinning, or semantic relabels.

@@ -324,3 +324,42 @@ secrets template: `.streamlit/secrets.toml.example`.
 Not done here: no payments/metering, no per-user quotas, no email/password path.
 If the owner later needs true self-signup, the documented next step is a hosted
 auth service (Supabase/Auth0), not a hand-built one.
+
+## D18. Live deploy runs open with a budget cap; the sign-in gate is deferred
+
+D17 built a two-tier access model (open offline tier for everyone, paid AI behind
+Google sign-in plus an approved list) with a spending cap as the independent
+backstop. When the app went live at <https://efdiff.streamlit.app/> on 2026-07-31
+the owner set `GEMINI_API_KEY` in Streamlit secrets but no `[auth]` section, which
+means only the backstop is in force: `app.py` computes
+`use_ai = True if not signin_on else appr["allowed"]`, so with sign-in
+unconfigured every anonymous visitor gets AI explanations on the owner's key.
+
+Flagged to the owner as an open wallet. The owner's decision: **set the Google
+Cloud budget cap now (done), turn the gate on later.** Recorded here so the state
+is deliberate rather than an oversight, and so nobody "fixes" it by switching the
+default without asking.
+
+Why this is a defensible interim, not a bug:
+- The backstop D17 always specified is in place. The failure mode is a capped bill
+  and explanations degrading to the offline tier, not an unbounded charge.
+- `gemini-2.5-flash` has a free daily allowance, and demo traffic on a link shared
+  with a handful of people is nowhere near it.
+- The key itself is not exposed. It stays server-side in Streamlit secrets, and
+  the Google Cloud key is restricted to the Generative Language API, so a leak
+  could not reach anything else in the project.
+
+What makes it stop being defensible, and the trigger to turn the gate on:
+- The link gets shared publicly (posted, listed, or sent to a group), or
+- the budget alert actually fires, or
+- the tool moves from demo to anything a client relies on.
+
+Turning it on is a secrets edit, not a code change: paste the `[auth]` and
+`[access]` blocks from `.streamlit/secrets.toml.example` per
+`docs/DEPLOY_GUIDE.md`. No redeploy needed, the app reboots itself.
+
+Correction to the D17 write-up while we are here: it described `src/auth.py` as
+degrading to "open, offline for all" when no `[auth]` secret is set. That is only
+true when no API key is set. With a key present and sign-in unconfigured, the
+degrade is "open, AI for all", which is exactly the situation this decision
+covers.

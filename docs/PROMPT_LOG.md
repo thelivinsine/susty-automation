@@ -657,3 +657,32 @@ and a correction of the stale "no login, no cloud" line that D17 had invalidated
 
 **Artifacts:** docs/STATUS.md, docs/PROMPT_LOG.md, docs/REFERENCE.md, README.md,
 docs/archive/STATUS_2026-W28.md, docs/archive/README.md.
+
+---
+
+### 2026-07-31 · P31
+Branch: `claude/immediate-action-items-7eyk9z` (level with `main` at `9b329b4`).
+
+**Prompt (verbatim):** "i set the cap on google cloud budget. i'll turn on the
+gate thing later. document it and merge everythinig to main"
+
+**Response summary:** Recorded the owner's call on the open-wallet risk raised in
+P30 as **D18**: the live app runs open with the Google Cloud budget cap as the
+only control, and the D17 sign-in gate is deliberately deferred. Written as a
+decision, not a TODO, so a later session does not "fix" it by flipping the default
+without asking, and paired with the explicit triggers that should flip it (the
+link is shared publicly, the budget alert fires, or anyone starts relying on the
+tool) plus the fact that turning it on is a secrets edit rather than a code
+change. Argued why the interim is defensible (the backstop D17 always specified is
+in place, the failure mode is a capped bill and a degrade to the offline tier
+rather than an unbounded charge, the free daily allowance covers demo traffic, and
+the key stays server-side and restricted to the Generative Language API). D18 also
+corrects the D17 write-up, which claimed `src/auth.py` degrades to "open, offline
+for all" with no `[auth]` secret: that holds only when no API key is set, and the
+same STATUS bullet carried the same wrong claim, now fixed. Also corrected a stale
+cross-reference (the hosting layer bullet cited D15, the goal-reframe decision,
+instead of D17). Rotated H15 into the W28 archive so STATUS is back to the
+two-most-recent rule.
+
+**Artifacts:** docs/DECISIONS.md (D18), docs/STATUS.md (H17), docs/REFERENCE.md,
+docs/PROMPT_LOG.md, docs/archive/STATUS_2026-W28.md.
