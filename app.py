@@ -45,8 +45,14 @@ except Exception:
 
 from paths import resolve_paths          # noqa: E402
 from pipeline import run_pipeline         # noqa: E402
-from report import build_markdown_report  # noqa: E402
 from explain import active_backend, NO_REASON  # noqa: E402
+from export import (                       # noqa: E402
+    completeness_checklist,
+    export_pack,
+    run_identity,
+    to_zip,
+    unresolved,
+)
 from ingest import read_table, guess_mapping, build_inventory  # noqa: E402
 from auth import sign_in_available, current_user, approval  # noqa: E402
 from matching import DEFAULT_THRESHOLD    # noqa: E402
@@ -572,14 +578,68 @@ for e in results["explanations"]:
 
 # --- 5. Export --------------------------------------------------------------
 write(section("Export", caption=(
-    "The report as a file you can keep, attach to a client folder, or diff "
-    "against next year's run."
+    "Four files from one run, all stamped with the same run id: a workbook, the "
+    "raw JSON, the Markdown report, and a print-ready memo you can print to PDF "
+    "from your browser. Anything still unresolved is written into the front "
+    "matter of every one of them."
 )))
 
-report_md = build_markdown_report(results)
+st.markdown("### Who this is for")
+who_1, who_2, who_3 = st.columns(3)
+client = who_1.text_input("Client", placeholder="Acme Ltd")
+product = who_2.text_input("Product", placeholder="Widget")
+operator = who_3.text_input("Prepared by", placeholder="Your name")
+
+identity = run_identity(
+    results, client=client or None, product=product or None, operator=operator or None
+)
+checklist = completeness_checklist(results, set_aside=aside)
+open_items = unresolved(checklist)
+
+st.markdown("### Before you send it")
+rows = []
+for item in checklist:
+    mark = badge("Resolved", "done") if item["resolved"] else badge("Open", "review")
+    rows.append((item["label"], f"{mark} {esc(item['detail'])}"))
+write(definitions(rows))
+
+if open_items:
+    write(alert(
+        f"{len(open_items)} item(s) are still open. You can send this now, and "
+        "every file will say on its first page exactly what was unresolved.",
+        title="Nothing ships silently",
+    ))
+else:
+    write(alert("Nothing was left unresolved on this run.", kind="none"))
+
+pack = export_pack(results, identity, checklist)
+names = {suffix: next(n for n in pack if n.endswith(suffix))
+         for suffix in (".xlsx", ".json", ".md", ".html")}
+
+st.caption(f"Run {identity['run_id']}, generated {identity['generated_utc']}.")
 st.download_button(
-    "Download report (Markdown)",
-    data=report_md,
-    file_name="ef_version_report.md",
-    mime="text/markdown",
+    f"Download the pack ({identity['run_id']}.zip)",
+    data=to_zip(pack),
+    file_name=f"{identity['run_id'].lower().replace('-', '_')}.zip",
+    mime="application/zip",
+    type="primary",
+)
+
+one, two, three, four = st.columns(4)
+one.download_button(
+    "Workbook (.xlsx)", data=pack[names[".xlsx"]], file_name=names[".xlsx"],
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    width="stretch",
+)
+two.download_button(
+    "Memo to print (.html)", data=pack[names[".html"]], file_name=names[".html"],
+    mime="text/html", width="stretch",
+)
+three.download_button(
+    "Report (.md)", data=pack[names[".md"]], file_name=names[".md"],
+    mime="text/markdown", width="stretch",
+)
+four.download_button(
+    "Data (.json)", data=pack[names[".json"]], file_name=names[".json"],
+    mime="application/json", width="stretch",
 )
