@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EF Version Explainer result canvas and design system (Ledger)</title>
+<meta name="description" content="Mockup B: the information architecture proposed by the July 2026 front-end audit (Result, Confidence, Movers, Explanations, Review, Export), plus a reference sheet of every token, badge, alert role and component state in the Audit Ledger system.">
+<style>
+/* ============================================================
+   EF VERSION EXPLAINER - RESULT CANVAS + DESIGN SYSTEM SHEET
+   ------------------------------------------------------------
+   Mockup B of two. Where mockup A (ledger_report_view.html)
+   re-skins the CURRENT report, this file shows the PROPOSED
+   STRUCTURE from the audit, and doubles as the reference sheet
+   for every component state.
+
+   Proposed order: Result, Confidence, Movers, Explanations,
+   Review, Export. The trust gate arrives BEFORE the conclusion
+   rather than two sections after it.
+
+   THE RULE: hue encodes epistemic status. Direction is carried
+   by glyph, sign and word. Every state below also carries a
+   text label, so a greyscale print still separates them.
+
+   Self-contained. No external requests.
+   ============================================================ */
+
+:root{
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:24px;
+  --s-6:32px; --s-7:48px; --s-8:64px; --s-9:96px;
+  --pad-card:28px; --measure:74ch; --radius:3px; --radius-lg:6px;
+  --rail:200px; --drawer:340px;
+
+  --font-display:"Newsreader", Georgia, "Times New Roman", serif;
+  --font-ui:"Public Sans", system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --t-micro:0.6875rem; --t-small:0.8125rem; --t-body:1rem;
+  --t-h3:1.4375rem; --t-h2:2rem; --t-verdict:4rem;
+  --ease:cubic-bezier(.2,.7,.3,1); --dur:220ms;
+
+  --paper:#FBFAF7; --surface:#FFFFFF; --surface-2:#F4F2ED;
+  --ink:#14181C; --ink-2:#3D444C; --ink-3:#5C646E;
+  --rule:#E2DED6; --border:#8F8A80;
+  --brand:#0B5750; --brand-deep:#073F3A; --brand-wash:#E6F0EE;
+  --signal:#8A5A05; --signal-wash:#FBF0DA; --neutral-wash:#EEEBE4;
+  --info:#1F4E79; --info-wash:#E4EDF5;
+  --shadow-1:0 1px 2px rgba(20,24,28,.05);
+  --shadow-2:0 2px 4px rgba(20,24,28,.05),0 8px 24px rgba(20,24,28,.06);
+  color-scheme:light;
+}
+:root[data-theme="dark"]{
+  --paper:#0E1215; --surface:#161B20; --surface-2:#1D242A;
+  --ink:#F2F0EB; --ink-2:#C6CBD1; --ink-3:#8E979F;
+  --rule:#262D34; --border:#646B75;
+  --brand:#4FBFA8; --brand-deep:#8FD9C9; --brand-wash:#12302C;
+  --signal:#E0A93E; --signal-wash:#332711; --neutral-wash:#1C2228;
+  --info:#8FC0E8; --info-wash:#14263A;
+  --shadow-1:0 1px 2px rgba(0,0,0,.5);
+  --shadow-2:0 2px 4px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.5);
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0E1215; --surface:#161B20; --surface-2:#1D242A;
+    --ink:#F2F0EB; --ink-2:#C6CBD1; --ink-3:#8E979F;
+    --rule:#262D34; --border:#646B75;
+    --brand:#4FBFA8; --brand-deep:#8FD9C9; --brand-wash:#12302C;
+    --signal:#E0A93E; --signal-wash:#332711; --neutral-wash:#1C2228;
+    --info:#8FC0E8; --info-wash:#14263A;
+    --shadow-1:0 1px 2px rgba(0,0,0,.5);
+    color-scheme:dark;
+  }
+}
+
+*,*::before,*::after{box-sizing:border-box}
+h1,h2,h3,h4{margin:0;font-stretch:normal}
+body,p,ul,ol,dl,dd{margin:0}
+body{background:var(--paper);color:var(--ink-2);font-family:var(--font-ui);
+  font-size:var(--t-body);line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:var(--brand);text-underline-offset:.18em}
+a:hover{color:var(--brand-deep)}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:2px}
+strong,b{color:var(--ink);font-weight:600}
+code{font-family:var(--font-mono);font-size:.85em}
+.tnum{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;
+  clip-path:inset(50%);white-space:nowrap}
+.muted{color:var(--ink-3)}
+.small{font-size:var(--t-small);line-height:1.6}
+
+h1{font-family:var(--font-display);font-size:clamp(1.75rem,4vw,2.5rem);line-height:1.12;
+  color:var(--ink);font-weight:600;letter-spacing:-.018em}
+h2{font-family:var(--font-display);font-size:var(--t-h2);line-height:1.14;
+  color:var(--ink);font-weight:600;letter-spacing:-.012em}
+h3{font-family:var(--font-display);font-size:var(--t-h3);line-height:1.2;
+  color:var(--ink);font-weight:600}
+h4{font-family:var(--font-ui);font-size:1.0625rem;font-weight:600;color:var(--ink);line-height:1.35}
+.eyebrow{font-family:var(--font-mono);font-size:var(--t-micro);font-weight:500;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--brand);
+  display:flex;align-items:center;gap:var(--s-3);margin-bottom:var(--s-3)}
+.eyebrow::after{content:"";flex:1;height:1px;background:var(--rule)}
+
+/* ---------- SHELL: action bar, rail, canvas ---------- */
+.actionbar{position:sticky;top:0;z-index:40;background:var(--surface);
+  border-bottom:1px solid var(--border);box-shadow:var(--shadow-1)}
+.actionbar .inner{max-width:1180px;margin:0 auto;padding:var(--s-3) var(--s-5);
+  display:flex;align-items:center;gap:var(--s-3) var(--s-4);flex-wrap:wrap}
+.actionbar .wordmark{font-family:var(--font-display);font-weight:600;color:var(--ink);font-size:1.0625rem}
+.actionbar .runid{font-family:var(--font-mono);font-size:var(--t-micro);letter-spacing:.06em;
+  color:var(--ink-3);text-transform:uppercase}
+.actionbar .spacer{flex:1}
+.state{display:inline-flex;align-items:center;gap:.45em;font-family:var(--font-mono);
+  font-size:var(--t-micro);letter-spacing:.1em;text-transform:uppercase;
+  padding:.35em .7em;border-radius:999px;background:var(--brand-wash);color:var(--brand-deep)}
+.state .dot{width:8px;height:8px;border-radius:50%;background:var(--brand)}
+:root[data-theme="dark"] .state{color:var(--brand)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .state{color:var(--brand)}}
+
+.shell{max-width:1180px;margin:0 auto;padding:var(--s-6) var(--s-5) var(--s-9);
+  display:grid;grid-template-columns:var(--rail) minmax(0,1fr);gap:var(--s-7);align-items:start}
+/* Grid and flex children default to min-width:auto and refuse to shrink below
+   their content. That is the classic phantom-horizontal-scroll source, and it is
+   what made the section rail force the page to 700px at mobile widths. */
+.shell>*,.with-drawer>*,.actionbar .inner>*{min-width:0}
+@media (max-width:900px){
+  .shell{grid-template-columns:1fr;gap:var(--s-5)}
+  .rail{position:static;display:flex;gap:var(--s-2);overflow-x:auto;padding-bottom:var(--s-2);
+    border-left:0;border-bottom:1px solid var(--rule)}
+  .rail a{white-space:nowrap;border-left:0;border-bottom:2px solid transparent;padding:var(--s-2) var(--s-3)}
+  .rail a[aria-current="true"]{border-left:0;border-bottom-color:var(--brand)}
+}
+.rail{position:sticky;top:80px;border-left:1px solid var(--rule);display:flex;flex-direction:column}
+.rail a{display:block;padding:var(--s-2) var(--s-4);text-decoration:none;color:var(--ink-3);
+  font-size:var(--t-small);border-left:2px solid transparent;margin-left:-1px}
+.rail a:hover{color:var(--ink)}
+.rail a[aria-current="true"]{color:var(--ink);font-weight:600;border-left-color:var(--brand)}
+.rail .count{font-family:var(--font-mono);font-size:var(--t-micro);color:var(--ink-3);margin-left:.4em}
+
+.section{margin-top:var(--s-8);scroll-margin-top:80px}
+.section:first-child{margin-top:0}
+.grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s-4)}
+.grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s-4)}
+@media (max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:var(--radius-lg);
+  padding:var(--pad-card);box-shadow:var(--shadow-1)}
+
+/* ---------- BUTTONS ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5em;
+  min-height:44px;padding:0 var(--s-4);border-radius:var(--radius);
+  font-family:var(--font-ui);font-size:var(--t-body);font-weight:600;
+  text-decoration:none;cursor:pointer;border:1px solid transparent}
+.btn-primary{background:var(--brand);color:#fff}
+.btn-primary:hover{background:var(--brand-deep);color:#fff}
+.btn-secondary{background:var(--surface);color:var(--ink);border-color:var(--border)}
+.btn-secondary:hover{background:var(--surface-2);color:var(--ink)}
+.btn[aria-disabled="true"]{opacity:.55;cursor:not-allowed}
+:root[data-theme="dark"] .btn-primary,
+:root[data-theme="dark"] .btn-primary:hover{color:#0E1215}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) .btn-primary,
+  :root:not([data-theme="light"]) .btn-primary:hover{color:#0E1215}
+}
+
+/* ---------- BADGES: hue = epistemic status ---------- */
+.b{display:inline-flex;align-items:center;gap:.4em;font-family:var(--font-mono);
+  font-size:var(--t-micro);font-weight:500;letter-spacing:.06em;text-transform:uppercase;
+  padding:.3em .6em;border-radius:var(--radius);white-space:nowrap;border:1px solid transparent}
+.b-cited{background:var(--brand-wash);color:var(--brand-deep)}
+.b-unexplained{background:var(--neutral-wash);color:var(--ink-2)}
+.b-review{background:var(--signal-wash);color:var(--signal);border-color:var(--signal)}
+.b-scope{background:var(--surface-2);color:var(--ink-3)}
+:root[data-theme="dark"] .b-cited{color:var(--brand)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .b-cited{color:var(--brand)}}
+
+/* ---------- ALERT ROLES ---------- */
+.alert{display:flex;gap:var(--s-3);align-items:flex-start;padding:var(--s-4);
+  margin-top:var(--s-3);border-left:4px solid var(--border);background:var(--surface);
+  border-radius:0 var(--radius-lg) var(--radius-lg) 0}
+.alert .role{display:block;font-family:var(--font-mono);font-size:var(--t-micro);
+  letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-bottom:var(--s-1)}
+.alert .body{font-size:var(--t-small);color:var(--ink-2)}
+.alert .icon{flex:0 0 auto;width:28px;height:28px;border-radius:50%;text-align:center;
+  line-height:28px;font-weight:700;font-size:1rem;background:var(--ink);color:var(--paper)}
+.alert-info{border-left-color:var(--info);background:var(--info-wash)}
+.alert-assessment{border-left-color:var(--brand);background:var(--brand-wash)}
+.alert-attention{border-left-color:var(--signal);background:var(--signal-wash)}
+.alert-attention .icon{background:var(--signal);color:var(--paper)}
+.alert-blocked{border-left-color:var(--signal);background:var(--surface);border:1px solid var(--signal);border-left-width:4px}
+.alert-blocked .icon{background:var(--signal);color:var(--paper)}
+
+/* ---------- VERDICT ---------- */
+.verdict{background:var(--surface);border:1px solid var(--rule);border-left:4px solid var(--brand);
+  border-radius:0 var(--radius-lg) var(--radius-lg) 0;padding:var(--pad-card);box-shadow:var(--shadow-1)}
+.verdict .lab{font-family:var(--font-mono);font-size:var(--t-micro);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--brand-deep);display:block}
+:root[data-theme="dark"] .verdict .lab{color:var(--brand)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .verdict .lab{color:var(--brand)}}
+.verdict .fig{font-family:var(--font-mono);font-variant-numeric:tabular-nums;
+  font-size:clamp(2.25rem,7vw,var(--t-verdict));line-height:1;font-weight:500;
+  color:var(--ink);letter-spacing:-.03em;margin-top:var(--s-3)}
+.verdict .fig .from{color:var(--ink-3);font-size:.5em}
+.verdict .fig .unit{font-family:var(--font-ui);font-size:.28em;font-weight:400;color:var(--ink-3)}
+.verdict .change{font-family:var(--font-display);font-size:1.375rem;line-height:1.35;
+  color:var(--ink);margin-top:var(--s-3);font-weight:600}
+.dir{color:var(--ink);font-weight:600}
+
+/* ---------- COVERAGE CONTROL ---------- */
+.coverage{display:block;width:100%;text-align:left;background:var(--surface);
+  border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--s-4);
+  cursor:pointer;font:inherit;color:inherit}
+.coverage:hover{background:var(--surface-2)}
+.coverage .v{font-family:var(--font-mono);font-variant-numeric:tabular-nums;
+  font-size:2rem;line-height:1;font-weight:500;color:var(--ink)}
+.coverage .k{display:block;font-size:var(--t-small);color:var(--ink-3);margin-top:var(--s-2)}
+.coverage .more{display:inline-flex;align-items:center;gap:.3em;margin-top:var(--s-2);
+  font-size:var(--t-small);color:var(--brand);font-weight:600}
+.meter{height:6px;background:var(--neutral-wash);border-radius:999px;overflow:hidden;margin-top:var(--s-3)}
+.meter i{display:block;height:100%;background:var(--brand)}
+
+/* ---------- TABLE ---------- */
+/* contain:paint is load-bearing. Without it a table wider than this box still
+   contributes its width to the initial containing block, so the PAGE gains a
+   phantom horizontal scroll into blank space even though the table scrolls
+   correctly inside. Verified at 375px. */
+.table-scroll{overflow-x:auto;contain:paint;margin-top:var(--s-4);border:1px solid var(--rule);
+  border-radius:var(--radius-lg);background:var(--surface)}
+.table-scroll:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:var(--t-small)}
+caption{text-align:left;padding:var(--s-4) var(--s-4) 0;color:var(--ink-3);
+  font-size:var(--t-small);caption-side:top}
+th,td{text-align:left;padding:var(--s-3) var(--s-4);border-bottom:1px solid var(--rule);vertical-align:top}
+thead th{background:var(--surface-2);color:var(--ink);font-weight:600;font-size:var(--t-micro);
+  letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;border-bottom:1px solid var(--border)}
+tbody th{font-weight:400;color:var(--ink-2)}
+tbody tr:last-child td,tbody tr:last-child th{border-bottom:0}
+tbody tr.is-selected{background:var(--brand-wash)}
+td.num,th.num{text-align:right;font-family:var(--font-mono);
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+.arrow-sm{color:var(--ink-3)}
+
+/* ---------- EVIDENCE DRAWER ---------- */
+.with-drawer{display:grid;grid-template-columns:minmax(0,1fr) var(--drawer);gap:var(--s-4);align-items:start}
+@media (max-width:1100px){.with-drawer{grid-template-columns:1fr}}
+.drawer{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:var(--s-4);box-shadow:var(--shadow-2);position:sticky;top:80px}
+.drawer .hd{font-family:var(--font-display);font-weight:600;color:var(--ink);
+  font-size:1.0625rem;line-height:1.3}
+.drawer dl{margin-top:var(--s-3)}
+.drawer dt{font-family:var(--font-mono);font-size:var(--t-micro);letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink-3);margin-top:var(--s-3)}
+.drawer dd{margin-left:0;font-size:var(--t-small);color:var(--ink-2)}
+.provenance{font-family:var(--font-mono);font-size:var(--t-micro);line-height:1.7;
+  color:var(--ink-2);background:var(--surface-2);border-left:2px solid var(--brand);
+  padding:var(--s-3);border-radius:0 var(--radius) var(--radius) 0;margin-top:var(--s-3);
+  white-space:pre-wrap;overflow-x:auto}
+
+/* ---------- DISCLOSURE ---------- */
+details{border:1px solid var(--rule);border-radius:var(--radius-lg);background:var(--surface);
+  margin-top:var(--s-3);overflow:hidden}
+summary{padding:var(--s-3) var(--s-4);cursor:pointer;font-weight:600;color:var(--ink);
+  font-size:var(--t-small);display:flex;gap:var(--s-2);align-items:center;flex-wrap:wrap}
+summary:hover{background:var(--surface-2)}
+details > .content{padding:0 var(--s-4) var(--s-4);font-size:var(--t-small);color:var(--ink-2)}
+
+/* ---------- CHECKLIST ---------- */
+.checklist{list-style:none;padding:0;margin-top:var(--s-3);border-top:1px solid var(--rule)}
+.checklist li{display:flex;gap:var(--s-3);align-items:flex-start;
+  padding:var(--s-3) 0;border-bottom:1px solid var(--rule);font-size:var(--t-small)}
+.checklist .txt{flex:1}
+.checklist .note{display:block;color:var(--ink-3);margin-top:2px}
+
+/* ---------- SWATCHES ---------- */
+.sw-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));
+  gap:var(--s-3);margin-top:var(--s-3)}
+.sw{border:1px solid var(--rule);border-radius:var(--radius-lg);overflow:hidden;background:var(--surface)}
+.sw .chip{height:56px;display:block;border-bottom:1px solid var(--rule)}
+.sw .info{padding:var(--s-3);font-family:var(--font-mono);font-size:var(--t-micro);line-height:1.6}
+.sw .info b{display:block;color:var(--ink);font-weight:500}
+.sw .info span{color:var(--ink-3)}
+
+/* ---------- STALE ---------- */
+.stale{border:1px dashed var(--signal);background:var(--signal-wash);
+  border-radius:var(--radius-lg);padding:var(--s-4);margin-top:var(--s-3);
+  display:flex;gap:var(--s-3);align-items:center;flex-wrap:wrap}
+.is-stale{opacity:.6}
+
+/* ---------- EMPTY ---------- */
+.empty{border:1px dashed var(--border);border-radius:var(--radius-lg);
+  padding:var(--s-5);text-align:center;color:var(--ink-2);background:var(--surface)}
+.empty .t{font-family:var(--font-display);font-size:1.0625rem;color:var(--ink);font-weight:600}
+.empty .d{font-size:var(--t-small);color:var(--ink-3);margin-top:var(--s-2);
+  max-width:52ch;margin-left:auto;margin-right:auto}
+
+.toggle{position:fixed;bottom:var(--s-4);right:var(--s-4);z-index:50;
+  display:inline-flex;align-items:center;gap:var(--s-2);min-height:44px;padding:0 var(--s-4);
+  background:var(--surface);color:var(--ink);border:1px solid var(--border);border-radius:999px;
+  font-family:var(--font-mono);font-size:var(--t-micro);letter-spacing:.08em;
+  text-transform:uppercase;cursor:pointer;box-shadow:var(--shadow-2)}
+.toggle .dot{width:9px;height:9px;border-radius:50%;background:var(--brand)}
+
+@media print{
+  .toggle,.actionbar,.rail,.btn{display:none !important}
+  .shell{grid-template-columns:1fr;display:block}
+  .with-drawer{display:block}
+  body{background:#fff;color:#111;font-size:10.5pt}
+  .table-scroll{overflow:visible;border:0}
+  thead{display:table-header-group}
+  tr{break-inside:avoid}
+  details > .content{display:block !important}
+  .card,.verdict,.drawer{break-inside:avoid;box-shadow:none}
+}
+@media (prefers-reduced-motion: reduce){*{transition:none !important;animation:none !important}}
+</style>
+</head>
+<body>
+
+<button class="toggle" id="themeToggle" type="button" aria-pressed="false">
+  <span class="dot" aria-hidden="true"></span><span id="themeLabel">Dark</span>
+</button>
+
+<!-- ACTION BAR: carries run identity and run state, and never collapses -->
+<div class="actionbar">
+  <div class="inner">
+    <span class="wordmark">EF Version Explainer</span>
+    <span class="runid">Run EFVX&#8209;20260731&#8209;1642&#8209;9f3c1b7a &middot; DEFRA 2025 &rarr; 2026</span>
+    <span class="spacer"></span>
+    <span class="state"><span class="dot" aria-hidden="true"></span>Complete</span>
+    <a class="btn btn-secondary" href="#setup">Change inputs</a>
+    <a class="btn btn-primary" href="#export">Export</a>
+  </div>
+</div>
+
+<div class="shell">
+
+  <!-- SECTION RAIL -->
+  <nav class="rail" aria-label="Sections">
+    <a href="#result" aria-current="true">Result</a>
+    <a href="#confidence">Confidence</a>
+    <a href="#movers">Movers <span class="count">67</span></a>
+    <a href="#explanations">Explanations</a>
+    <a href="#review">Review <span class="count">1</span></a>
+    <a href="#export">Export</a>
+  </nav>
+
+  <main>
+    <p class="eyebrow">Mockup B &middot; Proposed structure</p>
+    <h1>Result, then confidence, then the detail</h1>
+    <p class="small muted" style="margin-top:var(--s-3);max-width:var(--measure)">
+      The current build orders the page KPIs, relabels, contributors, explanations, needs&#8209;review, export,
+      so the section that decides whether the headline is defensible sits second to last. This mockup puts the
+      trust gate directly under the answer. Everything below is a component specimen: the same tokens the app
+      would ship.
+    </p>
+
+    <!-- ============ SETUP SUMMARY ============ -->
+    <!-- Setup is separated from commit. After a run the inputs collapse to this
+         one line, so the canvas is not competing with a permanent config rail.
+         "Change inputs" reopens the form in place. -->
+    <section class="section" id="setup" style="margin-top:var(--s-6)">
+      <div class="card" style="display:flex;gap:var(--s-3) var(--s-4);align-items:center;flex-wrap:wrap;padding:var(--s-4)">
+        <span class="b b-scope">Inputs</span>
+        <span class="small">DEFRA <strong>2025</strong> to <strong>2026</strong> full set
+          &middot; <code>client_bom.csv</code>, 7 lines
+          &middot; offline explainer</span>
+        <span style="flex:1"></span>
+        <a class="btn btn-secondary" href="#setup">Change inputs</a>
+      </div>
+    </section>
+
+    <!-- ============ RESULT ============ -->
+    <section class="section" id="result">
+      <h2>Result</h2>
+      <div class="verdict" style="margin-top:var(--s-4)">
+        <span class="lab">Product footprint &middot; 2026 factors</span>
+        <div class="fig"><span class="from">2.344 &rarr;</span> 2.305 <span class="unit">kg CO&#8322;e</span></div>
+        <p class="change"><span class="dir" aria-hidden="true">&#9660;</span> Down 1.68%, so 0.039 kg lighter.</p>
+        <p class="small muted" style="margin-top:var(--s-2)">Recomputed from the same bill of materials. Stays within a flat baseline.</p>
+      </div>
+      <div class="alert alert-assessment">
+        <span class="icon" aria-hidden="true">=</span>
+        <span><span class="role">Assessment</span>
+        <span class="body">The footprint did not increase against a flat baseline. This is a reading of the result, not a judgement about performance: the movement is factor drift, not an operational change.</span></span>
+      </div>
+    </section>
+
+    <!-- ============ CONFIDENCE ============ -->
+    <section class="section" id="confidence">
+      <h2>Confidence</h2>
+      <p class="small muted" style="margin-top:var(--s-2);max-width:var(--measure)">
+        A coverage figure with no door behind it is a number the consultant cannot defend. Both tiles below are controls.
+      </p>
+      <div class="grid-2" style="margin-top:var(--s-4)">
+        <button class="coverage" type="button" aria-expanded="false">
+          <span class="v">85.7<span style="font-size:.5em">%</span></span>
+          <span class="k">of the inventory matched (6 of 7 lines)</span>
+          <span class="meter" aria-hidden="true"><i style="width:85.7%"></i></span>
+          <span class="more">Show the 14.3% that did not match <span aria-hidden="true">&rarr;</span></span>
+        </button>
+        <button class="coverage" type="button" aria-expanded="false">
+          <span class="v">0 <span style="font-size:.5em">of</span> 1</span>
+          <span class="k">review items resolved</span>
+          <span class="meter" aria-hidden="true"><i style="width:2%"></i></span>
+          <span class="more">Open the review queue <span aria-hidden="true">&rarr;</span></span>
+        </button>
+      </div>
+
+      <details style="margin-top:var(--s-4)" open>
+        <summary>The 14.3% that did not match <span class="b b-review">1 line</span></summary>
+        <div class="content">
+          <div class="table-scroll" role="region" tabindex="0" aria-labelledby="cap-unmatched">
+            <table>
+              <caption id="cap-unmatched">Lines the tool refused to decide. Nothing here was guessed.</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Line item</th>
+                  <th scope="col">Unit</th>
+                  <th scope="col">Best candidate</th>
+                  <th scope="col" class="num">Score</th>
+                  <th scope="col">Why it stopped</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">Proprietary specialty resin (custom compound)</th>
+                  <td>tonne</td>
+                  <td>Plastic &middot; Plastics: average plastics</td>
+                  <td class="num">49.3</td>
+                  <td>Match score 49.3, below the 60 confidence threshold, so nothing was assumed.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <!-- ============ MOVERS ============ -->
+    <section class="section" id="movers">
+      <h2>Movers</h2>
+      <p class="small muted" style="margin-top:var(--s-2);max-width:var(--measure)">
+        Density is a feature here. Confidence shows inline, so the reader can see without a click which rows rest
+        on an exact match and which rest on a judgement. Selecting a row fills the evidence drawer.
+      </p>
+
+      <div class="with-drawer" style="margin-top:var(--s-4)">
+        <div class="table-scroll" role="region" tabindex="0" aria-labelledby="cap-movers">
+          <table>
+            <caption id="cap-movers">Five computed lines, largest movement first. Full precision is in the export.</caption>
+            <thead>
+              <tr>
+                <th scope="col">Line item</th>
+                <th scope="col" class="num">Footprint 2025 to 2026 (kg CO&#8322;e)</th>
+                <th scope="col" class="num">Change (kg CO&#8322;e)</th>
+                <th scope="col">Confidence</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="is-selected">
+                <th scope="row">Electricity generated, UK</th>
+                <td class="num">0.15045 <span class="arrow-sm" aria-hidden="true">&rarr;</span> 0.11132</td>
+                <td class="num"><span class="dir" aria-hidden="true">&#9660;</span> &minus;0.03913<span class="visually-hidden">, fell</span></td>
+                <td><span class="b b-cited">&#10003; Cited</span></td>
+              </tr>
+              <tr>
+                <th scope="row">Diesel (average biofuel blend)</th>
+                <td class="num">0.12854 <span class="arrow-sm" aria-hidden="true">&rarr;</span> 0.12918</td>
+                <td class="num"><span class="dir" aria-hidden="true">&#9650;</span> +0.00064<span class="visually-hidden">, rose</span></td>
+                <td><span class="b b-cited">&#10003; Cited</span></td>
+              </tr>
+              <tr>
+                <th scope="row">Paper and board: board, primary</th>
+                <td class="num">0.35992 <span class="arrow-sm" aria-hidden="true">&rarr;</span> 0.35947</td>
+                <td class="num"><span class="dir" aria-hidden="true">&#9660;</span> &minus;0.00045<span class="visually-hidden">, fell</span></td>
+                <td><span class="b b-unexplained">&#9642; Not explained</span></td>
+              </tr>
+              <tr>
+                <th scope="row">Aluminium cans and foil, primary</th>
+                <td class="num">1.64086 <span class="arrow-sm" aria-hidden="true">&rarr;</span> 1.64044</td>
+                <td class="num"><span class="dir" aria-hidden="true">&#9660;</span> &minus;0.00042<span class="visually-hidden">, fell</span></td>
+                <td><span class="b b-unexplained">&#9642; Not explained</span></td>
+              </tr>
+              <tr>
+                <th scope="row">Plastics: average, primary</th>
+                <td class="num">0.06345 <span class="arrow-sm" aria-hidden="true">&rarr;</span> 0.06341</td>
+                <td class="num"><span class="dir" aria-hidden="true">&#9660;</span> &minus;0.00004<span class="visually-hidden">, fell</span></td>
+                <td><span class="b b-unexplained">&#9642; Not explained</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- EVIDENCE DRAWER -->
+        <aside class="drawer" aria-label="Evidence for the selected row">
+          <p class="hd">Electricity generated &middot; Electricity: UK</p>
+          <dl>
+            <dt>The arithmetic</dt>
+            <dd class="tnum">0.85 kwh &times; 0.13096 = 0.11132 kg</dd>
+            <dt>Match</dt>
+            <dd>Exact, score 100</dd>
+            <dt>Status</dt>
+            <dd><span class="b b-cited">&#10003; Cited</span></dd>
+          </dl>
+          <div class="provenance">0.13096 kg CO&#8322;e/kWh
+DEFRA 2026 &middot; Electricity generated &middot; UK &middot; Scope 2
+Sheet "UK electricity" row 14 &middot; exact match (100)
+Run 9f3c1b7a &middot; 2026-07-31T16:42Z</div>
+          <a class="btn btn-secondary" style="margin-top:var(--s-4);width:100%" href="#">Copy with provenance</a>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ============ EXPLANATIONS ============ -->
+    <section class="section" id="explanations">
+      <h2>Explanations</h2>
+      <p class="small muted" style="margin-top:var(--s-2);max-width:var(--measure)">
+        Citation first. DEFRA's own sentence sits above the generated prose and is visually marked as evidence
+        rather than commentary. The model is a reading aid, never the authority.
+      </p>
+
+      <details open>
+        <summary>
+          Electricity generated &middot; Electricity: UK
+          <span class="b b-scope">Scope 2</span>
+          <span class="b b-cited">&#10003; Cited</span>
+          <span class="tnum muted" style="font-size:var(--t-micro)">0.17700 &rarr; 0.13096</span>
+        </summary>
+        <div class="content">
+          <div class="provenance">Official DEFRA note, quoted verbatim:
+"Revision to the calculation method for UK electricity. A revised methodology has been
+introduced: the previous approach divided total electricity-related emissions from the UK
+Greenhouse Gas Inventory by total generation, which introduced a two-year lag."</div>
+          <p style="margin-top:var(--s-3)"><strong>Why it changed.</strong> The factor fell 26.0% because DEFRA replaced the calculation method for UK grid electricity, removing a two-year reporting lag.</p>
+          <p style="margin-top:var(--s-2)"><strong>Methodology note.</strong> Same GHG Protocol scope classification. This is a factor-version update, so year-over-year comparisons should note the DEFRA release year (ISO 14064 comparability).</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>
+          Paper and board: board, primary production
+          <span class="b b-scope">Scope 3</span>
+          <span class="b b-unexplained">&#9642; Not explained</span>
+          <span class="tnum muted" style="font-size:var(--t-micro)">1199.72542 &rarr; 1198.23866</span>
+        </summary>
+        <div class="content">
+          <div class="alert alert-info" style="margin-top:var(--s-3)">
+            <span class="icon" aria-hidden="true">i</span>
+            <span><span class="role">Not explained in the DEFRA notes</span>
+            <span class="body">The factor moved and the notes are silent. This is the tool working correctly, not a failure. The before and after values are shown so the movement can still be reported honestly.
+            <br><br><span class="tnum">1199.72542 &rarr; 1198.23866 kg CO&#8322;e per tonne, down 0.12%</span></span></span>
+          </div>
+        </div>
+      </details>
+
+      <details>
+        <summary>
+          Electricity, 42 factors renamed, no methodology change
+          <span class="b b-scope">Rename family</span>
+          <span class="b b-unexplained">&#9642; Relabel</span>
+        </summary>
+        <div class="content">
+          <p style="margin-top:var(--s-3)">Same factor, renamed across versions. Grouped into a rename family so it does not read as real movement. Value movement is shown as a range across the family, never a single figure standing in for many.</p>
+        </div>
+      </details>
+      <p class="small muted" style="margin-top:var(--s-3)">
+        Compare these summaries with the current build, where eleven disclosures expose an empty accessible name
+        and every one is closed by default. Here the top three open, and each summary carries its own count.
+      </p>
+    </section>
+
+    <!-- ============ REVIEW ============ -->
+    <section class="section" id="review">
+      <h2>Review</h2>
+      <div class="alert alert-attention">
+        <span class="icon" aria-hidden="true">!</span>
+        <span><span class="role">Needs your attention</span>
+        <span class="body">One line was left for a human, not guessed. It fell below the confidence threshold for an automatic match, and guessing an emission factor would risk a wrong number.
+        <br><br><strong>Proprietary specialty resin (custom compound)</strong> &middot; tonne &middot; match score 49.3, below the 60 confidence threshold.</span></span>
+      </div>
+      <div style="display:flex;gap:var(--s-2);margin-top:var(--s-3);flex-wrap:wrap">
+        <a class="btn btn-primary" href="#">Accept best candidate</a>
+        <a class="btn btn-secondary" href="#">Map it myself</a>
+        <a class="btn btn-secondary" href="#">Exclude the line</a>
+      </div>
+    </section>
+
+    <!-- ============ EXPORT ============ -->
+    <section class="section" id="export">
+      <h2>Export</h2>
+      <p class="small muted" style="margin-top:var(--s-2);max-width:var(--measure)">
+        The consultant can always ship. They can never ship silently: anything unchecked below is written into the
+        export's own front matter.
+      </p>
+      <div class="card" style="margin-top:var(--s-4)">
+        <h4>Before you send this</h4>
+        <ul class="checklist">
+          <li><span class="b b-cited">&#10003; Pass</span><span class="txt">Column mapping confirmed<span class="note">Item, quantity and unit were confirmed by you, not inferred.</span></span></li>
+          <li><span class="b b-cited">&#10003; Pass</span><span class="txt">Relabel families accepted<span class="note">460 renames paired into 11 families.</span></span></li>
+          <li><span class="b b-review">&#9679; Open</span><span class="txt">Review queue resolved<span class="note">0 of 1 resolved. The unresolved line will be named in the export.</span></span></li>
+          <li><span class="b b-review">&#9679; Open</span><span class="txt">Unexplained movers acknowledged<span class="note">3 movers have no DEFRA note. They will be listed as unexplained.</span></span></li>
+          <li><span class="b b-unexplained">&#9642; Offline</span><span class="txt">Explanations are model-written<span class="note">Running the offline explainer. Extracts are official DEFRA text, not model prose.</span></span></li>
+        </ul>
+        <div style="display:flex;gap:var(--s-2);margin-top:var(--s-4);flex-wrap:wrap">
+          <a class="btn btn-primary" href="#">Download XLSX</a>
+          <a class="btn btn-secondary" href="#">Print-ready HTML</a>
+          <a class="btn btn-secondary" href="#">Markdown</a>
+          <a class="btn btn-secondary" href="#">JSON</a>
+        </div>
+        <p class="small muted" style="margin-top:var(--s-3)">
+          All four carry run id <code>EFVX&#8209;20260731&#8209;1642&#8209;9f3c1b7a</code>, so any figure in any of them
+          traces to the same source. The print-ready HTML is the PDF route: open it and print to PDF, no extra
+          dependency in the stack.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ REFERENCE SHEET ============ -->
+    <section class="section" id="reference">
+      <h2>Component reference</h2>
+      <p class="small muted" style="margin-top:var(--s-2);max-width:var(--measure)">
+        Every state the app needs. Toggle the theme with the control at the bottom right to check both, and print
+        this page to check that nothing depends on colour alone.
+      </p>
+
+      <h3 style="margin-top:var(--s-6)">Palette</h3>
+      <div class="sw-row">
+        <div class="sw"><span class="chip" style="background:#FBFAF7"></span><span class="info"><b>paper</b><span>#FBFAF7 canvas</span></span></div>
+        <div class="sw"><span class="chip" style="background:#14181C"></span><span class="info"><b>ink</b><span>#14181C 17.09:1</span></span></div>
+        <div class="sw"><span class="chip" style="background:#3D444C"></span><span class="info"><b>ink-2</b><span>#3D444C 9.45:1</span></span></div>
+        <div class="sw"><span class="chip" style="background:#5C646E"></span><span class="info"><b>ink-3</b><span>#5C646E 5.74:1</span></span></div>
+        <div class="sw"><span class="chip" style="background:#0B5750"></span><span class="info"><b>brand</b><span>#0B5750 8.07:1</span></span></div>
+        <div class="sw"><span class="chip" style="background:#073F3A"></span><span class="info"><b>brand-deep</b><span>#073F3A 11.30:1</span></span></div>
+        <div class="sw"><span class="chip" style="background:#8A5A05"></span><span class="info"><b>signal</b><span>#8A5A05 5.67:1</span></span></div>
+        <div class="sw"><span class="chip" style="background:#8F8A80"></span><span class="info"><b>border</b><span>#8F8A80 3.29:1</span></span></div>
+      </div>
+
+      <h3 style="margin-top:var(--s-6)">Status badges</h3>
+      <p class="small muted">Hue carries only this axis. Each badge also carries a glyph and a word, so greyscale still separates them.</p>
+      <div style="display:flex;gap:var(--s-3);flex-wrap:wrap;margin-top:var(--s-3)">
+        <span class="b b-cited">&#10003; Cited</span>
+        <span class="b b-unexplained">&#9642; Not explained</span>
+        <span class="b b-review">&#9679; Needs review</span>
+        <span class="b b-scope">Scope 2</span>
+      </div>
+
+      <h3 style="margin-top:var(--s-6)">Direction</h3>
+      <p class="small muted">Never hue. Glyph, sign and word only, so a fall and a rise read identically in any palette.</p>
+      <p style="margin-top:var(--s-3)" class="tnum">
+        <span class="dir" aria-hidden="true">&#9660;</span> &minus;0.03913 fell
+        &nbsp;&nbsp;&nbsp;
+        <span class="dir" aria-hidden="true">&#9650;</span> +0.00064 rose
+      </p>
+
+      <h3 style="margin-top:var(--s-6)">Alert roles</h3>
+      <p class="small muted">Four roles, because the current build renders three different message types in one green style.</p>
+      <div class="alert alert-info"><span class="icon" aria-hidden="true">i</span><span><span class="role">Information</span><span class="body">Using the real DEFRA full-set workbooks found in data/.</span></span></div>
+      <div class="alert alert-assessment"><span class="icon" aria-hidden="true">=</span><span><span class="role">Assessment</span><span class="body">The footprint did not increase against a flat baseline.</span></span></div>
+      <div class="alert alert-attention"><span class="icon" aria-hidden="true">!</span><span><span class="role">Needs your attention</span><span class="body">One line was set aside and needs a human decision before export.</span></span></div>
+      <div class="alert alert-blocked"><span class="icon" aria-hidden="true">!</span><span><span class="role">Cannot continue</span><span class="body">No usable rows after applying that mapping. Check the item, quantity and unit columns.</span></span></div>
+
+      <h3 style="margin-top:var(--s-6)">Buttons</h3>
+      <div style="display:flex;gap:var(--s-3);flex-wrap:wrap;margin-top:var(--s-3);align-items:center">
+        <a class="btn btn-primary" href="#">Run analysis</a>
+        <a class="btn btn-secondary" href="#">Change inputs</a>
+        <a class="btn btn-secondary" href="#" aria-disabled="true">Export (waiting on review)</a>
+      </div>
+      <p class="small muted" style="margin-top:var(--s-3)">
+        Primary is brand at 8.42:1 with white text, and 44px tall. The current build ships the framework's red at
+        3.30:1, and gives the download control a 1.45:1 border.
+      </p>
+
+      <h3 style="margin-top:var(--s-6)">Stale results</h3>
+      <div class="stale">
+        <span class="b b-review">&#9679; Stale</span>
+        <span class="small" style="flex:1">These numbers no longer match the inputs on screen. Nothing was silently recomputed.</span>
+        <a class="btn btn-primary" href="#">Re-run</a>
+      </div>
+      <div class="card is-stale" style="margin-top:var(--s-3)">
+        <span class="tnum" style="font-size:1.5rem;color:var(--ink)">2.305 kg CO&#8322;e</span>
+        <p class="small muted" style="margin-top:var(--s-2)">Result surfaces dim to 60% while stale, and export is disabled until the run is repeated.</p>
+      </div>
+
+      <h3 style="margin-top:var(--s-6)">Empty states</h3>
+      <p class="small muted">A dead end names the next action. A blank region does not.</p>
+      <div class="grid-2" style="margin-top:var(--s-3)">
+        <div class="empty">
+          <p class="t">No movers crossed the threshold</p>
+          <p class="d">Nothing moved more than 5% (Scope 1 and 2) or 10% (Scope 3). That is a finding, not an error. You can lower the threshold to see smaller movements.</p>
+          <a class="btn btn-secondary" style="margin-top:var(--s-4)" href="#">Lower the threshold</a>
+        </div>
+        <div class="empty">
+          <p class="t">Nothing matched in this file</p>
+          <p class="d">The tool expected an item name, a quantity and a unit. It found item and quantity, but no unit column, so nothing was assumed.</p>
+          <a class="btn btn-secondary" style="margin-top:var(--s-4)" href="#">Map the unit column</a>
+        </div>
+      </div>
+
+      <h3 style="margin-top:var(--s-6)">Type scale</h3>
+      <div class="table-scroll" role="region" tabindex="0" aria-labelledby="cap-type">
+        <table>
+          <caption id="cap-type">Never below 13px, except uppercase mono labels at 11px.</caption>
+          <thead><tr><th scope="col">Role</th><th scope="col" class="num">Size / line</th><th scope="col">Face</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Verdict figure</th><td class="num">64 / 1.0</td><td>Mono 500, tabular</td></tr>
+            <tr><th scope="row">Section H2</th><td class="num">32 / 1.14</td><td>Display 600</td></tr>
+            <tr><th scope="row">Sub H3</th><td class="num">23 / 1.2</td><td>Display 600</td></tr>
+            <tr><th scope="row">Card H4</th><td class="num">17 / 1.35</td><td>UI 600</td></tr>
+            <tr><th scope="row">Body</th><td class="num">16 / 1.6</td><td>UI 400</td></tr>
+            <tr><th scope="row">Table, caption</th><td class="num">13 / 1.6</td><td>UI 400</td></tr>
+            <tr><th scope="row">Label, ID</th><td class="num">11 / 1.5</td><td>Mono 500, uppercase</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 style="margin-top:var(--s-6)">Breakpoints</h3>
+      <p class="small muted">Narrow this window to check. The action bar never collapses, which is the fix for the
+        current build losing every control below 768px.</p>
+      <div class="table-scroll" role="region" tabindex="0" aria-labelledby="cap-bp">
+        <table>
+          <caption id="cap-bp">Layout behaviour by width.</caption>
+          <thead><tr><th scope="col">Range</th><th scope="col">Shell</th><th scope="col">Tabular data</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Under 640</th><td>Single column, rail becomes a horizontal chip scroller, action bar stays pinned.</td><td>Priority columns, the rest in the row drawer. No horizontal scroll.</td></tr>
+            <tr><th scope="row">640 to 1023</th><td>Rail above the canvas, action bar docked.</td><td>Priority columns with an expandable row.</td></tr>
+            <tr><th scope="row">1024 to 1439</th><td>Sticky rail plus fluid canvas.</td><td>Full grid, sticky header row.</td></tr>
+            <tr><th scope="row">1440 and up</th><td>Rail, canvas and evidence drawer all visible at once.</td><td>Full grid with the drawer pinned beside it.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer style="margin-top:var(--s-8);border-top:2px solid var(--ink);padding-top:var(--s-5)">
+      <p class="small muted" style="max-width:var(--measure)">
+        Design mockup, not the running app. Figures are a snapshot from <code>report_data_snapshot.json</code>.
+        Structure and component states follow <code>docs/audit/2026-07-31_frontend_ux_audit.html</code>.
+        This tool is independent and is not affiliated with, or endorsed by, DEFRA or DESNZ.
+      </p>
+    </footer>
+  </main>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const root = document.documentElement;
+  const btn  = document.getElementById('themeToggle');
+  const lbl  = document.getElementById('themeLabel');
+  const mq   = window.matchMedia('(prefers-color-scheme: dark)');
+  // In-memory only. No browser storage is used anywhere in this document.
+  const apply = (dark) => {
+    root.setAttribute('data-theme', dark ? 'dark' : 'light');
+    btn.setAttribute('aria-pressed', String(dark));
+    lbl.textContent = dark ? 'Light' : 'Dark';
+    btn.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
+  };
+  apply(mq.matches);
+  btn.addEventListener('click', () => apply(root.getAttribute('data-theme') !== 'dark'));
+
+  // Scroll-spy on the section rail. No storage, no dependencies.
+  const links = [...document.querySelectorAll('.rail a')];
+  const byId = new Map(links.map(a => [a.getAttribute('href').slice(1), a]));
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      links.forEach(a => a.removeAttribute('aria-current'));
+      const a = byId.get(e.target.id);
+      if (a) a.setAttribute('aria-current', 'true');
+    });
+  }, { rootMargin: '-80px 0px -70% 0px' });
+  document.querySelectorAll('main section[id]').forEach(s => obs.observe(s));
+})();
+</script>
+</body>
+</html>
