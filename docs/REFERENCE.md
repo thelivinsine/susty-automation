@@ -46,10 +46,20 @@ How to apply it:
   matcher pairs old rows against reordered new rows. A finer within-family pairing
   (align sub-rows by their leaf/variant, or use DEFRA's own row map) would make the
   per-variant deltas trustworthy. Left rather than guessed for now.
-- Streamlit theming: a GOV.UK-familiar look was designed for the standalone report
-  view (`docs/mockups/govuk_report_view.html`). The real app (`app.py`) still uses
-  Streamlit defaults; theming it to match (config.toml palette + CSS) is a natural
-  next step (P16).
+- **A-07, the one audit defect still open.** Streamlit's file uploader renders an
+  `<input type="file">` with no programmatic accessible name, so a screen-reader
+  user hears an unlabelled control. Neither CSS nor Python can attach a name to
+  it: it needs a Streamlit release that labels it, or a small custom component.
+  The visible label and help text are already there, which is why this is the
+  cheapest of the twelve to live with in the meantime.
+- **Surface the best candidate on a below-threshold match.** The Confidence
+  section explains a held line as "Best match scored 49.3, below the 82.0
+  confidence threshold, so nothing was assumed." It cannot yet add "the closest
+  thing we found was X", because `src/matching.py` keeps only the score once the
+  candidate loses (`match_bom`, the `below_threshold` branch). Retaining the
+  losing candidate's name is a small change there, and would make the review
+  queue much faster to work through. Left rather than smuggled into a view-layer
+  pass that was scoped not to touch matching.
 - Semantic relabels with low string overlap (Incineration -> Combustion) still
   read as added/removed; would need DEFRA's own relabel notes.
 - Package-manager pin + lockfile for reproducible installs (deps are audited now,
