@@ -389,7 +389,9 @@ Why GOV.UK, on the measured evidence:
   the register this audience already works in.
 
 What the audit was right about, and is grafted on anyway (the look is settled, the
-defects underneath it are not):
+defects underneath it are not). All three were put to the owner as deliberate
+deviations from the approved mockup, and the owner approved implementing what the
+audit recommends. Exact tokens are in `docs/PLAN_design_system.md`:
 1. **A yellow needs-review tint**, `#fff7bf` on `#594d00` (7.77:1). GOV.UK's four
    tints are blue, green, red and grey, so "held for review" has no colour of its
    own. Yellow over GOV.UK orange deliberately: orange neighbours red and would

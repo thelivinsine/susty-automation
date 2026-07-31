@@ -686,3 +686,72 @@ two-most-recent rule.
 
 **Artifacts:** docs/DECISIONS.md (D18), docs/STATUS.md (H17), docs/REFERENCE.md,
 docs/PROMPT_LOG.md, docs/archive/STATUS_2026-W28.md.
+
+---
+
+### 2026-07-31 · P32
+Branch: `claude/design-system-handbook-impl-vpe4c4`.
+
+**Prompt (verbatim):** "Read the local file attached. Act as a Lead Front-End
+Engineer and UI/UX Systems Specialist. Based on all the design, user flow,
+branding, and handbook usability recommendations outlined in the HTML report: 1.
+Extract the recommended design system tokens (colors, typography scales, spacing
+grid, component states) and implement them into our global CSS/styling framework
+(or Tailwind config). 2. Refactor or generate the core front-end components and
+layout structures identified in the report to ensure the application acts as an
+intuitive, high-utility handbook for sustainability professionals. 3. Ensure all
+components adhere to WCAG 2.1 AA accessibility standards, high information density
+standards, and responsive design patterns. Inspect our repository files first,
+prepare a robust plan for implementing the HTML report's recommendations." Then,
+across the session: "ask me questions if anything is unclear"; "i'd like you to
+also generate a couple of mockups for the recommended branding design based on the
+audit report and save it to the repo along with saving the audit html to the
+repo"; "compare it against the current branding design in the mock up"; "don't
+implement the plan yet, just save it to the repo"; "go ahead and generate the
+mockups as discussed above"; "give me the link to the mock up html"; "i like the
+govuk branding. document this choice in the implementation plan"; "for these three
+points, implement what the audit report suggests - document this in the plan.
+Document the session and merge everything to main".
+
+**Response summary:** Planning and design session. **No pipeline or app code was
+touched.** Saved the external front-end audit verbatim to `docs/audit/` with a
+README framing it as third-party source material and flagging its own
+`[NEEDS VERIFICATION]` items as open rather than as findings. Independently
+recomputed every contrast ratio it reports for its own palette (all reproduce
+exactly), which is the credibility check that made the rest usable.
+
+Surfaced a genuine fork the owner had to settle: the repo already pinned a GOV.UK
+direction (`docs/mockups/govuk_report_view.html`) while the audit argued for a
+different identity. Rather than decide it from a description, built both
+candidates as working, self-contained mockups on the same real pipeline figures
+(`ledger_report_view.html`, the same report and copy in the audit's skin;
+`ledger_result_canvas.html`, the proposed information architecture doubling as a
+component reference sheet). Owner chose **GOV.UK** (D19); the rejected pair stays
+committed so a revisit starts from artefacts.
+
+Owner then approved implementing the audit's fix for the three defects sitting
+underneath the look, now specified with exact tokens in the plan: a yellow
+needs-review tint (`#fff7bf`/`#594d00`, 7.77:1; dark `#332d00`/`#f3d97a`, 9.90:1),
+hue-encodes-epistemic-status with direction carried by glyph, sign and word
+(deleting `.d-up`/`.d-down`/`.move.up`/`.move.down`), and a `--border-control`
+split (`#0b0c0c` light, `#b6bbbe` dark).
+
+Two findings the audit could not have produced, because it inspected the live app
+and not our files: (a) our own approved GOV.UK mockup uses `--border #b1b4b6` at
+**2.08:1**, failing WCAG 1.4.11, and its dark counterpart is worse on tinted
+surfaces (2.20:1 on `--grey-2`); (b) a table wider than its `overflow-x:auto`
+container still contributes its width to the initial containing block, so the
+*page* gains a phantom horizontal scroll into blank space (480px at 375px)
+unless the container carries `contain:paint`. Both are now required rules in the
+plan. Mockups verified in headless Chromium at 375 to 1440px: 58 contrast pairs
+pass in both themes, zero horizontal page scroll, no tap target under 44px.
+
+Also resolved the audit's PDF ask against the no-heavy-deps rule: `pdfplumber`
+only reads, so the export pack ships a print-ready HTML memo the browser converts,
+which is what VISION move #3 already committed to.
+
+**Artifacts:** docs/audit/2026-07-31_frontend_ux_audit.html, docs/audit/README.md,
+docs/PLAN_design_system.md, docs/DECISIONS.md (D19),
+docs/mockups/ledger_report_view.html, docs/mockups/ledger_result_canvas.html,
+docs/mockups/README.md, docs/STATUS.md (H18),
+docs/archive/STATUS_2026-W31.md, docs/archive/README.md, docs/PROMPT_LOG.md.

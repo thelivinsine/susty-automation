@@ -70,31 +70,66 @@ built, not themed, and not referenced by the app.
   number stat row, inset text, summary and key-value explanation block, tables,
   warning text and buttons become the component library.
 
-### What still gets grafted on from the audit
+### What still gets grafted on from the audit: APPROVED
 
 Choosing GOV.UK settles the look. It does not settle the three defects the audit
-identified underneath the look, all of which still apply:
+identified underneath the look. The owner reviewed all three as deliberate
+deviations from the approved mockup and **approved implementing what the audit
+recommends** (2026-07-31). They are no longer open questions. Exact tokens below,
+all ratios computed rather than quoted, so implementation has nothing left to
+decide.
 
-1. **A yellow needs-review tint**, `#fff7bf` on `#594d00` (**7.77:1**). GOV.UK's
-   four tints are blue, green, red and grey, which leaves no colour for "held for
-   review". Yellow is chosen over GOV.UK orange (`#fcd6c3` on `#6e3619`, 7.05:1)
-   deliberately: orange sits next to red in hue and would blur the boundary that
-   keeps **red for genuine errors only**. A review flag is the tool working
-   correctly, not failing.
-2. **The hue rule.** Hue encodes epistemic status; direction is carried by glyph,
-   sign and word. This deletes `.d-up`, `.d-down`, `.move.up` and `.move.down`
-   from the mockup CSS. It is a deliberate deviation from the approved file,
-   because those four rules are the root cause of the audit's most severe finding:
-   a footprint *decrease* painted as an alarm.
-3. **The interactive border fix.** `--border #b1b4b6` is **2.08:1** on white and
-   fails WCAG 1.4.11. Split it: `#b1b4b6` stays for decorative table rules, and
-   interactive boundaries use `#0b0c0c`, which is what GOV.UK Frontend itself does
-   for input borders.
+**1. A needs-review tint, because GOV.UK has no colour for "held for review".**
 
-The GOV.UK confirmation panel also stays, with its meaning restated: green there
+GOV.UK's four tints are blue, green, red and grey. "Held for review" has to
+borrow grey, which also reads as "inactive". Add a fifth:
+
+| Token | Light | Dark | Ratio |
+|---|---|---|---|
+| `--tag-yellow-bg` / `-tx` | `#fff7bf` / `#594d00` | `#332d00` / `#f3d97a` | **7.77:1** light, **9.90:1** dark |
+
+Yellow over GOV.UK orange (`#fcd6c3` on `#6e3619`, 7.05:1) deliberately: orange
+neighbours red and would blur the boundary that keeps **red for genuine errors
+only**. Holding a line back for review is the no-guess rule (D2) working, not a
+failure. The dark tint is new, since the mockup defines no yellow in dark mode.
+
+**2. Hue encodes epistemic status. Direction is glyph, sign and word.**
+
+Delete `.d-up`, `.d-down`, `.move.up` and `.move.down` from the ported CSS. These
+four rules are the root cause of the audit's most severe finding: a footprint
+*decrease* painted as an alarm, next to a green panel reporting the same fact as
+good news. Replace with:
+
+```html
+<span class="dir" aria-hidden="true">&#9660;</span> &minus;0.03913<span class="visually-hidden">, fell</span>
+```
+
+`.dir { color: var(--body-tx) }`. No hue, in either direction. Hue is spent only
+on cited (green tint), not explained (grey tint), needs review (yellow tint), and
+error (red tint).
+
+The GOV.UK confirmation panel **stays**, with its meaning restated: green there
 means "the run completed and this is the answer", not "good news". Direction lives
 inside the panel as glyph and word, and the baseline judgement moves out into a
-separate assessment message.
+separate assessment message. Add a neutral `.panel--partial` variant for when
+coverage falls below a stated bar, which is the honest signal that the number is
+incomplete.
+
+**3. Interactive borders must meet WCAG 1.4.11 (3:1).**
+
+`--border #b1b4b6` is **2.08:1** on white and **1.86:1** on `--grey-1`, so it
+fails as any interactive boundary. The dark theme is worse than it looks:
+`#5c5f61` is 3.04:1 on the ground but **2.62:1** on `--grey-1` and **2.20:1** on
+`--grey-2`, so it fails wherever a control sits on a tinted surface. Split the
+token in both themes:
+
+| Token | Light | Dark | Use |
+|---|---|---|---|
+| `--border` | `#b1b4b6` | `#5c5f61` | Decorative table rules only. Never a control boundary. |
+| `--border-control` | `#0b0c0c` (19.59:1 on white, 17.52:1 on grey-1) | `#b6bbbe` (10.11:1 on ground, 8.71:1 on grey-1, 7.32:1 on grey-2) | Every interactive boundary: buttons, inputs, the download control. |
+
+`#0b0c0c` is what GOV.UK Frontend itself uses for input borders, so this stays
+authentic to the idiom rather than inventing a colour.
 
 ### Why the alternative was worth building anyway
 
@@ -193,10 +228,10 @@ Add, because GOV.UK's four tag tints do not cover the states the audit needs:
 
 | Token | Light | Purpose |
 |---|---|---|
-| `--tag-yellow-bg` / `-tx` | `#fff7bf` / `#594d00` | **needs review** (the one loud state) |
+| `--tag-yellow-bg` / `-tx` | `#fff7bf` / `#594d00` | **needs review** (the one loud state). Dark: `#332d00` / `#f3d97a` |
 | `--tag-grey-bg` / `-tx` | `#eeefef` / `#383f43` | **not explained** (notes are silent) |
 | `--tag-green-bg` / `-tx` | `#cce2d8` / `#005a30` | **cited** (verbatim DEFRA reason) |
-| `--border-interactive` | `#0b0c0c` | fixes the 2.08:1 boundary failure |
+| `--border-control` | `#0b0c0c` | every interactive boundary. Dark: `#b6bbbe`. Fixes the 2.08:1 failure |
 | spacing scale | `4 8 12 16 24 32 48 64 96 128` | one 8px rhythm, no ad-hoc margins |
 | `--measure` | `74ch` | prose cap; tables may break it, nothing else may |
 | `--rail` / `--pad-card` | `280px` / `28px` | constant card padding, so density comes from type size |
@@ -253,7 +288,7 @@ flag. The overrides that close defects:
 ```css
 [data-testid="stCaptionContainer"]{ opacity:1; color:var(--secondary) }          /* A-03 */
 [data-testid="stBaseButton-primary"]{ background:var(--green); min-height:44px } /* A-02 */
-[data-testid="stDownloadButton"] button{ border:1px solid var(--border-interactive) } /* A-08 */
+[data-testid="stDownloadButton"] button{ border:1px solid var(--border-control) }  /* A-08 */
 [data-testid="stElementToolbarButton"]{ min-width:44px; min-height:44px }        /* A-10 */
 :focus-visible{ outline:3px solid var(--focus); box-shadow:0 4px var(--black) }
 ```

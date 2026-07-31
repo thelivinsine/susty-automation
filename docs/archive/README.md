@@ -15,3 +15,5 @@ File naming, one per ISO week, matching each moved entry's own date:
 - `STATUS_2026-W28.md`: status handoffs H8, then H11 to H14 rotated out on
   2026-07-31. (H1–H7 predate this archive convention and live in git history and
   the prompt log.)
+- `STATUS_2026-W31.md`: status handoff H16, rotated out on 2026-07-31 when H18
+  landed and pushed it past the two-most-recent rule.
