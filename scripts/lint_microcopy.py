@@ -13,6 +13,10 @@ What it checks, and why the boundary sits where it does:
   exempt. This matches the convention already in the repo: docs are clean,
   code comments are not.
 - Markdown (.md): the whole document. README and CLAUDE.md are visible.
+- Stylesheets and pages (.css, .html): the whole document, same as Markdown.
+  The design layer carries visible copy (component labels, print rules,
+  standalone mockups and the export memo), so it has to sit inside the same
+  gate rather than outside it.
 - Allowlisted files (ALLOWLIST): skipped entirely. The synthetic data
   generator deliberately mimics DEFRA's real workbook formatting, and real
   DEFRA data itself contains em dashes. That is third-party layout, not our
@@ -38,9 +42,11 @@ ALLOWLIST = {
 }
 
 # Directories holding verbatim source documents we archive as-is (the owner's
-# original playbook and spec). These are not our copy, so we never rewrite them.
+# original playbook and spec, and the third-party front-end audit). These are
+# not our copy, so we never rewrite them.
 ALLOWLIST_PREFIXES = (
     os.path.join("docs", "reference") + os.sep,
+    os.path.join("docs", "audit") + os.sep,
 )
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -88,8 +94,8 @@ def check_python(path, source):
     return violations
 
 
-def check_markdown(path, source):
-    """Flag banned characters anywhere in a visible document."""
+def check_document(path, source):
+    """Flag banned characters anywhere in a visible document (.md, .css, .html)."""
     violations = []
     for i, line in enumerate(source.splitlines(), start=1):
         found = _banned_in(line)
@@ -98,13 +104,18 @@ def check_markdown(path, source):
     return violations
 
 
+# Everything with visible copy. .py is parsed (string literals only); the rest
+# are read whole.
+TARGET_EXTENSIONS = (".py", ".md", ".css", ".html")
+
+
 def iter_target_files():
-    """Yield tracked .py and .md files under the repo, skipping noise dirs."""
-    skip_dirs = {".git", "__pycache__", ".pytest_cache", "data"}
+    """Yield tracked source files under the repo, skipping noise dirs."""
+    skip_dirs = {".git", "__pycache__", ".pytest_cache", "data", ".venv", "venv"}
     for dirpath, dirnames, filenames in os.walk(ROOT):
         dirnames[:] = [d for d in dirnames if d not in skip_dirs]
         for name in filenames:
-            if name.endswith((".py", ".md")):
+            if name.endswith(TARGET_EXTENSIONS):
                 yield os.path.join(dirpath, name)
 
 
@@ -121,7 +132,7 @@ def lint(paths=None):
         if path.endswith(".py"):
             found = check_python(path, source)
         else:
-            found = check_markdown(path, source)
+            found = check_document(path, source)
         for lineno, msg in found:
             all_violations.append((rel, lineno, msg))
     return all_violations

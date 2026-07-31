@@ -755,3 +755,79 @@ docs/PLAN_design_system.md, docs/DECISIONS.md (D19),
 docs/mockups/ledger_report_view.html, docs/mockups/ledger_result_canvas.html,
 docs/mockups/README.md, docs/STATUS.md (H18),
 docs/archive/STATUS_2026-W31.md, docs/archive/README.md, docs/PROMPT_LOG.md.
+
+---
+
+### 2026-07-31 · P33
+Branch: `claude/next-step-model-selection-fj2hbt`.
+
+**Prompt (verbatim):** "what's the next step and which model is the best to
+implement it?" Then: "start working on the plan".
+
+**Response summary.** Answered the first question from the docs: the next step is
+`docs/PLAN_design_system.md` (approved, nothing built yet, `src/ui/` and
+`.streamlit/config.toml` both absent), and the right tier is heavy, which the
+session was already on. Flagged that the tail of `STATUS.md` still named
+header-row tolerance as next, contradicting its own Known-gaps section and the
+H18 handoff.
+
+Then implemented the plan end to end, in four commits.
+
+1. **Token layer.** `src/ui/tokens.css` with the GOV.UK set plus the three D19
+   grafts, `components.css` with the CSS-only defect fixes (A-02, A-03, A-08,
+   A-10), `inject_styles()`, `.streamlit/config.toml`. The contrast gate parses
+   `@contrast` annotations out of the stylesheet and measures all 26 pairs in
+   both themes: every one clears its floor, and the figures D19 predicted
+   reproduce exactly.
+2. **Components.** `components.py` (HTML builders, so escaping and table
+   semantics are assertable with no browser) and `format.py` (significant figures
+   by magnitude, and `direction()` returning a glyph and a word and no colour).
+3. **View layer.** `app.py` rewritten around Result, Confidence, Movers,
+   Explanations, Export, with the Run control moved into the main canvas so it
+   survives the sidebar collapsing below 768px.
+4. **Export pack.** `src/export.py`: four artifacts from one run sharing a run id
+   hashed from the inputs rather than the clock, with a completeness checklist
+   whose open items are written into every artifact's front matter.
+
+**Verified, not assumed.** 144 tests pass (was 44). Booted the real app through
+Streamlit's own harness and asserted the section order, that no canvas grid
+reaches the page, that every table has a caption and every disclosure a name.
+Confirmed all four `data-testid` selectors exist in the Streamlit 1.60.0 bundle
+before relying on them. Rendered the memo in headless Chromium: at a true 375px
+viewport (which needs an iframe, since Chrome's headless window floors at ~500px)
+the page shows zero phantom horizontal scroll, and deleting `contain: paint`
+reproduces the defect at 248px.
+
+**Two things corrected mid-flight, both mine.** A test assertion claimed hostile
+input should not contain the string `onmouseover=`; the escaping was correct and
+the assertion was wrong, since escaped quotes make it inert text. And the memo's
+escaping test planted its payload in a row the memo does not render, making it
+vacuous; it now plants the payload in both places a line item appears and asserts
+it arrives escaped rather than merely absent.
+
+**Left open, deliberately.** A-07 (Streamlit's file input has no programmatic
+accessible name, unfixable from CSS or Python) and the best-candidate name on a
+below-threshold match (`src/matching.py` discards it, and this pass was not
+allowed to change matching). Both are in `REFERENCE.md` and `STATUS.md` rather
+than quietly dropped.
+
+**Artifacts:** `src/ui/tokens.css`, `src/ui/components.css`, `src/ui/memo.css`,
+`src/ui/__init__.py`, `src/ui/components.py`, `src/ui/format.py`,
+`src/export.py`, `.streamlit/config.toml`, `app.py`, `scripts/lint_microcopy.py`,
+`tests/test_design_system.py`, `tests/test_ui_components.py`,
+`tests/test_export_pack.py`, `docs/PLAN_design_system.md`, `docs/DECISIONS.md`
+(D20), `docs/REFERENCE.md`, `docs/STATUS.md` (H19),
+`docs/archive/STATUS_2026-W31.md`, this file. Commits 6e902c5, 3c0fbbb, bc89bdb,
+ce7c7a3.
+
+**Correction appended to P33.** The entry above, and every earlier session,
+treated in-browser verification as the owner's job because the sandbox proxy
+denies CONNECT to `*.streamlit.app`. That is true of the DEPLOY only. Localhost is
+reachable, Chromium is preinstalled, and `pip install playwright` supplies the
+driver, so the running app was checked at 375, 768 and 1440 after all. It caught
+three defects the 144 tests could not: a column ratio that crushed the primary
+button to a quarter width at 375px, a direction glyph running into its figure,
+and the result panel rounding to 1 decimal beside a sentence using 2. All three
+fixed in commit 1a1d857. The recipe and its two traps (the screenshot flag fires
+before Streamlit's websocket content arrives; Chrome's headless window floors at
+about 500px) are in `REFERENCE.md` so this is not rediscovered next time.

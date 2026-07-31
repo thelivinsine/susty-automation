@@ -1,0 +1,527 @@
+/* ============================================================================
+   components.css - the app's own look, built on tokens.css.
+
+   This file has two halves.
+
+   HALF ONE: our own component classes, ported from the chosen GOV.UK mockup
+   (docs/mockups/govuk_report_view.html, DECISIONS D19). These style markup we
+   emit ourselves, so they are stable.
+
+   HALF TWO: overrides of Streamlit's built-in widgets, targeted by
+   `data-testid`. Those attributes are Streamlit INTERNALS, not a public API,
+   and a Streamlit upgrade can rename them. Every such rule therefore names the
+   defect it closes and the version it was verified against, so a future upgrade
+   that breaks one is diagnosable rather than mysterious.
+
+   Verified against: Streamlit 1.60.0. The four attributes used below were
+   confirmed present in that release's frontend bundle. If a rule stops taking
+   effect after an upgrade, grep the new bundle for the attribute name before
+   assuming the CSS is wrong.
+
+   THE RULE THIS FILE OBEYS
+   Hue encodes epistemic status, never direction of travel. There is no
+   ".up is red, .down is green" pair anywhere in here, and there must not be:
+   that convention is what painted a falling footprint as an alarm (defect
+   A-01). Direction is a glyph, a sign and a word.
+   ========================================================================= */
+
+/* ---------------------------------------------------------------------------
+   Base type and links
+   ------------------------------------------------------------------------ */
+
+.stApp {
+  background: var(--ground);
+  color: var(--body-tx);
+  font-family: var(--font);
+}
+
+.stApp p,
+.stApp li,
+.stApp label {
+  font-size: var(--font-body);
+  line-height: 1.47;
+}
+
+.stApp a {
+  color: var(--blue);
+  text-decoration: underline;
+  text-underline-offset: 0.1em;
+}
+
+.stApp a:hover {
+  color: var(--blue-dark);
+  text-decoration-thickness: 3px;
+}
+
+/* Numbers line up in columns or they are not comparable. */
+.tnum,
+.stApp td.num,
+.stApp th.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Screen-reader-only text. Direction and status are carried in words as well
+   as glyphs, so a screen reader hears "fell" rather than a bare triangle. */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Focus: GOV.UK's yellow block with the black underline.
+   The yellow alone is 1.27:1 on white, so the underline is what carries the
+   3:1 boundary. Applied globally, because a keyboard user should never lose
+   their place inside a Streamlit widget.
+   ------------------------------------------------------------------------ */
+
+.stApp :focus-visible {
+  outline: 3px solid transparent;
+  color: var(--focus-tx);
+  background: var(--focus);
+  box-shadow: 0 -2px var(--focus), 0 4px var(--focus-edge);
+  text-decoration: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stApp * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Section headings. One H1, then H2 per section, then H3 within, which is the
+   spine defect A-12 asked for (the live page ran H2, H1, H3).
+   ------------------------------------------------------------------------ */
+
+.stApp .section {
+  margin-top: var(--space-7);
+}
+
+.stApp .section > .h2wrap {
+  border-top: 2px solid var(--body-tx);
+  padding-top: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.stApp .section h2,
+.stApp .section h3 {
+  color: var(--heading);
+  font-weight: 700;
+  margin: 0;
+  padding: 0;
+}
+
+.stApp .caption {
+  color: var(--secondary);
+  font-size: var(--font-small);
+  margin: var(--space-1) 0 0;
+  max-width: var(--measure);
+}
+
+/* ---------------------------------------------------------------------------
+   Status tags. Hue lives here and nowhere else: cited, not explained, held for
+   review, error. Each tag also carries its own words, so the meaning survives
+   greyscale, colour-blindness and a screen reader.
+   ------------------------------------------------------------------------ */
+
+.stApp .tag {
+  display: inline-block;
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1.2;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  white-space: nowrap;
+  background: var(--tag-blue-bg);
+  color: var(--tag-blue-tx);
+}
+
+.stApp .tag.green  { background: var(--tag-green-bg);  color: var(--tag-green-tx); }
+.stApp .tag.grey   { background: var(--tag-grey-bg);   color: var(--tag-grey-tx); }
+.stApp .tag.yellow { background: var(--tag-yellow-bg); color: var(--tag-yellow-tx); }
+.stApp .tag.red    { background: var(--tag-red-bg);    color: var(--tag-red-tx); }
+
+/* ---------------------------------------------------------------------------
+   Direction of travel. NO HUE, in either direction.
+
+   The mockup this was ported from carried `.d-up{color:var(--red)}` and
+   `.d-down{color:var(--green)}`. Those rules are the root cause of the audit's
+   most severe finding, a footprint decrease painted as an alarm beside a green
+   panel reporting the same fact as good news. They are deliberately absent, a
+   test forbids them, and direction is carried by the glyph, the sign and the
+   hidden word that components.movement() emits.
+   ------------------------------------------------------------------------ */
+
+.stApp .dir,
+.stApp .move {
+  color: var(--body-tx);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Inside the confirmation panel the ink is the panel's own, not the body's. */
+.stApp .panel .dir,
+.stApp .panel .move {
+  color: inherit;
+}
+
+/* ---------------------------------------------------------------------------
+   The verdict panel. Green means "the run completed and this is the answer",
+   not "good news". The partial variant is the honest neutral for a run whose
+   coverage sits below the stated bar: the number is incomplete, which is
+   neither good nor bad.
+   ------------------------------------------------------------------------ */
+
+.stApp .panel {
+  background: var(--panel-bg);
+  color: var(--panel-tx);
+  padding: var(--pad-card);
+  margin-top: var(--space-5);
+  text-align: center;
+}
+
+.stApp .panel .lab {
+  font-size: 15px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.stApp .panel .fig {
+  font-weight: 700;
+  font-size: clamp(30px, 6.5vw, 50px);
+  line-height: 1.05;
+  margin-top: var(--space-2);
+}
+
+.stApp .panel .sub {
+  font-size: clamp(16px, 2.4vw, 20px);
+  margin-top: var(--space-3);
+  font-weight: 700;
+}
+
+.stApp .panel .base {
+  font-size: 15px;
+  margin-top: var(--space-2);
+  font-weight: 400;
+}
+
+.stApp .panel--partial {
+  background: var(--panel-quiet);
+  color: var(--panel-quiet-tx);
+  border: 1px solid var(--border-control);
+}
+
+/* ---------------------------------------------------------------------------
+   Big-number stat row
+   ------------------------------------------------------------------------ */
+
+.stApp .stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin-top: var(--space-5);
+  border-top: 1px solid var(--border);
+}
+
+/* Grid children default to min-width:auto and refuse to shrink below their
+   content, which is one of the two phantom-scroll sources. */
+.stApp .stats > * {
+  min-width: 0;
+}
+
+@media (max-width: 620px) {
+  .stApp .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.stApp .stat {
+  padding: var(--space-4) var(--space-4) var(--space-4) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.stApp .stat .v {
+  font-weight: 700;
+  font-size: 34px;
+  line-height: 1;
+  color: var(--heading);
+}
+
+.stApp .stat .k {
+  font-size: var(--font-meta);
+  color: var(--secondary);
+  margin-top: var(--space-1);
+}
+
+/* ---------------------------------------------------------------------------
+   Key-and-value explanation block
+   ------------------------------------------------------------------------ */
+
+.stApp .kv {
+  display: grid;
+  grid-template-columns: 1fr;
+  border: 1px solid var(--border);
+  margin-top: var(--space-4);
+}
+
+.stApp .kv .row {
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.stApp .kv .row:last-child {
+  border-bottom: 0;
+}
+
+.stApp .kv .key {
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--secondary);
+  font-weight: 700;
+  margin-bottom: var(--space-1);
+}
+
+.stApp .kv .val {
+  font-size: var(--font-small);
+  color: var(--body-tx);
+  max-width: var(--measure);
+}
+
+/* ---------------------------------------------------------------------------
+   Warning text and the quiet empty state. An empty state is not a warning and
+   must not be dressed as one (defect A-11 was three message types sharing one
+   style).
+   ------------------------------------------------------------------------ */
+
+.stApp .warning {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  margin-top: var(--space-4);
+}
+
+.stApp .warning .icon {
+  flex: 0 0 auto;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background: var(--body-tx);
+  color: var(--ground);
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 35px;
+  text-align: center;
+}
+
+.stApp .warning .txt {
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--body-tx);
+  max-width: var(--measure);
+}
+
+.stApp .warning .txt .hd {
+  display: block;
+}
+
+.stApp .empty {
+  color: var(--secondary);
+  font-size: var(--font-small);
+}
+
+/* ---------------------------------------------------------------------------
+   Disclosures. A real <details>, so it is keyboard-operable with no JavaScript
+   and prints expanded. Every summary names what is inside and how much of it,
+   which is defect A-05.
+   ------------------------------------------------------------------------ */
+
+.stApp details.disclosure {
+  border: 1px solid var(--border-control);
+  margin-top: var(--space-3);
+}
+
+.stApp details.disclosure > summary {
+  padding: var(--space-3) var(--space-4);
+  font-weight: 700;
+  color: var(--heading);
+  background: var(--grey-1);
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.stApp details.disclosure > .disclosure-body {
+  padding: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+/* ---------------------------------------------------------------------------
+   Tables. Real markup, not a canvas (defect A-04), and horizontally scrollable
+   without dragging the page with them (defect A-06).
+   ------------------------------------------------------------------------ */
+
+.stApp .table-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+  margin-top: var(--space-2);
+  /* Load-bearing. Without `contain: paint` a table wider than this container
+     still contributes its width to the initial containing block, so the PAGE
+     gains a phantom horizontal scroll into blank space even though the table
+     scrolls correctly inside. Measured at 375px: 480px of empty scroll without
+     it, 0 with it. */
+  contain: paint;
+}
+
+.stApp table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: var(--font-table);
+}
+
+.stApp caption {
+  text-align: left;
+  color: var(--secondary);
+  font-size: var(--font-small);
+  padding-bottom: var(--space-2);
+}
+
+.stApp th,
+.stApp td {
+  text-align: left;
+  padding: 11px 14px 11px 0;
+  border-bottom: 1px solid var(--border);   /* decorative rule, not a control */
+  vertical-align: top;
+}
+
+.stApp thead th {
+  font-weight: 700;
+  color: var(--heading);
+  border-bottom: 2px solid var(--body-tx);
+}
+
+.stApp td.num,
+.stApp th.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.stApp td.item {
+  padding-right: var(--space-5);
+}
+
+/* ---------------------------------------------------------------------------
+   HALF TWO: Streamlit widget overrides. Each closes a measured defect.
+   ------------------------------------------------------------------------ */
+
+/* The other phantom-scroll source: flex children default to min-width:auto and
+   refuse to shrink below their content, so a wide element inside a column
+   widens the whole page. Verified against Streamlit 1.60.0. */
+[data-testid="stHorizontalBlock"] > *,
+[data-testid="stColumn"] > * {
+  min-width: 0;
+}
+
+/* A-03: captions rendered at 3.69:1, below the AA floor. The no-guess sentence,
+   which is the credibility of the whole tool, was the least legible text on the
+   page. Streamlit dims captions with opacity; --secondary is 7.07:1 on white.
+   Verified against Streamlit 1.60.0. */
+[data-testid="stCaptionContainer"],
+[data-testid="stCaptionContainer"] p {
+  opacity: 1 !important;
+  color: var(--secondary) !important;
+  font-size: var(--font-small);
+}
+
+/* A-02: the primary action was Streamlit's default red at 3.30:1, and red is
+   reserved here for genuine errors. GOV.UK green carries white at 6.21:1. The
+   44px floor is the pointer-target minimum. Streamlit builds the attribute as
+   `stBaseButton-${kind}`, so the primary and the form-submit variants both need
+   naming. Verified against Streamlit 1.60.0. */
+[data-testid="stBaseButton-primary"],
+[data-testid="stBaseButton-primaryFormSubmit"] {
+  background: var(--action-bg) !important;
+  border: 1px solid var(--action-bg) !important;
+  color: var(--action-tx) !important;
+  font-weight: 700;
+  min-height: 44px;
+  border-radius: 0;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+
+/* A-08: secondary control borders measured 1.45:1. Interactive boundaries owe
+   3:1 under WCAG 1.4.11, so they use --border-control (19.59:1 on white), which
+   is the colour GOV.UK Frontend itself uses for input borders. Never --border.
+   Verified against Streamlit 1.60.0. */
+[data-testid="stBaseButton-secondary"],
+[data-testid="stBaseButton-secondaryFormSubmit"],
+[data-testid="stDownloadButton"] button {
+  border: 1px solid var(--border-control) !important;
+  color: var(--body-tx) !important;
+  min-height: 44px;
+  border-radius: 0;
+}
+
+/* A-10: the dataframe toolbar's controls were 22px, half the pointer-target
+   minimum. Verified against Streamlit 1.60.0. */
+[data-testid="stElementToolbarButton"] {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* ---------------------------------------------------------------------------
+   Print. The output of this tool goes into an assurance folder, so the printed
+   page is a real deliverable, not an afterthought. Hide the app chrome, drop to
+   black on white, and keep an explanation block from splitting across pages.
+   ------------------------------------------------------------------------ */
+
+@media print {
+  [data-testid="stSidebar"],
+  [data-testid="stToolbar"],
+  [data-testid="stHeader"],
+  [data-testid="stElementToolbar"],
+  [data-testid="stDownloadButton"] {
+    display: none !important;
+  }
+
+  .stApp {
+    background: #ffffff !important;
+    color: #0b0c0c !important;
+  }
+
+  .stApp a {
+    color: #0b0c0c !important;
+  }
+
+  /* A printed report must contain the reasoning, not a row of closed drawers.
+     The browser hides a closed details' contents, so this forces every one open
+     on paper regardless of what the reader had expanded on screen. */
+  .stApp details.disclosure > .disclosure-body {
+    display: block !important;
+  }
+
+  .stApp details.disclosure {
+    page-break-inside: avoid;
+  }
+
+  table {
+    page-break-inside: auto;
+  }
+
+  thead {
+    display: table-header-group;   /* repeat headers on every printed page */
+  }
+
+  tr {
+    page-break-inside: avoid;
+  }
+}

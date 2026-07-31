@@ -29,11 +29,23 @@ The Google Cloud budget cap is set (the D17 backstop) and the owner deliberately
 deferred the sign-in gate. Turn it on when the link goes public, when the budget
 alert fires, or when anyone relies on the tool. Secrets edit, no code change.
 
-Gates: `pytest` green (44 tests, including the grounding trap, a real-workbook
+**Interface:** the app now renders through an owned design layer (`src/ui/`)
+rather than Streamlit defaults, on the GOV.UK palette the owner chose (D19). The
+page reads Result, Confidence, Movers, Explanations, Export, with the trust gate
+second rather than near the bottom. Hue carries epistemic status only; direction
+of travel is a glyph, a sign and a word, so a falling footprint is never painted
+as an alarm. Tables are real tables (caption, column scopes, printable), the Run
+control sits in the main canvas so it survives the sidebar collapsing below
+768px, and one run exports four artifacts sharing a run id, each carrying its
+unresolved items in the front matter (D20).
+
+Gates: `pytest` green (144 tests, including the grounding trap, a real-workbook
 test, the microcopy gate, the relabel suite (detection + family grouping), the
 material-relabel explanation path, the retrieval-quality gold set, loader/diff
 golden vectors, the real-data ingest suite, and the access-gating suite (free
-tier never calls the model, approval rules)). Three CI gates are live: the microcopy linter (no-em-dash house
+tier never calls the model, approval rules), the design-system suite (contrast in
+both themes, escaping, table semantics, colour independence) and the export-pack
+suite (four artifacts, one run id, unresolved items in the front matter)). Three CI gates are live: the microcopy linter (no-em-dash house
 rule), a retrieval-quality gate that fails the build on any WRONG grounding note,
 and a dependency-audit gate (`pip-audit` on requirements); the loader/diff golden
 vectors run in the same pytest step. Streamlit app boots clean. Demo footprint on
@@ -87,16 +99,25 @@ paired renames group into 11 readable families.
   if one is set, drives explanations for everyone (offline for everyone if not).
   Local run / demo / tests are therefore unchanged. Owner guide `docs/DEPLOY_GUIDE.md`,
   secrets template `.streamlit/secrets.toml.example`.
+- **Design system and export pack (DECISIONS D20), shipped:** `src/ui/` holds the
+  token layer (`tokens.css`, both themes, every pair carrying a machine-checked
+  `@contrast` annotation), the component CSS, the HTML builders
+  (`components.py`) and the number formatting (`format.py`). `.streamlit/config.toml`
+  themes Streamlit's own chrome so the primary action never flashes red.
+  `src/export.py` turns one run into four artifacts (xlsx, json, md, print-ready
+  html memo) sharing a run id, with a completeness checklist whose open items are
+  written into every artifact's front matter. 11 of the audit's 12 defects closed;
+  A-07 needs a Streamlit-level fix.
 - Docs: WORKING_PREFERENCES, DECISIONS, PROMPT_LOG, this file.
 
 ## Known gaps / next candidates
 Backlog now lives in `REFERENCE.md` (kept out of this snapshot). Short version:
-**the design-system build (`docs/PLAN_design_system.md`, now the top item: it
-closes 12 measured accessibility defects and delivers VISION move #3's cited,
-printable memo as part of the export pack)**, turning on the sign-in gate when the
-live link goes public (deferred, D18), header-row tolerance in ingest, semantic
-relabels, and lockfile pinning. "GOV.UK theming" is no longer a vague backlog
-line: the direction is locked (D19) and the work is specified end to end.
+**A-07, the one audit defect still open** (Streamlit's file input has no
+programmatic accessible name and neither CSS nor Python can give it one), the
+best-candidate name on a below-threshold match, turning on the sign-in gate when
+the live link goes public (deferred, D18), header-row tolerance in ingest,
+semantic relabels, and lockfile pinning. The design-system build is DONE
+(`docs/PLAN_design_system.md`, D20), so "GOV.UK theming" leaves the backlog.
 
 ## Resume here
 Most recent handoffs (older ones rotate into `docs/archive/`):
@@ -124,18 +145,45 @@ Most recent handoffs (older ones rotate into `docs/archive/`):
   (480px of blank space at 375px) unless the container carries `contain:paint`.
   **Docs and mockups only, no pipeline or app code touched**; 44 tests green.
   Next: implement `docs/PLAN_design_system.md`, starting with the token layer.
-- H17 (2026-07-31): Owner set the Google Cloud budget cap and chose to defer the
-  sign-in gate on the live app, so the deploy runs OPEN with the cap as the only
-  control. Recorded as D18 rather than left as an oversight, with the triggers
-  that should flip it (link shared publicly, budget alert fires, anyone relies on
-  the tool) and the note that turning it on is a secrets edit, not a code change.
-  D18 also corrects the D17 write-up: `src/auth.py` degrades to "open, offline for
-  all" only when no API key is set, and to "open, AI for all" when one is.
-  Docs-only, no code touched.
+- H19 (2026-07-31): Implemented `docs/PLAN_design_system.md` end to end, in four
+  commits: the token layer, the component builders, the app view-layer rewrite,
+  and the export pack. The app had injected no CSS at all and had no
+  `.streamlit/config.toml`, so every visual decision was a Streamlit default;
+  that is what the audit's 12 defects were measured against. **11 of the 12 are
+  now closed** (A-07 is not, see below). The load-bearing change is that hue now
+  encodes epistemic status only (cited, not explained, needs review, error) and
+  direction of travel is carried by a glyph, an explicit sign and a word, which
+  kills A-01 at the root rather than swapping two colours. Two claims from the
+  plan were verified by measurement rather than assertion: all 26 declared token
+  pairs clear their WCAG floor in both themes (the figures the plan predicted,
+  including the 7.77:1 yellow tint and the 19.59:1 border, reproduce exactly),
+  and in headless Chromium at a true 375px viewport the memo shows zero phantom
+  horizontal scroll, while removing `contain: paint` reproduces the defect at
+  248px. **The running app was checked in a browser as well**, which earlier
+  sessions assumed was impossible here (the proxy blocks the live deploy, not
+  localhost, so `streamlit run` plus Playwright works; recipe in `REFERENCE.md`).
+  At 375, 768 and 1440: zero phantom scroll, zero canvas grids, green CTA at
+  44px, captions at 7.07:1, no tap target under 44px. That pass caught three
+  defects no unit test could, all fixed. Tests went 44 to 144. Nothing in the
+  pipeline, matching, diff or explanation layer was touched.
+- H18 (2026-07-31): Front-end audit received, branding decided, design-system
+  work planned. Saved the external UI/UX/accessibility audit verbatim
+  (`docs/audit/`), which measured **12 defects** in the live app (5 critical) by
+  reading the real DOM. Independently recomputed every contrast ratio it reported
+  for its own palette: all reproduce exactly. The audit proposed replacing the
+  visual identity; the owner reviewed both directions as working mockups on the
+  same real figures and **kept GOV.UK** (D19), so the two "Ledger" mockups are
+  committed as the rejected alternative rather than deleted. Docs and mockups
+  only, no pipeline or app code touched.
 
-Next likely task: header-row tolerance in ingest, then VISION move #3 (a dated,
-cited, printable memo as the first-class output). Deferred by owner decision, not
-forgotten: the sign-in gate on the live deploy (D18), to be turned on when the
-link goes public. Lower-priority: GOV.UK theming from the saved mockup
-(`docs/mockups/govuk_report_view.html`), a finer within-family relabel pairing to
-make per-variant deltas trustworthy, lockfile pinning, or semantic relabels.
+Next likely task: **A-07, the one defect left open.** Streamlit's file uploader
+renders an `<input type="file">` with no programmatic accessible name, and that
+cannot be fixed from CSS or from Python. It needs either a Streamlit upgrade that
+labels it, or a small custom component. Then: header-row tolerance in ingest, and
+surfacing the best-candidate name on a below-threshold match (the coverage control
+shows the score and a sentence, but `src/matching.py` discards the losing
+candidate's name, so "here is what it nearly matched" needs a one-line change
+there and was left rather than smuggled into a view-layer pass). Deferred by owner
+decision, not forgotten: the sign-in gate on the live deploy (D18). Lower
+priority: a finer within-family relabel pairing, lockfile pinning, semantic
+relabels.

@@ -1,0 +1,398 @@
+/* ============================================================================
+   memo.css - the standalone, print-ready memo.
+
+   Why this is a separate file from components.css: those rules are scoped to
+   `.stApp`, Streamlit's root element, because they have to out-specify
+   Streamlit's own defaults. The memo is a document we render end to end with no
+   Streamlit anywhere, so it needs the same look without that prefix.
+
+   Both files consume the SAME tokens.css, and a test asserts that neither uses a
+   colour that is not a defined token, so the two cannot drift into different
+   palettes.
+
+   The memo is the artifact that ends up in an assurance folder. The audit's
+   central complaint about the live app was that its tables were painted to
+   canvas and could not be printed at all; this file is the other half of that
+   answer. Everything here is print-first: no interactivity, nothing collapsed,
+   table headers repeated across pages, and a provenance block at the top that
+   says which run produced the numbers.
+
+   The memo opts into dark mode with data-theme="auto" because, unlike the app,
+   we control the whole document, so there is no Streamlit chrome to disagree
+   with. Print always resolves to black on white regardless.
+   ========================================================================= */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--body-tx);
+  font-family: var(--font);
+  font-size: var(--font-body);
+  line-height: 1.47;
+}
+
+main {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-5) var(--space-8);
+}
+
+h1 {
+  color: var(--heading);
+  font-weight: 700;
+  font-size: clamp(28px, 5vw, 40px);
+  line-height: 1.1;
+  margin: 0 0 var(--space-3);
+}
+
+h2 {
+  color: var(--heading);
+  font-weight: 700;
+  font-size: clamp(20px, 3vw, 25px);
+  margin: 0;
+}
+
+h3 {
+  color: var(--heading);
+  font-weight: 700;
+  font-size: 18px;
+  margin: var(--space-5) 0 var(--space-2);
+}
+
+p {
+  margin: 0 0 var(--space-3);
+  max-width: var(--measure);
+}
+
+a {
+  color: var(--blue);
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---- Provenance. Which run produced these numbers, and what was unresolved
+   when it was exported. This is the block that makes the memo auditable. ---- */
+
+.provenance {
+  border: 1px solid var(--border-control);
+  padding: var(--space-4);
+  margin-bottom: var(--space-5);
+  font-size: var(--font-small);
+}
+
+.provenance dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-1) var(--space-4);
+  margin: 0;
+}
+
+.provenance dt {
+  color: var(--secondary);
+  font-weight: 700;
+}
+
+.provenance dd {
+  margin: 0;
+}
+
+.provenance .unresolved {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+/* ---- Sections ---- */
+
+.section {
+  margin-top: var(--space-7);
+}
+
+.section > .h2wrap {
+  border-top: 2px solid var(--body-tx);
+  padding-top: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.caption {
+  color: var(--secondary);
+  font-size: var(--font-small);
+  margin: var(--space-1) 0 0;
+  max-width: var(--measure);
+}
+
+/* ---- Status tags. Hue for epistemic status only. ---- */
+
+.tag {
+  display: inline-block;
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1.2;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  white-space: nowrap;
+  background: var(--tag-blue-bg);
+  color: var(--tag-blue-tx);
+}
+
+.tag.green  { background: var(--tag-green-bg);  color: var(--tag-green-tx); }
+.tag.grey   { background: var(--tag-grey-bg);   color: var(--tag-grey-tx); }
+.tag.yellow { background: var(--tag-yellow-bg); color: var(--tag-yellow-tx); }
+.tag.red    { background: var(--tag-red-bg);    color: var(--tag-red-tx); }
+
+/* Direction of travel carries no hue here either. */
+.dir,
+.move {
+  color: var(--body-tx);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ---- The result panel ---- */
+
+.panel {
+  background: var(--panel-bg);
+  color: var(--panel-tx);
+  padding: var(--pad-card);
+  text-align: center;
+}
+
+.panel .dir,
+.panel .move {
+  color: inherit;
+}
+
+.panel .lab {
+  font-size: 15px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.panel .fig {
+  font-weight: 700;
+  font-size: clamp(28px, 6vw, 44px);
+  line-height: 1.05;
+  margin-top: var(--space-2);
+}
+
+.panel .sub {
+  font-size: 18px;
+  margin-top: var(--space-3);
+  font-weight: 700;
+}
+
+.panel .base {
+  font-size: 15px;
+  margin-top: var(--space-2);
+  font-weight: 400;
+}
+
+.panel--partial {
+  background: var(--panel-quiet);
+  color: var(--panel-quiet-tx);
+  border: 1px solid var(--border-control);
+}
+
+/* ---- Key-and-value explanation blocks ---- */
+
+.kv {
+  border: 1px solid var(--border);
+  margin-top: var(--space-3);
+}
+
+.kv .row {
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.kv .row:last-child {
+  border-bottom: 0;
+}
+
+.kv .key {
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--secondary);
+  font-weight: 700;
+  margin-bottom: var(--space-1);
+}
+
+.kv .val {
+  font-size: var(--font-small);
+  max-width: var(--measure);
+}
+
+/* ---- Tables ---- */
+
+.table-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+  contain: paint;          /* stops a wide table dragging the page with it */
+  margin-top: var(--space-2);
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: var(--font-table);
+}
+
+caption {
+  text-align: left;
+  color: var(--secondary);
+  font-size: var(--font-small);
+  padding-bottom: var(--space-2);
+}
+
+th,
+td {
+  text-align: left;
+  padding: 9px 12px 9px 0;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+thead th {
+  font-weight: 700;
+  color: var(--heading);
+  border-bottom: 2px solid var(--body-tx);
+}
+
+td.num,
+th.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ---- Warning text and the quiet empty state ---- */
+
+.warning {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  margin-top: var(--space-4);
+}
+
+.warning .icon {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--body-tx);
+  color: var(--ground);
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 32px;
+  text-align: center;
+}
+
+.warning .txt {
+  font-weight: 700;
+  max-width: var(--measure);
+}
+
+.warning .txt .hd {
+  display: block;
+}
+
+.empty {
+  color: var(--secondary);
+  font-size: var(--font-small);
+}
+
+footer {
+  margin-top: var(--space-7);
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-4);
+  color: var(--secondary);
+  font-size: var(--font-meta);
+  max-width: var(--measure);
+}
+
+/* ---------------------------------------------------------------------------
+   Print. This is the memo's real output format: the user prints to PDF from the
+   browser, which is how a client-ready PDF ships without adding a PDF-writing
+   dependency (docs/VISION.md settled this, see the plan's constraint note).
+   ------------------------------------------------------------------------ */
+
+@page {
+  margin: 18mm 16mm;
+}
+
+@media print {
+  body {
+    background: #ffffff;
+    color: #0b0c0c;
+    font-size: 11pt;
+  }
+
+  main {
+    max-width: none;
+    padding: 0;
+  }
+
+  a {
+    color: #0b0c0c;
+  }
+
+  /* Panel colour does not survive most printers' default settings, so the
+     memo's result block prints as a bordered box rather than relying on ink. */
+  .panel {
+    background: #ffffff;
+    color: #0b0c0c;
+    border: 2px solid #0b0c0c;
+  }
+
+  .panel--partial {
+    border-style: dashed;
+  }
+
+  .tag {
+    border: 1px solid #0b0c0c;
+    background: #ffffff;
+    color: #0b0c0c;
+  }
+
+  .table-scroll {
+    overflow: visible;
+    contain: none;
+  }
+
+  thead {
+    display: table-header-group;   /* repeat headers on every printed page */
+  }
+
+  tr,
+  .kv .row,
+  .provenance {
+    page-break-inside: avoid;
+  }
+
+  h2,
+  h3 {
+    page-break-after: avoid;
+  }
+}

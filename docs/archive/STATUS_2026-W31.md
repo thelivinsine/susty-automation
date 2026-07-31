@@ -1,5 +1,13 @@
 # Status handoffs, 2026-W31
 
+- H17 (2026-07-31): Owner set the Google Cloud budget cap and chose to defer the
+  sign-in gate on the live app, so the deploy runs OPEN with the cap as the only
+  control. Recorded as D18 rather than left as an oversight, with the triggers
+  that should flip it (link shared publicly, budget alert fires, anyone relies on
+  the tool) and the note that turning it on is a secrets edit, not a code change.
+  D18 also corrects the D17 write-up: `src/auth.py` degrades to "open, offline for
+  all" only when no API key is set, and to "open, AI for all" when one is.
+  Docs-only, no code touched.
 - H16 (2026-07-31): Owner-facing session, no pipeline code changed. Walked the
   owner through the two manual steps the sandbox cannot do: the GitHub default
   branch is now `main` (verified via the API: `default_branch: "main"`), and the

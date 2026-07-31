@@ -421,3 +421,89 @@ Do not re-open the palette without new evidence. Rebuilding the comparison is
 cheap now that both mockups exist.
 
 Plan: `docs/PLAN_design_system.md`.
+
+## D20. The design system shipped, and the four rules that survived contact
+
+`docs/PLAN_design_system.md` is implemented. D19 settled the palette; this
+records what was actually built, what changed from the plan, and what is still
+open, so nobody re-derives it.
+
+**What shipped.** An owned design layer in `src/ui/`: `tokens.css` (both themes),
+`components.css` (the app, scoped to Streamlit's root), `memo.css` (the
+standalone print memo), `components.py` (HTML builders), `format.py` (figures and
+direction), plus `.streamlit/config.toml` so Streamlit's own chrome matches, and
+`src/export.py` for the four-artifact pack. `app.py`'s view layer was rewritten
+around Result, Confidence, Movers, Explanations, Export. No pipeline, matching,
+diff or explanation logic was touched, by design.
+
+**1. Hue encodes epistemic status. Direction is glyph, sign and word.** This is
+the rule everything else defers to, and it is now enforced in three places rather
+than trusted: `format.direction()` returns a glyph and a word and no colour at
+all; `components.movement()` hides the glyph from assistive tech and exposes the
+word; and a test forbids `.d-up`, `.d-down`, `.move.up` and `.move.down` from
+appearing in our CSS at all. A footprint that falls is not good news, and one
+that rises is not an error.
+
+**2. Contrast is arithmetic, so it is a test.** Every token pair in `tokens.css`
+carries an `@contrast text:` or `@contrast ui:` annotation, and
+`tests/test_design_system.py` parses them, computes WCAG 2.1 relative luminance
+in pure Python, and fails the build below 4.5:1 for text or 3:1 for an
+interactive boundary, **in both themes**. All 26 pairs pass. Every figure D19
+predicted reproduces exactly (yellow tint 7.77:1 light and 9.90:1 dark,
+`--border-control` 19.59:1 light and 10.11 / 8.71 / 7.32 dark, muted text
+7.07:1). Add a token pair, add its annotation, or the gate does not know to look.
+
+**3. `contain: paint` is load-bearing, and now it is measured.** In headless
+Chromium at a true 375px viewport the memo's page `scrollWidth` equals its
+`clientWidth`: zero phantom horizontal scroll. Deleting the one `contain: paint`
+declaration reproduces the defect at **248px** of blank scroll. (D19 recorded
+480px from the mockups; different table, different number, same defect and same
+fix.) Chrome's headless window floors at ~500px, so a true narrow viewport needs
+an iframe, which is worth knowing before anyone re-runs this.
+
+**The app itself was checked in a browser too**, which earlier sessions assumed
+the sandbox could not do. The proxy blocks the live deploy, not localhost, so
+`streamlit run` plus Playwright works (see `REFERENCE.md` for the recipe). At
+375, 768 and 1440: zero phantom scroll, zero canvas grids, three real tables, the
+primary action at `rgb(0,112,60)` and 44px tall, captions at `rgb(80,90,95)` and
+full opacity, and no tap target under 44px. It also caught three things no unit
+test could: a column ratio that crushed the primary button at 375px, a glyph
+running into its figure, and the panel rounding to 1 decimal beside a sentence
+using 2. Run the browser pass before calling an interface change done.
+
+**4. The PDF question is settled as print-ready HTML.** The audit asked for a
+PDF. `pdfplumber` only reads them and CLAUDE.md rules out reportlab and
+weasyprint, so the pack ships an HTML memo the browser prints to PDF, which is
+what `docs/VISION.md` already committed to. The memo makes zero external
+requests (asserted in a test), because it holds a client's confidential
+inventory. A generated PDF binary remains a separate dependency decision.
+
+**Deviations from the plan, all deliberate.**
+
+- **Dark mode is opt-in, not automatic.** The plan carried the mockup's
+  `prefers-color-scheme` block. Streamlit follows the system setting only when no
+  custom theme is set, and our injected CSS cannot read that setting, so a
+  dark-mode visitor would have got our dark tokens inside Streamlit's light
+  chrome. The app is pinned light to match `config.toml`; documents we render end
+  to end opt in with `data-theme="auto"`. The dark tokens are still fully tested.
+- **`memo.css` is a fifth file the plan did not list.** `components.css` is scoped
+  to `.stApp` so it can out-specify Streamlit; a standalone memo has no such
+  element. Both consume the same tokens and a test asserts neither uses an
+  undefined one, so they cannot drift into different palettes.
+- **The coverage control shows the score and a sentence, not the best candidate.**
+  The plan wanted "each with its best candidate and score". `src/matching.py`
+  discards the losing candidate's name when it falls below the threshold, and
+  this pass was not allowed to change matching. The sentence cites the real 82.0
+  threshold. Surfacing the near-miss name is a one-line change in `matching.py`
+  and is on the backlog.
+
+**Still open: A-07.** Streamlit's file uploader renders an `<input type="file">`
+with no programmatic accessible name. That cannot be fixed from CSS or from
+Python, so 11 of the audit's 12 defects are closed and this one needs either a
+Streamlit upgrade or a small custom component.
+
+**One fragility to know about.** The Streamlit widget overrides are targeted by
+`data-testid`, which is a Streamlit internal and not a public API. All four were
+confirmed present in the 1.60.0 bundle, each rule names the defect it closes and
+the version it was verified against, and a test enforces that labelling. A future
+upgrade that breaks one should be diagnosable rather than mysterious.

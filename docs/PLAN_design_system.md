@@ -1,7 +1,12 @@
 # Plan: design system, handbook UI, and export pack
 
-Status: **approved, not yet implemented.** Written 2026-07-31.
-Source document: `docs/audit/2026-07-31_frontend_ux_audit.html`.
+Status: **IMPLEMENTED 2026-07-31** (commits 6e902c5, 3c0fbbb, bc89bdb, ce7c7a3).
+Written 2026-07-31. Source document: `docs/audit/2026-07-31_frontend_ux_audit.html`.
+
+What actually shipped, what deviated from this plan and why, and the one defect
+still open (A-07) are recorded in `docs/DECISIONS.md` **D20**. Read that first:
+this document is the specification as approved, kept as written so the decisions
+behind it stay legible, not a description of the finished code.
 
 ## Why this work
 
