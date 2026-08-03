@@ -101,23 +101,40 @@ def golden(tmp_path_factory):
 
 
 # --- Golden: exact loader output ----------------------------------------------
-# (activity, unit, kg_co2e, scope, category). The duplicate diesel row is gone,
+# (activity, unit, kg_co2e, scope, category, source_sheet, source_row). The
+# source_row values are the 1-based rows in the fixture workbook, so they also pin
+# that provenance survives the super-header expansion and the forward-fill: the
+# two Aluminium blocks come from the SAME row 6, expanded by the super-header, and
+# Coal is row 10 not row 9 because the duplicate diesel row sits between them and
+# is dropped by the dedup. Every row number here was checked against the fixture's
+# actual cells with openpyxl, not copied from the loader's own output. The
+# duplicate diesel row is gone,
 # the "Year" column is absent, units are normalized (litres->litre,
 # tonnes->tonne), the Scope-3 sheet's messy scope is normalized, and the two
 # kg CO2e blocks are expanded into distinct activities via the super-header.
 EXPECTED_2025 = [
-    ("Liquid fuels - Diesel", "litre", 2.5, "Scope 1", "Fuels"),
-    ("Liquid fuels - Petrol", "litre", 2.3, "Scope 1", "Fuels"),
-    ("Gaseous fuels - Natural gas", "kwh", 0.18, "Scope 1", "Fuels"),
-    ("Solid fuels - Coal", "kg", 2.9, "Scope 1", "Fuels"),
-    ("Metal - Aluminium - Primary material production", "tonne", 12000.0, "Scope 3", "Material use"),
-    ("Metal - Aluminium - Closed-loop source", "tonne", 500.0, "Scope 3", "Material use"),
+    ("Liquid fuels - Diesel", "litre", 2.5, "Scope 1", "Fuels", "Fuels", 6),
+    ("Liquid fuels - Petrol", "litre", 2.3, "Scope 1", "Fuels", "Fuels", 7),
+    ("Gaseous fuels - Natural gas", "kwh", 0.18, "Scope 1", "Fuels", "Fuels", 8),
+    ("Solid fuels - Coal", "kg", 2.9, "Scope 1", "Fuels", "Fuels", 10),
+    ("Metal - Aluminium - Primary material production", "tonne", 12000.0, "Scope 3", "Material use", "Material use", 6),
+    ("Metal - Aluminium - Closed-loop source", "tonne", 500.0, "Scope 3", "Material use", "Material use", 6),
 ]
 
 
 def test_loader_columns_are_exactly_the_contract(golden):
     old, _ = golden
-    assert list(old.columns) == ["activity", "unit", "kg_co2e", "scope", "category", "version"]
+    assert list(old.columns) == [
+        "activity",
+        "unit",
+        "kg_co2e",
+        "scope",
+        "category",
+        "version",
+        "source_file",
+        "source_sheet",
+        "source_row",
+    ]
 
 
 def test_loader_output_matches_golden(golden):
@@ -131,6 +148,9 @@ def test_loader_output_matches_golden(golden):
         assert got.scope == exp[3]
         assert got.category == exp[4]
         assert got.version == "2025"
+        assert got.source_file == "defra_2025.xlsx"
+        assert got.source_sheet == exp[5]
+        assert got.source_row == exp[6]
 
 
 def test_loader_drops_duplicate_activity_unit(golden):

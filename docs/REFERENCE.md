@@ -60,11 +60,13 @@ How to apply it:
   losing candidate's name is a small change there, and would make the review
   queue much faster to work through. Left rather than smuggled into a view-layer
   pass that was scoped not to touch matching.
-- **Citations in the memo (VISION move #3, second half).** Planned in
-  `docs/PLAN_cited_memo.md`. D20's memo prints a green "Cited" tag but never the
-  quote it was grounded in, and no factor carries its workbook, sheet, or row.
-  Most of the provenance is not in the data yet, so this is plumbing (loader,
-  retrieval return shape, explain passthrough) before rendering. Next build task.
+- **Offline mode duplicates the quote (from D21).** The offline explainer embeds
+  the DEFRA note inside `plain_english_reason`, so the memo shows the note twice:
+  once truncated in the reason, once verbatim in the citation block. With a live
+  model there is no duplication, because the reason is a short sentence. Fixing it
+  means editing the offline explainer's output, which is the grounding layer, so
+  it was left out of a citation-rendering change. Worth doing when the offline
+  explainer is next opened.
 - Semantic relabels with low string overlap (Incineration -> Combustion) still
   read as added/removed; would need DEFRA's own relabel notes.
 - Package-manager pin + lockfile for reproducible installs (deps are audited now,

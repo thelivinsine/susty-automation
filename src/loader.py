@@ -3,6 +3,7 @@ loader.py — read a DEFRA/DESNZ GHG conversion-factor workbook and normalize it
 into ONE tidy table:
 
     activity | unit | kg_co2e | scope | category | version
+    | source_file | source_sheet | source_row
 
 This is written against the REAL "Government conversion factors for company
 reporting — full set" workbook, whose layout is fiddly:
@@ -25,7 +26,9 @@ Public function:  load_defra(path, version_label) -> pandas.DataFrame
 
 from __future__ import annotations
 
+import os
 import re
+
 import pandas as pd
 
 
@@ -106,8 +109,14 @@ def _clean_unit(unit) -> str:
     return u
 
 
-def _parse_sheet(sheet: pd.DataFrame, sheet_name: str) -> pd.DataFrame | None:
-    """Turn one raw sheet into normalized rows, or None if it isn't a factor sheet."""
+def _parse_sheet(
+    sheet: pd.DataFrame, sheet_name: str, source_file: str = ""
+) -> pd.DataFrame | None:
+    """Turn one raw sheet into normalized rows, or None if it isn't a factor sheet.
+
+    `source_file` is carried onto every row so a citation can name the workbook a
+    factor came from. It is recorded, never reconstructed later (DECISIONS D2).
+    """
     header_row = _find_header_row(sheet)
     if header_row is None:
         return None
@@ -181,6 +190,13 @@ def _parse_sheet(sheet: pd.DataFrame, sheet_name: str) -> pd.DataFrame | None:
                     "kg_co2e": val,
                     "scope": scope,
                     "category": sheet_name,
+                    "source_file": source_file,
+                    "source_sheet": sheet_name,
+                    # `i` is the 0-based position in the raw sheet, and the sheet
+                    # was read with header=None, so no row was consumed as a
+                    # header. +1 is therefore the row number a human sees when
+                    # they open the workbook and scroll to it.
+                    "source_row": i + 1,
                 }
             )
 
@@ -197,14 +213,20 @@ def load_defra(path: str, version_label: str) -> pd.DataFrame:
     """
     Load a DEFRA GHG conversion-factor workbook and return a normalized table:
         activity | unit | kg_co2e | scope | category | version
+        | source_file | source_sheet | source_row
 
     `version_label` (e.g. "2025") is stamped on every row so two years can be
     diffed later.
+
+    The three source_* columns are the factor's provenance: the workbook, the
+    sheet, and the row a human would scroll to. They exist so a cited memo can
+    show where a number came from instead of asking the reader to trust it.
     """
+    source_file = os.path.basename(path)
     sheets = pd.read_excel(path, sheet_name=None, header=None, engine="openpyxl")
     frames = []
     for name, sheet in sheets.items():
-        parsed = _parse_sheet(sheet, name)
+        parsed = _parse_sheet(sheet, name, source_file)
         if parsed is not None and not parsed.empty:
             frames.append(parsed)
 
@@ -221,4 +243,16 @@ def load_defra(path: str, version_label: str) -> pd.DataFrame:
     df = df.drop_duplicates(subset=["activity", "unit"], keep="first").reset_index(
         drop=True
     )
-    return df[["activity", "unit", "kg_co2e", "scope", "category", "version"]]
+    return df[
+        [
+            "activity",
+            "unit",
+            "kg_co2e",
+            "scope",
+            "category",
+            "version",
+            "source_file",
+            "source_sheet",
+            "source_row",
+        ]
+    ]
