@@ -7,12 +7,23 @@ here. No vector DB — plain keyword + fuzzy retrieval, kept in memory.
 Public functions:
     extract_changes_text(pdf_path) -> str
     chunk_changes(text)            -> list[dict{title, text}]
+    load_change_chunks(pdf, xlsx)  -> list[dict{title, text, source, source_file}]
     retrieve_passage(chunks, material, min_score) -> (passage_text, score)
+    retrieve_citation(chunks, material, min_score) -> dict | None
+
+WHY TWO RETRIEVE FUNCTIONS. `retrieve_passage` returns the flat text the
+explainer is grounded in, which is all the model ever needed. A cited memo needs
+more: the section heading on its own, the quote on its own, and which document
+the note came from, so a reader can check the claim instead of trusting a badge.
+`retrieve_citation` returns that, and both call the SAME `_best_chunk`, so the
+two can never disagree about which passage won.
 """
 
 from __future__ import annotations
 
+import os
 import re
+
 import pdfplumber
 import openpyxl
 from rapidfuzz import fuzz
@@ -123,20 +134,35 @@ def load_change_chunks(pdf_path: str | None, new_workbook_path: str | None) -> l
     Build grounding chunks, preferring a real Major Changes PDF, then falling
     back to the new workbook's "What's new" sheet. Returns [] if neither works
     (the explainer then honestly reports "no official reason found").
+
+    Each chunk is TAGGED with the document it came from. Without the tag a memo
+    could only say "the DEFRA notes", which is not a citation a reader can follow:
+    the PDF and the workbook sheet are different documents, and which one was read
+    is part of the claim.
     """
     if pdf_path:
         try:
             chunks = chunk_changes(extract_changes_text(pdf_path))
             if chunks:
-                return chunks
+                return _tag(chunks, "Major Changes report", pdf_path)
         except Exception:
             pass
     if new_workbook_path:
         try:
-            return chunk_whats_new(extract_whats_new_text(new_workbook_path))
+            chunks = chunk_whats_new(extract_whats_new_text(new_workbook_path))
+            return _tag(chunks, '"What\'s new" sheet', new_workbook_path)
         except Exception:
             pass
     return []
+
+
+def _tag(chunks: list[dict], source: str, path: str) -> list[dict]:
+    """Stamp every chunk with the document it was read from."""
+    name = os.path.basename(path)
+    for c in chunks:
+        c["source"] = source
+        c["source_file"] = name
+    return chunks
 
 
 def _keywords(material: str) -> set[str]:
@@ -155,14 +181,18 @@ def _keyword_overlap(material: str, passage: str) -> float:
     return hit / len(kws)
 
 
-def retrieve_passage(chunks: list[dict], material: str, min_score: float = 0.5):
+def _best_chunk(chunks: list[dict], material: str, min_score: float = 0.5):
     """
-    Return (passage_text, score) for the chunk best matching `material`, or
-    ("", 0.0) if nothing is relevant enough. A returned empty string is the
-    signal that the report does NOT explain this change — the explainer must then
-    say so rather than invent a reason.
+    The single ranking function. Returns (chunk, score), or (None, score) when
+    nothing clears the bar. A returned None is the signal that the report does
+    NOT explain this change, and the explainer must then say so rather than
+    invent a reason.
+
+    DECISIONS D11 lives in this function. Do not change the scoring here to make
+    a citation render more often: a citation that names the wrong note is worse
+    than no citation at all.
     """
-    best_text, best_score = "", 0.0
+    best_chunk, best_score = None, 0.0
     for ch in chunks:
         haystack = f"{ch['title']} {ch['text']}"
         overlap = _keyword_overlap(material, haystack)
@@ -178,8 +208,44 @@ def retrieve_passage(chunks: list[dict], material: str, min_score: float = 0.5):
         title_fuzz = fuzz.token_set_ratio(material.lower(), ch["title"].lower()) / 100.0
         score = max(overlap, title_fuzz) if overlap >= min_score else overlap
         if score > best_score:
-            best_score, best_text = score, haystack.strip()
+            best_score, best_chunk = score, ch
 
     if best_score >= min_score:
-        return best_text, round(best_score, 3)
-    return "", round(best_score, 3)
+        return best_chunk, round(best_score, 3)
+    return None, round(best_score, 3)
+
+
+def retrieve_passage(chunks: list[dict], material: str, min_score: float = 0.5):
+    """
+    Return (passage_text, score) for the chunk best matching `material`, or
+    ("", 0.0) if nothing is relevant enough. This is the text the explainer is
+    grounded in, and its shape is unchanged: heading and body joined, because
+    that is what the model reads.
+    """
+    ch, score = _best_chunk(chunks, material, min_score)
+    if ch is None:
+        return "", score
+    return f"{ch['title']} {ch['text']}".strip(), score
+
+
+def retrieve_citation(chunks: list[dict], material: str, min_score: float = 0.5):
+    """
+    The same winning chunk, kept in pieces so it can be CITED rather than just
+    read: heading on its own, quote on its own, and the document both came from.
+
+    Returns None when nothing clears the bar, which is the same signal
+    `retrieve_passage` gives by returning "". Both call `_best_chunk`, so the
+    quote shown to a reader is always the passage the explanation was built from.
+    """
+    ch, score = _best_chunk(chunks, material, min_score)
+    if ch is None:
+        return None
+    return {
+        "heading": (ch.get("title") or "").strip(),
+        "quote": (ch.get("text") or "").strip(),
+        # Absent only for chunks built directly by a test or a caller that
+        # bypassed load_change_chunks. Stated, never invented (DECISIONS D2).
+        "source": ch.get("source", "source not recorded"),
+        "source_file": ch.get("source_file", ""),
+        "score": score,
+    }

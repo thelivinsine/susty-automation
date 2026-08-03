@@ -868,3 +868,44 @@ filename, version year, or mtime. Design only, no code changed.
 
 **Artifacts:** docs/PLAN_cited_memo.md (new), docs/STATUS.md (H20),
 docs/REFERENCE.md, docs/PROMPT_LOG.md.
+
+---
+
+### 2026-07-31 · P35
+Branch: `claude/immediate-action-items-7eyk9z` (reset onto `db0cf35`).
+
+**Prompt (verbatim):** "build it"
+
+**Response summary:** Built the citations from `docs/PLAN_cited_memo.md`, recorded
+as D21. Ran the plan's risk-first step before anything visible: the loader now
+records `source_file`, `source_sheet` and `source_row`, and rather than trust it,
+240 randomly sampled rows across both real workbooks were re-opened with openpyxl
+and checked cell by cell. All 240 landed on the right line, so the row numbers
+survive the super-header expansion, the forward-filled descriptors and the
+multi-block sheets. `diff.py` carries the three columns through the join, citing
+the new workbook where a factor still exists and the old one where it was removed.
+`changes_pdf` tags every chunk with the document it came from (the Major Changes
+report or the "What's new" sheet, which are different documents and cannot both be
+"the DEFRA notes"), and gains `retrieve_citation`, which returns the heading, the
+quote and the source separately. Both retrieve functions call one new `_best_chunk`
+so they can never disagree about which passage won, and a test pins that.
+`export.py` renders the evidence under the "Cited" tag and `ui/memo.css` styles it
+with a left rule rather than a new hue, because D20 reserves hue for epistemic
+status and the tag already carries it. Deviation from the plan, taken deliberately
+and recorded in D21: the citation is attached in `pipeline.py`, not in
+`explain._finalize`, because the pipeline already holds both halves and
+`explain.py` is the module the grounding trap guards. The D12 golden vector failed
+exactly as predicted, and its fixture now pins the provenance with every expected
+row number verified against the fixture's own cells (my first guesses were wrong;
+the loader was right). Verified: 149 tests (was 144), retrieval gate still 0 wrong
+hits so D11 holds, microcopy clean, `scripts/check_citations.py` prints real
+evidence on the real workbooks, and the memo was rendered in headless Chromium to
+confirm the block appears and survives print media. Reported rather than hidden:
+in offline mode the explanation already embeds the note, so reason and quote read
+as near-duplicates; fixing that means editing the grounding layer, so it went to
+the backlog instead of into this change.
+
+**Artifacts:** src/loader.py, src/diff.py, src/changes_pdf.py, src/pipeline.py,
+src/export.py, src/ui/memo.css, scripts/check_citations.py,
+tests/test_golden_loader.py, tests/test_export_pack.py, docs/DECISIONS.md (D21),
+docs/STATUS.md (H21), docs/REFERENCE.md, docs/PROMPT_LOG.md.

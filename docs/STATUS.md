@@ -39,13 +39,15 @@ control sits in the main canvas so it survives the sidebar collapsing below
 768px, and one run exports four artifacts sharing a run id, each carrying its
 unresolved items in the front matter (D20).
 
-Gates: `pytest` green (144 tests, including the grounding trap, a real-workbook
+Gates: `pytest` green (149 tests, including the grounding trap, a real-workbook
 test, the microcopy gate, the relabel suite (detection + family grouping), the
 material-relabel explanation path, the retrieval-quality gold set, loader/diff
 golden vectors, the real-data ingest suite, and the access-gating suite (free
 tier never calls the model, approval rules), the design-system suite (contrast in
 both themes, escaping, table semantics, colour independence) and the export-pack
-suite (four artifacts, one run id, unresolved items in the front matter)). Three CI gates are live: the microcopy linter (no-em-dash house
+suite (four artifacts, one run id, unresolved items in the front matter, and the
+citation suite: evidence carried, evidence rendered, and no quote beside an
+unexplained change)). Three CI gates are live: the microcopy linter (no-em-dash house
 rule), a retrieval-quality gate that fails the build on any WRONG grounding note,
 and a dependency-audit gate (`pip-audit` on requirements); the loader/diff golden
 vectors run in the same pytest step. Streamlit app boots clean. Demo footprint on
@@ -108,6 +110,15 @@ paired renames group into 11 readable families.
   html memo) sharing a run id, with a completeness checklist whose open items are
   written into every artifact's front matter. 11 of the audit's 12 defects closed;
   A-07 needs a Streamlit-level fix.
+- **Citations in the memo (DECISIONS D21), shipped:** the "Cited" tag now has
+  evidence under it. `loader.py` records `source_file`/`source_sheet`/`source_row`
+  (240 of 240 sampled real rows verified against the workbook cells), `diff.py`
+  carries them through the join, `changes_pdf` tags each chunk with its document
+  and adds `retrieve_citation`, and `export.py` renders the verbatim quote, its
+  section heading, the source document and the factor's row. `retrieve_passage`
+  and `retrieve_citation` share one `_best_chunk`, so the quote shown is always
+  the passage the explanation was built from. `scripts/check_citations.py` shows
+  it working on real data.
 - Docs: WORKING_PREFERENCES, DECISIONS, PROMPT_LOG, this file.
 
 ## Known gaps / next candidates
@@ -145,6 +156,25 @@ Most recent handoffs (older ones rotate into `docs/archive/`):
   (480px of blank space at 375px) unless the container carries `contain:paint`.
   **Docs and mockups only, no pipeline or app code touched**; 44 tests green.
   Next: implement `docs/PLAN_design_system.md`, starting with the token layer.
+- H21 (2026-07-31): BUILT the citations (D21), so the memo now shows its work.
+  Validated the risky step first: the loader records `source_file`,
+  `source_sheet`, `source_row`, and 240 of 240 randomly sampled rows across both
+  real workbooks were checked against the actual cells with openpyxl, so the row
+  numbers survive the super-header expansion and the forward-fill. `diff.py`
+  carries provenance through the join (new workbook where the factor still
+  exists, old one where it was removed); `changes_pdf` tags each chunk with its
+  document and gains `retrieve_citation`, which shares `_best_chunk` with
+  `retrieve_passage` so the quote a reader checks is always the passage the
+  explanation was built from; `export.py` renders the quote, its section heading,
+  the source document, and the factor's workbook/sheet/row under the "Cited" tag.
+  D11 untouched: the retrieval gate still reports 0 wrong hits. The D12 golden
+  vector failed as predicted and its fixture now PINS the provenance, with every
+  expected row number verified against the fixture's cells rather than copied from
+  the loader. 149 tests (was 144), both gates clean, `scripts/check_citations.py`
+  prints the evidence on real data, and the memo was rendered in headless Chromium
+  to confirm the citation block appears and survives print media. Known wrinkle
+  logged, not hidden: in offline mode the reason already embeds the note, so it
+  reads twice.
 - H20 (2026-07-31): Design session for the CITED half of VISION move #3, planned
   in `docs/PLAN_cited_memo.md`. Scope shrank on contact with D20: the dated,
   printable memo shipped in the export pack, so only the citations are left. The

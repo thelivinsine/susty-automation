@@ -396,3 +396,43 @@ footer {
     page-break-after: avoid;
   }
 }
+
+/* ---- Citation. The evidence under a "Cited" tag.
+
+   The tag is the tool's claim; this block is what makes the claim checkable. A
+   reader who cannot see the quote cannot tell a correct grounding from a wrong
+   one, and DECISIONS D11 exists because wrong groundings were possible.
+
+   Deliberately quiet: no new hue. D20 reserves hue for epistemic status, and the
+   status is already carried by the tag above. This is evidence, not a fourth
+   state, so it earns a left rule and smaller type instead of a colour. ---- */
+
+.cite {
+  margin-top: var(--space-3);
+  padding-left: var(--space-3);
+  border-left: 4px solid var(--border);
+  font-size: var(--font-small);
+}
+
+.cite-quote {
+  margin: 0 0 var(--space-2) 0;
+  font-style: italic;
+}
+
+.cite-meta {
+  margin: 0;
+  color: var(--secondary);
+}
+
+.cite-missing {
+  margin: var(--space-2) 0 0 0;
+  color: var(--secondary);
+}
+
+@media print {
+  /* A quote split across a page break reads as two half-quotes, which is worse
+     than a short page. Keep the evidence with the claim it supports. */
+  .cite {
+    page-break-inside: avoid;
+  }
+}

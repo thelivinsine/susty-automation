@@ -447,6 +447,58 @@ def _movers_html(results):
     )
 
 
+def _citation_html(entry):
+    """The evidence under a "Cited" tag: the quoted DEFRA note and the factor's
+    own source line.
+
+    Two things are cited and they fail independently. The factor's source (which
+    workbook, sheet and row) is known whenever the loader recorded it. The DEFRA
+    note exists only when a passage cleared the retrieval bar. Whatever is missing
+    is SAID to be missing, because a silent gap in a cited document reads as
+    "there was nothing to say" (DECISIONS D2).
+    """
+    cite = entry.get("citation") or {}
+    note = cite.get("note")
+    parts = []
+
+    if note:
+        heading = (note.get("heading") or "").strip()
+        quote = (note.get("quote") or "").strip()
+        # Verbatim or absent. No trimming to fit the page: the print stylesheet
+        # handles length, and an abridged quote is a different claim.
+        if quote:
+            parts.append(f'<p class="cite-quote">&ldquo;{esc(quote)}&rdquo;</p>')
+        meta = []
+        if heading:
+            meta.append(f"Section: {heading}")
+        source = (note.get("source") or "").strip()
+        source_file = (note.get("source_file") or "").strip()
+        if source:
+            meta.append(f"Source: {source}" + (f" ({source_file})" if source_file else ""))
+        if meta:
+            parts.append(f'<p class="cite-meta">{esc(" | ".join(meta))}</p>')
+
+    factor_file = (cite.get("factor_source_file") or "").strip()
+    factor_sheet = (cite.get("factor_source_sheet") or "").strip()
+    factor_row = cite.get("factor_source_row")
+    if factor_file and factor_sheet and factor_row:
+        parts.append(
+            '<p class="cite-meta">'
+            f'Factor read from {esc(factor_file)}, sheet &ldquo;{esc(factor_sheet)}&rdquo;, '
+            f"row {esc(str(factor_row))}.</p>"
+        )
+    elif not parts:
+        return ""
+
+    if not note:
+        parts.append(
+            '<p class="cite-missing">No passage in the DEFRA change notes matched '
+            "this factor, so there is nothing to quote.</p>"
+        )
+
+    return f'<div class="cite">{"".join(parts)}</div>'
+
+
 def _explanations_html(results):
     explanations = results.get("explanations") or []
     if not explanations:
@@ -470,8 +522,9 @@ def _explanations_html(results):
             share_txt = f" ({share:+.1f}% of the total change)" if share is not None else ""
             rows.append(("Impact on your footprint",
                          f"{esc(signed(impact))} kg CO2e{esc(share_txt)}."))
+        cite_html = _citation_html(e) if cited else ""
         rows += [
-            ("Why it changed", f"{tag} {esc(e['plain_english_reason'])}"),
+            ("Why it changed", f"{tag} {esc(e['plain_english_reason'])}{cite_html}"),
             ("Methodology note", esc(e["methodology_note"])),
             ("Target impact", esc(e["target_impact_flag"])),
         ]

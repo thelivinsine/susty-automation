@@ -37,6 +37,7 @@ sys.path.insert(0, os.path.join(ROOT, "src"))
 import export as ex                     # noqa: E402
 from explain import NO_REASON           # noqa: E402
 from pipeline import run_pipeline       # noqa: E402
+from ui.components import esc          # noqa: E402
 
 SYNTH = os.path.join(ROOT, "data", "synthetic")
 FIXED_TIME = datetime(2026, 7, 31, 9, 30, 0, tzinfo=timezone.utc)
@@ -178,6 +179,102 @@ def test_an_unexplained_change_is_reported_as_unexplained_not_hidden(results):
         if e["plain_english_reason"].strip() == NO_REASON
     ]
     assert cited["resolved"] == (not unexplained)
+
+
+# ---------------------------------------------------------------------------
+# Citations: the evidence under a "Cited" tag
+# ---------------------------------------------------------------------------
+
+def _html(pack):
+    """The memo artifact out of the pack."""
+    return pack[[n for n in pack if n.endswith(".html")][0]]
+
+
+def _cited(results):
+    return [
+        e for e in results["explanations"]
+        if e["plain_english_reason"].strip() != NO_REASON
+    ]
+
+
+def test_a_cited_explanation_carries_the_passage_it_was_grounded_in(results):
+    """The tag is the tool's claim. This is the evidence behind it.
+
+    Without the quote a reader cannot tell a correct grounding from a wrong one,
+    and D11 exists because wrong groundings were possible.
+    """
+    cited = _cited(results)
+    assert cited, "the fixture run should ground at least one change"
+    for e in cited:
+        note = (e.get("citation") or {}).get("note")
+        assert note, f"{e['activity']} is tagged cited with no passage carried"
+        assert note["quote"].strip(), "a citation with an empty quote cites nothing"
+        assert note["source"], "a citation must name the document it came from"
+
+
+def test_the_quote_is_the_passage_the_explanation_was_built_from(results):
+    """Retrieval and citation must never disagree about which passage won.
+
+    They share `_best_chunk`, so this pins that they still do. If they drifted
+    apart, the memo would quote one note while the reason came from another,
+    which is a wrong citation wearing a right one's clothes.
+    """
+    from changes_pdf import load_change_chunks, retrieve_passage
+
+    chunks = load_change_chunks(
+        os.path.join(SYNTH, "changes_2026.pdf"),
+        os.path.join(SYNTH, "defra_2026.xlsx"),
+    )
+    for e in _cited(results):
+        note = e["citation"]["note"]
+        passage, _ = retrieve_passage(chunks, e["activity"])
+        assert passage == f"{note['heading']} {note['quote']}".strip()
+
+
+def test_a_factor_cites_the_workbook_sheet_and_row_it_was_read_from(results):
+    """A year later, "where did this number come from" has an answer."""
+    for e in results["explanations"]:
+        cite = e["citation"]
+        assert cite["factor_source_file"].endswith(".xlsx")
+        assert cite["factor_source_sheet"]
+        assert isinstance(cite["factor_source_row"], int)
+        assert cite["factor_source_row"] > 0
+
+
+def test_the_evidence_reaches_the_printed_page(pack, results):
+    """Carrying provenance in a dataframe is not the same as showing it.
+
+    This is the regression the whole feature exists to prevent: a memo that
+    still prints a green "Cited" tag after the evidence silently stopped being
+    rendered.
+    """
+    html = _html(pack)
+    cited = _cited(results)
+    assert html.count('class="cite"') >= len(cited)
+    for e in cited:
+        quote = e["citation"]["note"]["quote"]
+        assert esc(quote) in html, f"the quote for {e['activity']} is not on the page"
+        assert esc(e["citation"]["factor_source_sheet"]) in html
+
+
+def test_an_unexplained_change_shows_no_quote_at_all(results, identity, checklist):
+    """The trap. Silence in the notes must stay visibly silent.
+
+    A quote block next to "no official reason found" would be the tool inventing
+    evidence for a claim it explicitly declined to make (DECISIONS D2).
+    """
+    unexplained = [
+        e for e in results["explanations"]
+        if e["plain_english_reason"].strip() == NO_REASON
+    ]
+    if not unexplained:
+        pytest.skip("this fixture grounds every change, so the trap cannot fire here")
+    html = ex.to_print_html(results, identity, checklist)
+    for e in unexplained:
+        assert NO_REASON in html
+        note = (e.get("citation") or {}).get("note")
+        if note and note.get("quote"):
+            assert esc(note["quote"]) not in html
 
 
 # ---------------------------------------------------------------------------

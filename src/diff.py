@@ -56,14 +56,30 @@ def is_material(pct, scope) -> bool:
 def diff_versions(df_old: pd.DataFrame, df_new: pd.DataFrame) -> pd.DataFrame:
     """Join two normalized tables on (activity, unit) and flag material movers."""
     key = ["activity", "unit"]
-    old = df_old[key + ["scope", "kg_co2e"]].rename(columns={"kg_co2e": "kg_co2e_old"})
-    new = df_new[key + ["scope", "kg_co2e"]].rename(columns={"kg_co2e": "kg_co2e_new"})
+    # Provenance rides along so a citation can name the workbook, sheet and row a
+    # factor was read from. Carried, never reconstructed downstream (DECISIONS D2).
+    src = ["source_file", "source_sheet", "source_row"]
+    have_src = all(c in df_old.columns for c in src) and all(c in df_new.columns for c in src)
+    cols = ["scope", "kg_co2e"] + (src if have_src else [])
+
+    old = df_old[key + cols].rename(columns={"kg_co2e": "kg_co2e_old"})
+    new = df_new[key + cols].rename(columns={"kg_co2e": "kg_co2e_new"})
 
     merged = old.merge(new, on=key, how="outer", suffixes=("_old", "_new"))
 
     # Prefer whichever scope is present (they should agree across versions).
     merged["scope"] = merged["scope_new"].fillna(merged["scope_old"])
     merged = merged.drop(columns=["scope_old", "scope_new"])
+
+    # Cite the NEW workbook where the factor still exists, since that is the
+    # version the reader is moving to. A removed factor only exists in the old
+    # one, so it cites that instead.
+    for c in src:
+        if have_src:
+            merged[c] = merged[f"{c}_new"].fillna(merged[f"{c}_old"])
+            merged = merged.drop(columns=[f"{c}_new", f"{c}_old"])
+        else:
+            merged[c] = None
 
     rows = []
     for _, r in merged.iterrows():
@@ -97,6 +113,9 @@ def diff_versions(df_old: pd.DataFrame, df_new: pd.DataFrame) -> pd.DataFrame:
                 "pct_change": pct,
                 "status": status,
                 "flagged": flagged,
+                "source_file": r.get("source_file"),
+                "source_sheet": r.get("source_sheet"),
+                "source_row": r.get("source_row"),
             }
         )
 

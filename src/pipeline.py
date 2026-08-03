@@ -13,7 +13,7 @@ from diff import diff_versions, is_material
 from relabel import detect_relabels, group_relabels, relabel_head
 from matching import match_bom, coverage_summary
 from recompute import recompute, top_delta_lines
-from changes_pdf import load_change_chunks, retrieve_passage
+from changes_pdf import load_change_chunks, retrieve_citation, retrieve_passage
 from explain import explain_change
 
 
@@ -51,6 +51,32 @@ def _family_target_flag(group, context) -> str:
     if fell:
         return "These factors decreased, easing the product footprint."
     return "Immaterial at the product level."
+
+
+def _cite_for(citation, source_file, source_sheet, source_row):
+    """Assemble what the memo needs to show its work for one factor change.
+
+    Two independent things are being cited and they can fail independently:
+      - the FACTOR's own source (which workbook, sheet and row it was read from),
+        which we always have once the loader recorded it, and
+      - the DEFRA NOTE the explanation was grounded in, which exists only when a
+        passage actually cleared the retrieval bar.
+
+    A missing piece is reported as missing (DECISIONS D2). Nothing here is
+    reconstructed, inferred or filled in from a filename.
+    """
+    def _row(value):
+        try:
+            return int(value) if value is not None and not pd.isna(value) else None
+        except (TypeError, ValueError):
+            return None
+
+    return {
+        "factor_source_file": source_file or "",
+        "factor_source_sheet": source_sheet or "",
+        "factor_source_row": _row(source_row),
+        "note": citation,
+    }
 
 
 def run_pipeline(
@@ -121,6 +147,11 @@ def run_pipeline(
         if explain_flagged_only and row["activity"] not in included_activities:
             continue
         passage, score = retrieve_passage(chunks, row["activity"]) if chunks else ("", 0.0)
+        # The same winning chunk, kept in pieces so the memo can show what the
+        # explanation was grounded in. `retrieve_citation` shares `_best_chunk`
+        # with `retrieve_passage`, so the quote a reader checks is always the
+        # passage the model actually read.
+        citation = retrieve_citation(chunks, row["activity"]) if chunks else None
         result = explain_change(
             material=row["activity"],
             old=row["kg_co2e_old"],
@@ -143,6 +174,7 @@ def run_pipeline(
                     round(impact / total_move * 100, 1) if total_move else None
                 ),
                 "retrieval_score": score,
+                "citation": _cite_for(citation, row["source_file"], row["source_sheet"], row["source_row"]),
                 **result,
             }
         )
@@ -180,12 +212,13 @@ def run_pipeline(
             # The change note may sit under either the old or the new head name;
             # retrieve on both and keep the stronger hit. All variants share the
             # head, so one retrieval covers the family. Empty -> honest "no reason".
-            passage, score = "", 0.0
+            passage, score, citation = "", 0.0, None
             if chunks:
                 for name in (nh, oh):
                     p, s = retrieve_passage(chunks, name)
                     if s > score:
                         passage, score = p, s
+                        citation = retrieve_citation(chunks, name)
             # A representative member (biggest move) gives explain_change real
             # numbers; the reason is grounded in the shared rename note, so it is
             # valid for the whole family. Family-level target flag overrides the
@@ -216,6 +249,10 @@ def run_pipeline(
                     "pct_max": max(pcts),
                     "value_movement": _family_movement(pcts, n_rose, n_fell),
                     "retrieval_score": score,
+                    # A rename family spans many rows across the workbook, so
+                    # there is no single row to point at. The NOTE is still
+                    # citable, and that is the claim being made.
+                    "citation": _cite_for(citation, "", "", None),
                     "plain_english_reason": result["plain_english_reason"],
                     "methodology_note": result["methodology_note"],
                     "target_impact_flag": _family_target_flag(g, context),

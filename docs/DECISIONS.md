@@ -507,3 +507,50 @@ Streamlit upgrade or a small custom component.
 confirmed present in the 1.60.0 bundle, each rule names the defect it closes and
 the version it was verified against, and a test enforces that labelling. A future
 upgrade that breaks one should be diagnosable rather than mysterious.
+
+## D21. Citations are carried, never reconstructed
+
+The memo shipped in D20 printed a green "Cited" tag whenever the explanation was
+not the verbatim `NO_REASON` sentence, and printed nothing to back it up. The tag
+was the tool's own claim about itself, and a reader had no way to tell a correct
+grounding from a wrong one. That is a real gap, not a cosmetic one: D11 exists
+because wrong groundings were possible, and its gold set caught one.
+
+The rule adopted here: **a citation is a factual claim about a source, so D2
+applies to it exactly as it applies to a factor match.**
+
+What that means in code:
+
+- **Carried, never reconstructed.** Provenance is recorded at the moment of
+  reading and travels with the row. `loader.py` now records `source_file`,
+  `source_sheet` and `source_row`; `diff.py` carries them through the join;
+  `changes_pdf.load_change_chunks` tags each chunk with the document it came
+  from. Nothing downstream infers a source from a filename or a version year.
+- **Two things are cited, and they fail independently.** The FACTOR's source
+  (workbook, sheet, row) exists whenever the loader recorded it. The DEFRA NOTE
+  exists only when a passage cleared the retrieval bar. The memo reports each on
+  its own, so a factor with no matching note still shows where its number came
+  from.
+- **A missing piece is stated, not omitted.** A silent gap in a cited document
+  reads as "there was nothing to say".
+- **The quote is verbatim or absent.** No summarizing and no trimming to fit the
+  page: an abridged quote is a different claim. The print stylesheet handles
+  length.
+- **Retrieval and citation share one ranking function.** `retrieve_passage` and
+  `retrieve_citation` both call `_best_chunk`, so the quote a reader checks is
+  always the passage the explanation was built from. They cannot drift apart into
+  a memo that quotes one note while the reason came from another. A test pins it.
+
+Deviation from `docs/PLAN_cited_memo.md`, taken deliberately: the plan put the
+citation into `explain._finalize`. It is attached in `pipeline.py` instead. The
+pipeline already holds both halves (it calls retrieval and knows the factor row),
+and `explain.py` is the module the grounding trap guards, so leaving its contract
+untouched is worth more than following the plan literally. The grounding safety
+net is unchanged.
+
+Known and accepted: in OFFLINE mode the explanation text already embeds the DEFRA
+note, so the reason and the quote read as near-duplicates on the page. With a live
+model the reason is a short plain-English sentence and the quote earns its space.
+Fixing the offline duplication means editing the offline explainer's output, which
+is the grounding layer, so it is deliberately not done in a citation-rendering
+change. Logged in `REFERENCE.md`.
