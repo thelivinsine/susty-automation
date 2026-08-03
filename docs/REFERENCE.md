@@ -60,6 +60,11 @@ How to apply it:
   losing candidate's name is a small change there, and would make the review
   queue much faster to work through. Left rather than smuggled into a view-layer
   pass that was scoped not to touch matching.
+- **Citations in the memo (VISION move #3, second half).** Planned in
+  `docs/PLAN_cited_memo.md`. D20's memo prints a green "Cited" tag but never the
+  quote it was grounded in, and no factor carries its workbook, sheet, or row.
+  Most of the provenance is not in the data yet, so this is plumbing (loader,
+  retrieval return shape, explain passthrough) before rendering. Next build task.
 - Semantic relabels with low string overlap (Incineration -> Combustion) still
   read as added/removed; would need DEFRA's own relabel notes.
 - Package-manager pin + lockfile for reproducible installs (deps are audited now,
