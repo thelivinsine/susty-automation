@@ -831,3 +831,40 @@ and the result panel rounding to 1 decimal beside a sentence using 2. All three
 fixed in commit 1a1d857. The recipe and its two traps (the screenshot flag fires
 before Streamlit's websocket content arrives; Chrome's headless window floors at
 about 500px) are in `REFERENCE.md` so this is not rediscovered next time.
+
+---
+
+### 2026-07-31 · P34
+Branch: `claude/immediate-action-items-7eyk9z` (reset onto `d1e576d`, which had
+merged PRs #19 and #20 mid-session).
+
+**Prompt (verbatim):** "what's next step?" then "give me a non technical brief and
+short" then "go ahead"
+
+**Response summary:** Recommended VISION move #3 (the dated, cited, printable
+memo) over the smaller backlog items, on the grounds that ingest had shipped so
+the tool ate a real register but its output was still a page the consultant
+retypes. Owner approved, so this was the design session. Mid-session two parallel
+sessions merged (PR #19 front-end audit and branding, PR #20 the design system and
+four-artifact export pack), and PR #21 hit a merge conflict, which was the useful
+accident: reading what had landed showed the dated printable memo ALREADY SHIPPED
+in `src/export.py`. So the plan was rewritten against the shipped code rather than
+merged as drafted, and the scope shrank to the citations alone. The gap, stated
+precisely: `_explanations_html` renders a green "Cited" tag whenever the reason is
+not the verbatim NO_REASON sentence, but never renders what the reason was
+grounded in, so the memo asserts groundedness without evidence. A reader cannot
+distinguish a correct grounding from a wrong one, which matters exactly because
+D11 exists to prevent wrong groundings and its gold set proves they were possible.
+Underneath it, most of the provenance is absent: the loader knows the workbook
+path but records nothing per row and never captures the row index; `retrieve_passage`
+returns the matched note and `explain._finalize` drops it; `load_change_chunks`
+never records whether the PDF or the "What's new" sheet won; no publication date is
+parsed. Decisions taken in the plan: write into D20's memo rather than build a
+second document, steps 2 and 3 change what is RETURNED and never what is CHOSEN so
+D11 stays locked, the D12 golden vector is EXPECTED to fail on the new loader
+columns and its fixture updates in the same commit, and a publication date the
+source file does not state is printed as missing rather than inferred from the
+filename, version year, or mtime. Design only, no code changed.
+
+**Artifacts:** docs/PLAN_cited_memo.md (new), docs/STATUS.md (H20),
+docs/REFERENCE.md, docs/PROMPT_LOG.md.
