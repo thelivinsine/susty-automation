@@ -46,6 +46,13 @@ Self-contained, no external requests, light and dark. Open it directly in a
 browser. The figures are the same real 2025 to 2026 snapshot the other mockups
 use, so they drift with the data in the same way.
 
+Where the shipped app differs, and why: the mockup's setup screen has a sticky
+bottom action bar and a "use the sample product" button, and its downloads are
+file cards. The app uses a plain primary button with a line of helper text and
+Streamlit's own download buttons, because those are widgets Streamlit renders
+and restyling them further would mean fighting internals for no gain in
+comprehension. Everything else on these screens is what the app does.
+
 ## `report_data_snapshot.json`
 
 The real numbers the mockup was rendered from: a snapshot of the pipeline output
