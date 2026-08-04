@@ -909,3 +909,29 @@ the backlog instead of into this change.
 src/export.py, src/ui/memo.css, scripts/check_citations.py,
 tests/test_golden_loader.py, tests/test_export_pack.py, docs/DECISIONS.md (D21),
 docs/STATUS.md (H21), docs/REFERENCE.md, docs/PROMPT_LOG.md.
+PR #22, squash-merged as `12e27f1`.
+
+
+---
+
+### 2026-07-31 · P36
+Branch: `claude/immediate-action-items-7eyk9z` (level with `main` at `12e27f1`).
+
+**Prompt (verbatim):** "document the session"
+
+**Response summary:** The build session was already written up as P35 and H21 in
+the same PR as the work, per the house rule that doc updates ship with the change.
+What was genuinely missing was the ship record: both entries were written BEFORE
+the merge, so neither carried the PR number or the squash SHA the convention asks
+for. Added `PR #22, squash-merged as 12e27f1` to P35 and to H21, and logged this
+prompt. Then found a real defect while checking STATUS: parallel merges had left
+the Resume-here list holding FIVE handoffs in scrambled order (H18, H21, H20, H19,
+H18) with H18 present TWICE in two different versions, because two sessions wrote
+that handoff independently and both landed. Deduped keeping the fuller of the two
+H18 records, reordered newest-first, and rotated H19 and H18 into the W31 archive,
+so STATUS is back to the two-most-recent rule. No new claims about the work
+itself: everything else in P35 and H21 was already accurate and verified when
+written.
+
+**Artifacts:** docs/PROMPT_LOG.md, docs/STATUS.md,
+docs/archive/STATUS_2026-W31.md, docs/archive/README.md.
