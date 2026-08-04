@@ -127,12 +127,51 @@
   /* @contrast text: --tag-yellow-tx on --tag-yellow-bg */
   /* @contrast text: --tag-red-tx on --tag-red-bg */
 
-  /* ---- Type ---- */
-  --font: arial, "Helvetica Neue", "Nimbus Sans", "Liberation Sans", sans-serif;
+  /* ---- Surfaces (v2). NO NEW HUE ENTERS THE PALETTE HERE.
+     Every value below is an alpha composite of the ink colour, so a card edge
+     is the same ink as the type, just quieter. Hairlines and shadows are what
+     let a page carry cards, sticky bars and a masthead without inventing a
+     grey ramp the contrast test would then have to police. They are never used
+     to bound a control: that is still --border-control's job. ---- */
+  --hair: rgba(11, 12, 12, 0.13);
+  --hair-strong: rgba(11, 12, 12, 0.24);
+  --wash: rgba(11, 12, 12, 0.03);
+  --shadow-1: 0 1px 2px rgba(11, 12, 12, 0.05), 0 1px 3px rgba(11, 12, 12, 0.07);
+  --shadow-2: 0 1px 2px rgba(11, 12, 12, 0.05), 0 10px 28px rgba(11, 12, 12, 0.09);
+
+  /* Radius. GOV.UK is square; this is the one place the idiom is softened, so
+     that cards read as surfaces rather than as boxes drawn on paper. */
+  --radius-1: 6px;
+  --radius-2: 10px;
+  --radius-3: 14px;
+  --radius-pill: 999px;
+
+  /* The pressed/hover state of the primary action. Already in the palette as
+     the "cited" tag ink, reused rather than a new green. */
+  --green-deep: #005a30;
+
+  /* @contrast text: --action-tx on --green-deep */
+
+  /* ---- Type ----
+     A system stack: it looks native on every platform, renders at the weights
+     a product interface needs, and still makes zero network requests, which
+     matters for a tool handling confidential client data.
+     --font-body and friends stay because memo.css consumes them. ---- */
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+          Arial, "Noto Sans", sans-serif;
   --font-body: 18px;
   --font-small: 16px;
   --font-table: 15px;
   --font-meta: 14px;
+
+  /* The app's scale. One ladder, so nothing is sized by eye. */
+  --t-display: clamp(34px, 6vw, 52px);
+  --t-h1: clamp(22px, 3.2vw, 28px);
+  --t-h2: clamp(19px, 2.4vw, 23px);
+  --t-h3: 17px;
+  --t-body: 17px;
+  --t-small: 15px;
+  --t-meta: 13px;
 
   /* ---- Space: one 8px-family rhythm, no ad-hoc margins ---- */
   --space-1: 4px;
@@ -167,6 +206,7 @@
   --blue: #1d70b8;
   --blue-dark: #003078;
   --green: #00703c;
+  --green-deep: #005a30;
   --red: #d4351c;
   --action-bg: #00703c;
   --action-tx: #ffffff;
@@ -198,6 +238,7 @@
   --blue: #5694ca;
   --blue-dark: #99c1ea;
   --green: #57a97a;
+  --green-deep: #57a97a;
   --red: #ea6d5b;
   --action-bg: #57a97a;
   --action-tx: #0b0c0c;
@@ -213,6 +254,11 @@
   --tag-grey-bg: #26282a;  --tag-grey-tx: #c5c9cb;
   --tag-yellow-bg: #332d00; --tag-yellow-tx: #f3d97a;
   --tag-red-bg: #3a1a14;   --tag-red-tx: #f0a99b;
+  --hair: rgba(255, 255, 255, 0.16);
+  --hair-strong: rgba(255, 255, 255, 0.30);
+  --wash: rgba(255, 255, 255, 0.04);
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-2: 0 1px 2px rgba(0, 0, 0, 0.5), 0 10px 28px rgba(0, 0, 0, 0.55);
 }
 
 /* Follow the reader's system setting, but only where a document opts in.
@@ -234,6 +280,7 @@
     --blue: #5694ca;
     --blue-dark: #99c1ea;
     --green: #57a97a;
+    --green-deep: #57a97a;
     --red: #ea6d5b;
     --action-bg: #57a97a;
     --action-tx: #0b0c0c;
@@ -249,5 +296,10 @@
     --tag-grey-bg: #26282a;  --tag-grey-tx: #c5c9cb;
     --tag-yellow-bg: #332d00; --tag-yellow-tx: #f3d97a;
     --tag-red-bg: #3a1a14;   --tag-red-tx: #f0a99b;
-  }
+    --hair: rgba(255, 255, 255, 0.16);
+    --hair-strong: rgba(255, 255, 255, 0.30);
+    --wash: rgba(255, 255, 255, 0.04);
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --shadow-2: 0 1px 2px rgba(0, 0, 0, 0.5), 0 10px 28px rgba(0, 0, 0, 0.55);
+}
 }

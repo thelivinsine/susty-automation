@@ -6,6 +6,10 @@ Streamlit app in `app.py`); they exist to pin a look before theming the real UI.
 
 ## `govuk_report_view.html`
 
+The mockup that pinned the palette (D19) and the one the v1 design layer was
+ported from. Superseded as a layout reference by `v2_product_ui.html` (D22); its
+colours are still the source of truth and are unchanged.
+
 The one-page version-delta report in a **GOV.UK Design System** visual idiom,
 evoked for familiarity, not a literal copy: black masthead with an environment
 green keyline, a phase banner, the green confirmation panel for the headline
@@ -19,6 +23,35 @@ The style is inspired by the GOV.UK Design System for familiarity only.
 
 Open it directly in a browser (no server, no build): it is a single file with all
 CSS inline and no external requests.
+
+## `v2_product_ui.html`
+
+The **current** direction, and the one the live app now implements (DECISIONS
+**D22**). Same palette as `govuk_report_view.html`, every hex still from
+`src/ui/tokens.css`; what changes is the object it makes. Three screens behind a
+switcher at the top:
+
+- **Set up**: the three-step flow (versions, inventory, confirm your columns)
+  with a preview of the uploaded file as read, and a sticky action bar.
+- **Report**: the whole delta report under a masthead and a sticky section nav.
+  The verdict is two figures and a delta chip over a strip of qualifying facts;
+  coverage is a meter against the 95% bar; deltas carry magnitude bars;
+  explanations lead with the status tag and the impact on the reader's own
+  footprint, with the DEFRA quote set as a source block.
+- **System**: the swatch sheet (so "the palette is unchanged" can be checked by
+  looking), the status tags, the controls, the four message roles, the empty and
+  loading states, and a note on what changed and why.
+
+Self-contained, no external requests, light and dark. Open it directly in a
+browser. The figures are the same real 2025 to 2026 snapshot the other mockups
+use, so they drift with the data in the same way.
+
+Where the shipped app differs, and why: the mockup's setup screen has a sticky
+bottom action bar and a "use the sample product" button, and its downloads are
+file cards. The app uses a plain primary button with a line of helper text and
+Streamlit's own download buttons, because those are widgets Streamlit renders
+and restyling them further would mean fighting internals for no gain in
+comprehension. Everything else on these screens is what the app does.
 
 ## `report_data_snapshot.json`
 
@@ -120,8 +153,10 @@ and 1440px:
 - **No tap target under 44px**, semantic tables with `<caption>`, `scope="col"`
   and `scope="row"`, keyboard-reachable scroll regions, and no em dashes.
 
-## Next step this reference is for
+## What these are for now
 
-Theming the actual Streamlit app (`app.py`) via a `.streamlit/config.toml`
-palette plus a token stylesheet, so the real product matches the chosen mockup.
-The full plan is `docs/PLAN_design_system.md`.
+The theming step is done: `src/ui/` is the live design layer and
+`.streamlit/config.toml` matches it (D20), and the product-UI rework on top of it
+shipped as D22. These files stay as the visual record: `v2_product_ui.html` is
+the current reference, `govuk_report_view.html` is where the palette came from,
+and the two Ledger files are the rejected alternative.

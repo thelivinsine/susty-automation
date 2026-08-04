@@ -935,3 +935,52 @@ written.
 
 **Artifacts:** docs/PROMPT_LOG.md, docs/STATUS.md,
 docs/archive/STATUS_2026-W31.md, docs/archive/README.md.
+
+---
+
+### 2026-08-04 · P37
+Branch: `claude/app-design-ui-overhaul-wmb9df` (from `main`).
+
+**Prompt (verbatim):** "I want you to make the app's design, layout and user
+interface extremely intuitive, user-friendly and should look like it's designed
+by senior design and front-end experts from billion dollar tech apps. Generate
+some previews to rework the design by keeping the color palette intact."
+Followed mid-session by: "looks good. go ahead and implement it".
+
+**Response summary:** Built the direction as a preview first, then implemented
+it. `docs/mockups/v2_product_ui.html` is a single self-contained file with three
+screens (set up, report, and the system sheet), rendered from the real 2025 and
+2026 snapshot numbers, plus a swatch panel so the "palette intact" claim is
+checkable by looking rather than by trusting a sentence. Published for review,
+approved, implemented.
+
+What the rework actually changes (D22): an app shell (masthead naming the two
+releases and the run status, sticky numbered section nav); setup moved out of the
+sidebar into three numbered steps in the canvas with a preview of the file as
+read; the verdict as two figures and a delta chip over a strip of qualifying
+facts, with green moved from a slab fill to a rail and a tag so the figure reads
+as ink on ground; coverage as a meter against the stated 95% bar; magnitude bars
+on every delta column; explanation cards that lead with the status tag and the
+impact on the reader's own footprint, with the D21 DEFRA quote now rendered in
+the app; a system font stack (native-looking, still zero network requests).
+
+The palette is untouched. The only additions are neutrals that are alpha
+composites of the existing ink, plus `--green-deep: #005a30`, which was already
+in the palette as the "cited" tag ink and now also serves as the primary action's
+pressed state. Every D20 rule survives and is still enforced by the same tests:
+hue for epistemic status only, contrast measured in both themes, `--border` never
+on a control, real tables, `contain: paint`, and every `data-testid` rule naming
+its defect and verified version.
+
+Verified rather than eyeballed: 151 tests green, and the running app was driven
+in headless Chromium at 375, 768 and 1440px (zero horizontal page scroll at every
+width, the report rendering end to end on the real workbooks). Two real defects
+were caught that way and fixed: a card opened in one `st.markdown` call never
+wraps the next one (Streamlit closes every block it renders), and the masthead
+status tag read "Not run yet" beside a finished report until it was painted into
+a slot, because on a first visit the run happens further down the same script.
+
+**Artifacts:** docs/mockups/v2_product_ui.html, docs/mockups/README.md,
+src/ui/tokens.css, src/ui/components.css, src/ui/components.py, src/ui/format.py,
+src/export.py, src/report.py, app.py, tests/test_export_pack.py,
+docs/DECISIONS.md (D22), docs/STATUS.md (H22), docs/PROMPT_LOG.md.

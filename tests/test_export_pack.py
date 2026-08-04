@@ -138,7 +138,9 @@ def test_the_checklist_reports_what_is_open(results):
 
     set_aside_item = next(i for i in items if i["key"] == "no_rows_set_aside")
     assert set_aside_item["resolved"] is False
-    assert "1 row(s)" in set_aside_item["detail"]
+    # "1 row", not "1 row(s)": a parenthesised plural is the tell of a string
+    # that was assembled rather than written (ui.format.plural).
+    assert "1 row skipped" in set_aside_item["detail"]
 
 
 def test_a_run_with_nothing_open_says_so(results):

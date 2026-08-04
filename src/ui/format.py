@@ -141,3 +141,12 @@ def human_column(name):
         return COLUMN_NAMES[key]
     words = key.replace("_", " ").strip()
     return words[:1].upper() + words[1:] if words else key
+
+
+def plural(count, word, many=None):
+    """"1 line" but "3 lines", so the copy never says "line(s)".
+
+    Small, and worth having in one place: a parenthesised plural is the tell of
+    a string that was assembled rather than written.
+    """
+    return f"{count} {word if count == 1 else (many or word + 's')}"

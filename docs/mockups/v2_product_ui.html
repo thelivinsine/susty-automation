@@ -1,0 +1,1399 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EF Version Explainer, product UI preview</title>
+<style>
+/* ===========================================================================
+   v2_product_ui.html - preview of the reworked interface.
+
+   THE PALETTE IS UNCHANGED. Every hex below already exists in
+   src/ui/tokens.css (GOV.UK, DECISIONS D19). What changes is everything else:
+   the shell, the information architecture, the surfaces, the type scale, the
+   states, and the density.
+
+   Neutral hairlines and shadows are alpha composites of the ink colour
+   (#0b0c0c), so they add no new hue.
+   ======================================================================== */
+
+:root {
+  /* ---- Ground and ink (unchanged) ---- */
+  --black: #0b0c0c;
+  --white: #ffffff;
+  --ground: #ffffff;
+  --grey-1: #f3f2f1;
+  --grey-2: #e7e6e5;
+  --heading: #0b0c0c;
+  --body-tx: #0b0c0c;
+  --secondary: #505a5f;
+  --border: #b1b4b6;
+  --border-control: #0b0c0c;
+  --blue: #1d70b8;
+  --blue-dark: #003078;
+  --green: #00703c;
+  --green-deep: #005a30;
+  --red: #d4351c;
+  --action-bg: #00703c;
+  --action-tx: #ffffff;
+  --panel-bg: #00703c;
+  --panel-tx: #ffffff;
+  --panel-quiet: #f3f2f1;
+  --panel-quiet-tx: #0b0c0c;
+  --focus: #ffdd00;
+  --focus-tx: #0b0c0c;
+  --focus-edge: #0b0c0c;
+  --tag-blue-bg: #d2e2f1;   --tag-blue-tx: #14477d;
+  --tag-green-bg: #cce2d8;  --tag-green-tx: #005a30;
+  --tag-grey-bg: #eeefef;   --tag-grey-tx: #383f43;
+  --tag-yellow-bg: #fff7bf; --tag-yellow-tx: #594d00;
+  --tag-red-bg: #f6d7d2;    --tag-red-tx: #942514;
+
+  /* ---- NEW: surface system. Neutral only, no new hue. ---- */
+  --hair:        rgba(11, 12, 12, 0.13);
+  --hair-strong: rgba(11, 12, 12, 0.24);
+  --wash:        rgba(11, 12, 12, 0.03);
+  --shadow-1: 0 1px 2px rgba(11,12,12,.05), 0 1px 3px rgba(11,12,12,.07);
+  --shadow-2: 0 1px 2px rgba(11,12,12,.05), 0 10px 28px rgba(11,12,12,.09);
+  --shadow-bar: 0 1px 0 var(--hair);
+  --radius-1: 6px;
+  --radius-2: 10px;
+  --radius-3: 14px;
+  --radius-pill: 999px;
+
+  /* ---- NEW: type. A system stack, so it looks native and loads nothing. ---- */
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+          Arial, "Noto Sans", sans-serif;
+  --t-display: clamp(34px, 6vw, 52px);
+  --t-h1: clamp(22px, 3.2vw, 28px);
+  --t-h2: clamp(19px, 2.4vw, 23px);
+  --t-h3: 17px;
+  --t-body: 17px;
+  --t-small: 15px;
+  --t-meta: 13px;
+
+  /* ---- Space (unchanged 8px family) ---- */
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
+  --space-5: 24px; --space-6: 32px; --space-7: 48px; --space-8: 64px;
+  --measure: 68ch;
+  --shell: 1140px;
+}
+
+:root[data-theme="dark"] {
+  --black: #ffffff; --white: #1a1a1a; --ground: #0b0c0c;
+  --grey-1: #1c1d1f; --grey-2: #2a2b2d;
+  --heading: #ffffff; --body-tx: #ffffff; --secondary: #b6bbbe;
+  --border: #5c5f61; --border-control: #b6bbbe;
+  --blue: #5694ca; --blue-dark: #99c1ea;
+  --green: #57a97a; --green-deep: #57a97a; --red: #ea6d5b;
+  --action-bg: #57a97a; --action-tx: #0b0c0c;
+  --panel-bg: #005a30; --panel-tx: #ffffff;
+  --panel-quiet: #1c1d1f; --panel-quiet-tx: #ffffff;
+  --focus: #ffdd00; --focus-tx: #0b0c0c; --focus-edge: #ffffff;
+  --tag-blue-bg: #17324d;   --tag-blue-tx: #9fc3e8;
+  --tag-green-bg: #14331f;  --tag-green-tx: #6fce9b;
+  --tag-grey-bg: #26282a;   --tag-grey-tx: #c5c9cb;
+  --tag-yellow-bg: #332d00; --tag-yellow-tx: #f3d97a;
+  --tag-red-bg: #3a1a14;    --tag-red-tx: #f0a99b;
+  --hair: rgba(255,255,255,0.16);
+  --hair-strong: rgba(255,255,255,0.30);
+  --wash: rgba(255,255,255,0.04);
+  --shadow-1: 0 1px 2px rgba(0,0,0,.5);
+  --shadow-2: 0 1px 2px rgba(0,0,0,.5), 0 10px 28px rgba(0,0,0,.55);
+  --shadow-bar: 0 1px 0 var(--hair);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --black: #ffffff; --white: #1a1a1a; --ground: #0b0c0c;
+    --grey-1: #1c1d1f; --grey-2: #2a2b2d;
+    --heading: #ffffff; --body-tx: #ffffff; --secondary: #b6bbbe;
+    --border: #5c5f61; --border-control: #b6bbbe;
+    --blue: #5694ca; --blue-dark: #99c1ea;
+    --green: #57a97a; --green-deep: #57a97a; --red: #ea6d5b;
+    --action-bg: #57a97a; --action-tx: #0b0c0c;
+    --panel-bg: #005a30; --panel-tx: #ffffff;
+    --panel-quiet: #1c1d1f; --panel-quiet-tx: #ffffff;
+    --focus: #ffdd00; --focus-tx: #0b0c0c; --focus-edge: #ffffff;
+    --tag-blue-bg: #17324d;   --tag-blue-tx: #9fc3e8;
+    --tag-green-bg: #14331f;  --tag-green-tx: #6fce9b;
+    --tag-grey-bg: #26282a;   --tag-grey-tx: #c5c9cb;
+    --tag-yellow-bg: #332d00; --tag-yellow-tx: #f3d97a;
+    --tag-red-bg: #3a1a14;    --tag-red-tx: #f0a99b;
+    --hair: rgba(255,255,255,0.16);
+    --hair-strong: rgba(255,255,255,0.30);
+    --wash: rgba(255,255,255,0.04);
+    --shadow-1: 0 1px 2px rgba(0,0,0,.5);
+    --shadow-2: 0 1px 2px rgba(0,0,0,.5), 0 10px 28px rgba(0,0,0,.55);
+    --shadow-bar: 0 1px 0 var(--hair);
+  }
+}
+
+/* ---------------------------------------------------------------- base --- */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--body-tx);
+  font-family: var(--font);
+  font-size: var(--t-body);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, p, ul, ol, figure { margin: 0; }
+ul { padding-left: 1.1em; }
+
+.tnum { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+
+.visually-hidden {
+  position: absolute !important; width: 1px; height: 1px; margin: 0; padding: 0;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+
+:focus-visible {
+  outline: 3px solid transparent;
+  color: var(--focus-tx);
+  background: var(--focus);
+  box-shadow: 0 -2px var(--focus), 0 4px var(--focus-edge);
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+.shell {
+  max-width: var(--shell);
+  margin: 0 auto;
+  padding: 0 var(--space-5);
+}
+@media (max-width: 620px) { .shell { padding: 0 var(--space-4); } }
+
+/* ------------------------------------------------------ preview chrome --- */
+/* Not part of the product. It exists so three screens can be compared in one
+   file, and it is visually separated from the app so it is never mistaken for
+   a component. */
+
+.pv {
+  position: sticky; top: 0; z-index: 60;
+  background: var(--grey-1);
+  border-bottom: 1px solid var(--hair);
+}
+.pv-in {
+  max-width: var(--shell); margin: 0 auto;
+  padding: var(--space-2) var(--space-5);
+  display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap;
+}
+.pv-tag {
+  font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--secondary);
+}
+.pv-seg {
+  display: flex; gap: 2px; padding: 3px;
+  background: var(--ground); border: 1px solid var(--hair);
+  border-radius: var(--radius-pill);
+}
+.pv-seg button {
+  font: inherit; font-size: 14px; font-weight: 600;
+  border: 0; background: transparent; color: var(--secondary);
+  padding: 7px 14px; border-radius: var(--radius-pill); cursor: pointer;
+  min-height: 34px;
+}
+.pv-seg button[aria-selected="true"] { background: var(--black); color: var(--ground); }
+.pv-theme {
+  margin-left: auto; font: inherit; font-size: 14px; font-weight: 600;
+  background: var(--ground); color: var(--body-tx);
+  border: 1px solid var(--hair-strong); border-radius: var(--radius-pill);
+  padding: 7px 14px; cursor: pointer; min-height: 34px;
+}
+.screen[hidden] { display: none; }
+
+/* ------------------------------------------------------------ masthead --- */
+
+.masthead {
+  position: sticky; top: 45px; z-index: 40;
+  background: var(--black);
+  color: var(--ground);
+  border-bottom: 3px solid var(--green);
+}
+:root[data-theme="dark"] .masthead { background: #000000; }
+.mast-in {
+  max-width: var(--shell); margin: 0 auto;
+  padding: var(--space-3) var(--space-5);
+  display: flex; align-items: center; gap: var(--space-4);
+}
+@media (max-width: 620px) { .mast-in { padding: var(--space-3) var(--space-4); } }
+
+.mark {
+  flex: 0 0 auto; width: 34px; height: 34px; border-radius: var(--radius-1);
+  background: var(--green); color: #ffffff;
+  display: grid; place-items: center;
+  font-weight: 800; font-size: 14px; letter-spacing: .02em;
+}
+.wordmark { font-weight: 700; font-size: 16px; letter-spacing: -0.01em; line-height: 1.2; }
+.wordmark span { display: block; font-weight: 400; font-size: var(--t-meta); opacity: .75; }
+.mast-right { margin-left: auto; display: flex; align-items: center; gap: var(--space-3); }
+.mast-fact {
+  display: none; font-size: var(--t-meta); line-height: 1.3; text-align: right; opacity: .82;
+}
+.mast-fact b { display: block; font-size: 14px; opacity: 1; font-weight: 700; }
+@media (min-width: 860px) { .mast-fact { display: block; } }
+
+/* --------------------------------------------------------- section nav --- */
+
+.subnav {
+  position: sticky; top: 106px; z-index: 30;
+  background: var(--ground);
+  border-bottom: 1px solid var(--hair);
+  box-shadow: var(--shadow-bar);
+}
+.subnav-in {
+  max-width: var(--shell); margin: 0 auto; padding: 0 var(--space-5);
+  display: flex; gap: var(--space-1); overflow-x: auto; scrollbar-width: none;
+  contain: paint;
+}
+.subnav-in::-webkit-scrollbar { display: none; }
+.subnav a {
+  flex: 0 0 auto;
+  padding: 13px var(--space-3) 11px;
+  font-size: var(--t-small); font-weight: 600;
+  color: var(--secondary); text-decoration: none;
+  border-bottom: 3px solid transparent;
+  min-height: 44px; display: flex; align-items: center; gap: 7px;
+}
+.subnav a:hover { color: var(--body-tx); }
+.subnav a[aria-current="true"] { color: var(--body-tx); border-bottom-color: var(--green); }
+.subnav a .n {
+  font-size: 11px; font-weight: 800; color: var(--secondary);
+  background: var(--grey-1); border-radius: var(--radius-pill);
+  min-width: 19px; height: 19px; display: grid; place-items: center;
+}
+
+/* ------------------------------------------------------------- layout --- */
+
+main { padding-bottom: var(--space-8); }
+
+.sect { padding-top: var(--space-7); scroll-margin-top: 160px; }
+
+.sect-head {
+  display: flex; align-items: baseline; gap: var(--space-3);
+  flex-wrap: wrap; margin-bottom: var(--space-4);
+}
+.sect-head h2 {
+  font-size: var(--t-h2); font-weight: 700; letter-spacing: -0.015em; color: var(--heading);
+}
+.eyebrow {
+  font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--secondary);
+}
+.lede { color: var(--secondary); font-size: var(--t-small); max-width: var(--measure); }
+
+.grid { display: grid; gap: var(--space-4); }
+.g-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.g-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.g-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 900px) { .g-3, .g-4 { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width: 560px) { .g-2, .g-3, .g-4 { grid-template-columns: minmax(0,1fr); } }
+
+/* --------------------------------------------------------------- card --- */
+
+.card {
+  background: var(--ground);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-2);
+  box-shadow: var(--shadow-1);
+  padding: var(--space-5);
+}
+.card.flush { padding: 0; overflow: hidden; }
+.card-head {
+  display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--hair);
+  background: var(--wash);
+}
+.card-head h3 { font-size: var(--t-h3); font-weight: 700; letter-spacing: -0.01em; }
+.card-body { padding: var(--space-5); }
+.card-foot {
+  padding: var(--space-3) var(--space-5);
+  border-top: 1px solid var(--hair);
+  background: var(--wash);
+  font-size: var(--t-meta); color: var(--secondary);
+}
+
+/* --------------------------------------------------------------- pill --- */
+
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 700; letter-spacing: .03em;
+  padding: 4px 10px; border-radius: var(--radius-pill);
+  background: var(--tag-blue-bg); color: var(--tag-blue-tx); white-space: nowrap;
+}
+.pill.green  { background: var(--tag-green-bg);  color: var(--tag-green-tx); }
+.pill.grey   { background: var(--tag-grey-bg);   color: var(--tag-grey-tx); }
+.pill.yellow { background: var(--tag-yellow-bg); color: var(--tag-yellow-tx); }
+.pill.red    { background: var(--tag-red-bg);    color: var(--tag-red-tx); }
+.pill .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.pill.on-dark { background: rgba(255,255,255,.16); color: #ffffff; }
+
+/* ------------------------------------------------------------- button --- */
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font: inherit; font-size: var(--t-small); font-weight: 700;
+  min-height: 44px; padding: 0 var(--space-4);
+  border-radius: var(--radius-1); cursor: pointer;
+  border: 1px solid var(--border-control); background: var(--ground); color: var(--body-tx);
+  text-decoration: none;
+}
+.btn:hover { background: var(--grey-1); }
+.btn.primary {
+  background: var(--action-bg); color: var(--action-tx);
+  border-color: var(--action-bg);
+  box-shadow: 0 1px 0 rgba(11,12,12,.28);
+}
+.btn.primary:hover { background: var(--green-deep); border-color: var(--green-deep); }
+:root[data-theme="dark"] .btn.primary:hover { filter: brightness(1.08); }
+.btn.small { min-height: 36px; font-size: 14px; padding: 0 var(--space-3); }
+.btn.wide { width: 100%; }
+.btn.quiet { border-color: var(--hair-strong); }
+.btn[disabled] { opacity: .45; cursor: not-allowed; }
+.btn-row { display: flex; gap: var(--space-3); flex-wrap: wrap; align-items: center; }
+
+/* --------------------------------------------------------------- hero --- */
+/* The verdict. Green is the "run completed, this is the answer" signal, so it
+   is a rail and a pill, not a slab: the number stays ink on ground, which is
+   where a figure is most readable. Below the coverage bar the rail goes
+   neutral and the pill says Partial, because an incomplete number is neither
+   good news nor bad. */
+
+.hero {
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-3);
+  box-shadow: var(--shadow-2);
+  overflow: hidden;
+  background: var(--ground);
+}
+.hero-rail { height: 4px; background: var(--green); }
+.hero.partial .hero-rail { background: var(--border-control); }
+.hero-top {
+  display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap;
+  padding: var(--space-4) var(--space-5) 0;
+}
+.hero-main {
+  display: flex; align-items: flex-end; gap: var(--space-5); flex-wrap: wrap;
+  padding: var(--space-4) var(--space-5) var(--space-5);
+}
+.fig-block { min-width: 0; }
+.fig-block .lab {
+  font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--secondary); margin-bottom: 2px;
+}
+.fig-block .v {
+  font-size: var(--t-display); font-weight: 800; line-height: 1;
+  letter-spacing: -0.03em; color: var(--heading);
+}
+.fig-block .u { font-size: var(--t-meta); color: var(--secondary); margin-top: 6px; }
+.fig-arrow {
+  font-size: 26px; color: var(--secondary); line-height: 1; padding-bottom: 16px;
+}
+.delta {
+  margin-left: auto; text-align: right; min-width: 0;
+}
+.delta .amount {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: clamp(18px, 2.6vw, 24px); font-weight: 800; letter-spacing: -0.02em;
+  border: 1px solid var(--hair-strong); border-radius: var(--radius-pill);
+  padding: 7px 16px; background: var(--grey-1); color: var(--body-tx);
+}
+.delta .words { font-size: var(--t-meta); color: var(--secondary); margin-top: 7px; }
+@media (max-width: 700px) { .delta { margin-left: 0; text-align: left; width: 100%; } }
+
+.factstrip {
+  display: grid; grid-template-columns: repeat(4, minmax(0,1fr));
+  border-top: 1px solid var(--hair); background: var(--wash);
+}
+@media (max-width: 700px) { .factstrip { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+.factstrip > div {
+  padding: var(--space-3) var(--space-5);
+  border-right: 1px solid var(--hair); min-width: 0;
+}
+.factstrip > div:last-child { border-right: 0; }
+.factstrip .k {
+  font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--secondary);
+}
+.factstrip .v { font-size: var(--t-small); font-weight: 700; margin-top: 2px; }
+
+/* -------------------------------------------------------------- stats --- */
+
+.stat {
+  background: var(--ground); border: 1px solid var(--hair);
+  border-radius: var(--radius-2); padding: var(--space-4) var(--space-5);
+  box-shadow: var(--shadow-1); min-width: 0;
+}
+.stat .v {
+  font-size: 32px; font-weight: 800; line-height: 1.05; letter-spacing: -0.025em;
+  color: var(--heading);
+}
+.stat .k { font-size: var(--t-meta); color: var(--secondary); margin-top: 6px; }
+
+/* -------------------------------------------------------------- meter --- */
+/* Coverage as a measured bar against the stated bar, not a bare percentage.
+   No hue: the fill is ink, the threshold is a marked line. */
+
+.meter { margin-top: var(--space-3); }
+.meter-track {
+  position: relative; height: 12px; border-radius: var(--radius-pill);
+  background: var(--grey-2); overflow: hidden;
+}
+.meter-fill { height: 100%; background: var(--body-tx); border-radius: var(--radius-pill); }
+.meter-mark {
+  position: absolute; top: -5px; bottom: -5px; width: 2px; background: var(--body-tx);
+}
+.meter-legend {
+  display: flex; justify-content: space-between; gap: var(--space-3);
+  font-size: var(--t-meta); color: var(--secondary); margin-top: 7px;
+}
+
+/* -------------------------------------------------------------- table --- */
+
+.table-scroll {
+  overflow-x: auto; max-width: 100%; contain: paint;
+  border: 1px solid var(--hair); border-radius: var(--radius-2); background: var(--ground);
+}
+table { border-collapse: collapse; width: 100%; font-size: var(--t-small); }
+caption {
+  text-align: left; color: var(--secondary); font-size: var(--t-meta);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--hair); background: var(--wash);
+}
+th, td { text-align: left; padding: 11px var(--space-4); border-bottom: 1px solid var(--hair); vertical-align: top; }
+tbody tr:last-child td { border-bottom: 0; }
+thead th {
+  font-size: var(--t-meta); font-weight: 700; color: var(--secondary);
+  letter-spacing: .04em; text-transform: uppercase; white-space: nowrap;
+}
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+td.item { font-weight: 600; }
+tbody tr:hover { background: var(--wash); }
+
+/* An inline magnitude bar. Width carries size, the sign and word carry
+   direction, and there is no hue in either. */
+.bar { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.bar .track { width: 64px; height: 6px; background: var(--grey-2); border-radius: var(--radius-pill); }
+.bar .fill { height: 100%; background: var(--body-tx); border-radius: var(--radius-pill); }
+
+/* ------------------------------------------------------------ message --- */
+
+.note {
+  display: flex; gap: var(--space-3); align-items: flex-start;
+  padding: var(--space-4);
+  border: 1px solid var(--hair); border-left: 4px solid var(--body-tx);
+  border-radius: var(--radius-2);
+  background: var(--wash);
+}
+.note .ic {
+  flex: 0 0 auto; width: 26px; height: 26px; border-radius: 50%;
+  background: var(--body-tx); color: var(--ground);
+  font-weight: 800; font-size: 16px; display: grid; place-items: center;
+}
+.note .tx { font-size: var(--t-small); max-width: var(--measure); }
+.note .tx b { display: block; margin-bottom: 2px; }
+.note.ok { border-left-color: var(--green); }
+.note.ok .ic { background: var(--green); color: #ffffff; }
+.note.review { border-left-color: var(--tag-yellow-tx); }
+.note.review .ic { background: var(--tag-yellow-tx); color: #ffffff; }
+.note.err { border-left-color: var(--red); }
+.note.err .ic { background: var(--red); color: #ffffff; }
+.empty { color: var(--secondary); font-size: var(--t-small); }
+
+/* ---------------------------------------------------------- disclosure --- */
+
+details.disc {
+  border: 1px solid var(--hair); border-radius: var(--radius-2);
+  background: var(--ground); box-shadow: var(--shadow-1); overflow: hidden;
+}
+details.disc + details.disc { margin-top: var(--space-3); }
+details.disc > summary {
+  padding: var(--space-4) var(--space-5);
+  cursor: pointer; list-style: none; min-height: 44px;
+  display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap;
+}
+details.disc > summary::-webkit-details-marker { display: none; }
+details.disc > summary::after {
+  content: "+"; margin-left: auto; font-size: 20px; font-weight: 700;
+  color: var(--secondary); line-height: 1;
+}
+details.disc[open] > summary::after { content: "\2212"; }
+details.disc[open] > summary { border-bottom: 1px solid var(--hair); background: var(--wash); }
+.disc-body { padding: var(--space-5); }
+.disc-title { font-weight: 700; font-size: var(--t-small); min-width: 0; }
+.disc-meta { font-size: var(--t-meta); color: var(--secondary); }
+
+/* explanation card head: pill, name, figures, impact */
+/* flex: 1 rather than width: 100%, so the summary's +/- marker stays on the
+   same line instead of being pushed onto a row of its own. */
+.xhead { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; flex: 1 1 auto; min-width: 0; }
+.xhead .who { min-width: 0; flex: 1 1 260px; }
+.xhead .who .name { display: block; font-weight: 700; font-size: var(--t-small); }
+.xhead .who .meta { display: block; font-size: var(--t-meta); color: var(--secondary); margin-top: 2px; }
+.xhead .impact { text-align: right; }
+.xhead .impact .v { display: block; font-weight: 800; font-variant-numeric: tabular-nums; }
+.xhead .impact .k { display: block; font-size: var(--t-meta); color: var(--secondary); }
+
+.kv { display: grid; gap: var(--space-4); }
+.kv .k {
+  font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--secondary); margin-bottom: var(--space-1);
+}
+.kv .v { font-size: var(--t-small); max-width: var(--measure); }
+blockquote.src {
+  margin: var(--space-2) 0 0; padding: var(--space-3) var(--space-4);
+  border-left: 3px solid var(--green); background: var(--grey-1);
+  border-radius: 0 var(--radius-1) var(--radius-1) 0;
+  font-size: var(--t-small);
+}
+blockquote.src cite { display: block; margin-top: 6px; font-size: var(--t-meta); color: var(--secondary); font-style: normal; }
+
+/* ------------------------------------------------------------- setup --- */
+
+.steps { display: grid; gap: var(--space-4); }
+.step {
+  display: grid; grid-template-columns: 34px minmax(0,1fr); gap: var(--space-4);
+}
+.step-n {
+  width: 34px; height: 34px; border-radius: 50%;
+  display: grid; place-items: center; font-weight: 800; font-size: 15px;
+  background: var(--grey-1); color: var(--secondary);
+  border: 1px solid var(--hair);
+}
+.step.done .step-n { background: var(--green); color: #ffffff; border-color: var(--green); }
+.step.now .step-n { background: var(--black); color: var(--ground); border-color: var(--black); }
+.step-t { font-weight: 700; font-size: var(--t-h3); letter-spacing: -0.01em; }
+.step-h { font-size: var(--t-small); color: var(--secondary); margin-top: 2px; }
+.step-body { margin-top: var(--space-3); }
+
+.field { display: block; }
+.field + .field { margin-top: var(--space-4); }
+/* Inside a grid the gap already spaces them, and the stacking margin would
+   knock the second column out of alignment with the first. */
+.grid > .field + .field { margin-top: 0; }
+.field .lab { display: block; font-weight: 700; font-size: var(--t-small); margin-bottom: 6px; }
+.field .hint { font-size: var(--t-meta); color: var(--secondary); margin-top: 6px; }
+.control {
+  width: 100%; min-height: 44px; padding: 10px var(--space-3);
+  border: 1px solid var(--border-control); border-radius: var(--radius-1);
+  background: var(--ground); color: var(--body-tx); font: inherit; font-size: var(--t-small);
+}
+select.control { appearance: none; background-image: none; }
+
+.drop {
+  border: 2px dashed var(--hair-strong); border-radius: var(--radius-2);
+  padding: var(--space-6) var(--space-5); text-align: center; background: var(--wash);
+}
+.drop .big { font-weight: 700; font-size: var(--t-h3); }
+.drop .sm { font-size: var(--t-small); color: var(--secondary); margin: 6px 0 var(--space-4); }
+.file {
+  display: flex; align-items: center; gap: var(--space-3);
+  border: 1px solid var(--hair); border-radius: var(--radius-2);
+  padding: var(--space-3) var(--space-4); background: var(--ground);
+}
+.file .ic {
+  width: 34px; height: 34px; border-radius: var(--radius-1); background: var(--grey-1);
+  display: grid; place-items: center; font-size: 11px; font-weight: 800; color: var(--secondary);
+}
+.file .nm { font-weight: 700; font-size: var(--t-small); min-width: 0; }
+.file .mt { display: block; font-weight: 400; font-size: var(--t-meta); color: var(--secondary); }
+
+.actionbar {
+  position: sticky; bottom: 0; z-index: 20;
+  margin-top: var(--space-6);
+  background: var(--ground);
+  border-top: 1px solid var(--hair);
+  box-shadow: 0 -8px 24px rgba(11,12,12,.07);
+}
+.actionbar-in {
+  max-width: var(--shell); margin: 0 auto; padding: var(--space-3) var(--space-5);
+  display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap;
+}
+.actionbar .say { font-size: var(--t-small); color: var(--secondary); flex: 1 1 240px; min-width: 0; }
+
+/* --------------------------------------------------------- downloads --- */
+
+.dl {
+  display: flex; align-items: center; gap: var(--space-3);
+  border: 1px solid var(--hair); border-radius: var(--radius-2);
+  padding: var(--space-4); background: var(--ground); box-shadow: var(--shadow-1);
+  text-decoration: none; color: inherit; min-width: 0;
+}
+.dl:hover { background: var(--wash); }
+.dl .ic {
+  flex: 0 0 auto; width: 38px; height: 38px; border-radius: var(--radius-1);
+  background: var(--grey-1); color: var(--secondary);
+  display: grid; place-items: center; font-size: 10px; font-weight: 800; letter-spacing: .04em;
+}
+.dl .nm { display: block; font-weight: 700; font-size: var(--t-small); }
+.dl .mt { display: block; font-size: var(--t-meta); color: var(--secondary); }
+
+.check { display: grid; gap: 0; }
+.check .row {
+  display: flex; align-items: flex-start; gap: var(--space-3);
+  padding: var(--space-3) 0; border-bottom: 1px solid var(--hair);
+}
+.check .row:last-child { border-bottom: 0; }
+.check .row .tx { font-size: var(--t-small); min-width: 0; }
+.check .row .tx b { font-weight: 700; }
+.check .row .tx b { display: block; }
+
+/* ------------------------------------------------------ system sheet --- */
+
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap: var(--space-3); }
+.sw { border: 1px solid var(--hair); border-radius: var(--radius-2); overflow: hidden; }
+.sw .chip { height: 54px; }
+.sw .nm { padding: 8px var(--space-3); font-size: var(--t-meta); }
+.sw .nm b { display: block; font-size: var(--t-small); }
+.spec { font-size: var(--t-small); color: var(--secondary); }
+.spec code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px; background: var(--grey-1); padding: 2px 6px; border-radius: 4px;
+  color: var(--body-tx);
+}
+.skel {
+  height: 12px; border-radius: var(--radius-pill); background: var(--grey-2);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+.skel + .skel { margin-top: 10px; }
+@keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: .45 } }
+.stack > * + * { margin-top: var(--space-4); }
+.stack-3 > * + * { margin-top: var(--space-3); }
+</style>
+</head>
+<body>
+
+<!-- ===================== preview chrome (not the product) ================= -->
+<div class="pv">
+  <div class="pv-in">
+    <span class="pv-tag">Preview</span>
+    <div class="pv-seg" role="tablist" aria-label="Preview screens">
+      <button role="tab" aria-selected="true" data-screen="setup">Set up</button>
+      <button role="tab" aria-selected="false" data-screen="report">Report</button>
+      <button role="tab" aria-selected="false" data-screen="system">System</button>
+    </div>
+    <button class="pv-theme" id="themeToggle">Dark</button>
+  </div>
+</div>
+
+<!-- ============================== masthead ============================== -->
+<header class="masthead">
+  <div class="mast-in">
+    <div class="mark" aria-hidden="true">EF</div>
+    <div class="wordmark">Version Explainer<span>DEFRA GHG conversion factors</span></div>
+    <div class="mast-right">
+      <div class="mast-fact"><b>2025 to 2026</b>Full set, UK</div>
+      <span class="pill on-dark" id="mastPill"><span class="dot"></span>Not run yet</span>
+    </div>
+  </div>
+</header>
+
+<!-- =============================== SET UP =============================== -->
+<section class="screen" id="screen-setup">
+  <main class="shell">
+    <div class="sect" style="padding-top:var(--space-6)">
+      <div class="sect-head">
+        <div>
+          <p class="eyebrow">Step 1 of 3</p>
+          <h2>Compare two DEFRA releases against your product</h2>
+          <p class="lede" style="margin-top:6px">
+            Pick the two versions, upload your bill of materials, and confirm which
+            columns are which. Nothing is matched or assumed until you say run.
+          </p>
+        </div>
+      </div>
+
+      <div class="steps">
+
+        <!-- step 1 -->
+        <div class="step done">
+          <div class="step-n" aria-hidden="true">&#10003;</div>
+          <div>
+            <div class="step-t">Versions to compare</div>
+            <div class="step-h">Found in your data folder, so there is nothing to upload.</div>
+            <div class="step-body card">
+              <div class="note ok" style="margin-bottom:var(--space-4)">
+                <span class="ic" aria-hidden="true">&#10003;</span>
+                <span class="tx"><b>Real DEFRA full set detected</b>
+                2111 factors in 2025 and 2133 in 2026, across 27 sheets.</span>
+              </div>
+              <div class="grid g-2">
+                <label class="field">
+                  <span class="lab">Older version</span>
+                  <select class="control"><option>2025 full set</option></select>
+                  <span class="hint">ghg-conversion-factors-2025-full-set.xlsx</span>
+                </label>
+                <label class="field">
+                  <span class="lab">Newer version</span>
+                  <select class="control"><option>2026 full set</option></select>
+                  <span class="hint">ghg-conversion-factors-2026-full-set.xlsx</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- step 2 -->
+        <div class="step done">
+          <div class="step-n" aria-hidden="true">&#10003;</div>
+          <div>
+            <div class="step-t">Your product inventory</div>
+            <div class="step-h">A .csv or .xlsx. Column names do not need to match anything.</div>
+            <div class="step-body card stack-3">
+              <div class="file">
+                <span class="ic" aria-hidden="true">CSV</span>
+                <span class="nm">widget_bom_q3.csv<span class="mt">7 rows, 5 columns, 4 KB</span></span>
+                <button class="btn small quiet" style="margin-left:auto">Replace</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- step 3 -->
+        <div class="step now">
+          <div class="step-n" aria-hidden="true">3</div>
+          <div>
+            <div class="step-t">Confirm your columns</div>
+            <div class="step-h">We guessed from your headers. Change anything we got wrong.</div>
+            <div class="step-body card flush">
+              <div class="card-body">
+                <div class="grid g-3">
+                  <label class="field">
+                    <span class="lab">Item or material</span>
+                    <select class="control"><option>Material description</option></select>
+                    <span class="hint">Guessed, high confidence</span>
+                  </label>
+                  <label class="field">
+                    <span class="lab">Quantity</span>
+                    <select class="control"><option>Qty per unit</option></select>
+                    <span class="hint">Guessed, high confidence</span>
+                  </label>
+                  <label class="field">
+                    <span class="lab">Unit</span>
+                    <select class="control"><option>UoM</option></select>
+                    <span class="hint">Guessed, medium confidence</span>
+                  </label>
+                </div>
+              </div>
+              <div class="card-body" style="padding-top:0">
+                <div class="table-scroll">
+                  <table>
+                    <caption>Preview of the first rows, read with your mapping</caption>
+                    <thead>
+                      <tr><th scope="col">Item or material</th><th scope="col" class="num">Quantity</th><th scope="col">Unit</th><th scope="col">Read as</th></tr>
+                    </thead>
+                    <tbody>
+                      <tr><td class="item">Electricity generated, UK</td><td class="num tnum">0.85</td><td>kwh</td><td><span class="pill green"><span class="dot"></span>Ready</span></td></tr>
+                      <tr><td class="item">Diesel (average biofuel blend)</td><td class="num tnum">0.05</td><td>litre</td><td><span class="pill green"><span class="dot"></span>Ready</span></td></tr>
+                      <tr><td class="item">Proprietary specialty resin</td><td class="num tnum">0.0002</td><td>tonne</td><td><span class="pill green"><span class="dot"></span>Ready</span></td></tr>
+                      <tr><td class="item">(blank)</td><td class="num tnum">1.20</td><td>kg</td><td><span class="pill yellow"><span class="dot"></span>Set aside</span></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="card-foot">
+                6 of 7 rows ready. 1 row set aside because it has no item name, and it
+                is listed in the report rather than dropped quietly.
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <div class="actionbar">
+    <div class="actionbar-in">
+      <span class="say">Ready to run. 6 inventory lines against 2025 and 2026.</span>
+      <div class="btn-row">
+        <button class="btn quiet">Use the sample product</button>
+        <button class="btn primary">Run analysis</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================== REPORT =============================== -->
+<section class="screen" id="screen-report" hidden>
+
+  <nav class="subnav" aria-label="Report sections">
+    <div class="subnav-in">
+      <a href="#s-result" aria-current="true"><span class="n">1</span>Result</a>
+      <a href="#s-confidence"><span class="n">2</span>Confidence</a>
+      <a href="#s-movers"><span class="n">3</span>Movers</a>
+      <a href="#s-explanations"><span class="n">4</span>Explanations</a>
+      <a href="#s-export"><span class="n">5</span>Export</a>
+    </div>
+  </nav>
+
+  <main class="shell">
+
+    <!-- 1. RESULT -->
+    <section class="sect" id="s-result">
+      <div class="sect-head">
+        <div>
+          <p class="eyebrow">Section 1</p>
+          <h2>Result</h2>
+        </div>
+      </div>
+      <p class="lede" style="margin-bottom:var(--space-4)">
+        Your product's footprint under 2025 and under 2026, recomputed from the same
+        bill of materials.
+      </p>
+
+      <div class="hero partial">
+        <div class="hero-rail"></div>
+        <div class="hero-top">
+          <span class="pill yellow"><span class="dot"></span>Partial answer</span>
+          <span class="pill grey">Coverage 85.7%</span>
+          <span class="disc-meta" style="margin-left:auto">Run EF-2026-08-04-1147</span>
+        </div>
+        <div class="hero-main">
+          <div class="fig-block">
+            <div class="lab">2025</div>
+            <div class="v tnum">2.344</div>
+            <div class="u">kg CO2e</div>
+          </div>
+          <div class="fig-arrow" aria-hidden="true">&#8594;</div>
+          <div class="fig-block">
+            <div class="lab">2026</div>
+            <div class="v tnum">2.305</div>
+            <div class="u">kg CO2e</div>
+          </div>
+          <div class="delta">
+            <span class="amount tnum">
+              <span aria-hidden="true">&#9660;</span> 1.68%
+              <span class="visually-hidden">, fell</span>
+            </span>
+            <div class="words">0.0394 kg lighter under 2026</div>
+          </div>
+        </div>
+        <div class="factstrip">
+          <div><div class="k">Lines</div><div class="v tnum">6 of 7 matched</div></div>
+          <div><div class="k">Factors moved</div><div class="v tnum">67 past threshold</div></div>
+          <div><div class="k">Explained</div><div class="v tnum">1 of 1 cited</div></div>
+          <div><div class="k">Baseline</div><div class="v">Within a flat baseline</div></div>
+        </div>
+      </div>
+
+      <div style="margin-top:var(--space-4)" class="note">
+        <span class="ic" aria-hidden="true">!</span>
+        <span class="tx"><b>Assessment</b>
+        The footprint did not increase, so it stays within a flat baseline. Coverage
+        is 85.7%, below the 95% bar, so read this total as a partial answer.</span>
+      </div>
+    </section>
+
+    <!-- 2. CONFIDENCE -->
+    <section class="sect" id="s-confidence">
+      <div class="sect-head">
+        <div>
+          <p class="eyebrow">Section 2</p>
+          <h2>Confidence</h2>
+        </div>
+      </div>
+      <p class="lede" style="margin-bottom:var(--space-4)">
+        What matched, what did not, and what was deliberately left for a human.
+        Nothing below the confidence threshold is ever assumed.
+      </p>
+
+      <div class="grid g-2" style="align-items:start">
+        <div class="card">
+          <div class="eyebrow">Coverage of your inventory</div>
+          <div style="display:flex;align-items:baseline;gap:10px;margin-top:6px">
+            <span class="tnum" style="font-size:38px;font-weight:800;letter-spacing:-.03em;line-height:1">85.7%</span>
+            <span class="disc-meta">6 of 7 lines</span>
+          </div>
+          <div class="meter">
+            <div class="meter-track" role="img" aria-label="Coverage 85.7 percent, below the 95 percent bar">
+              <div class="meter-fill" style="width:85.7%"></div>
+              <div class="meter-mark" style="left:95%"></div>
+            </div>
+            <div class="meter-legend"><span>0%</span><span>95% bar</span><span>100%</span></div>
+          </div>
+          <p class="spec" style="margin-top:var(--space-3)">
+            Below the bar, so this total is incomplete. One line was held back rather
+            than guessed, which is the rule working, not a failure.
+          </p>
+        </div>
+
+        <div class="grid g-2" style="gap:var(--space-3)">
+          <div class="stat"><div class="v tnum">67</div><div class="k">Factors past DEFRA thresholds</div></div>
+          <div class="stat"><div class="v tnum">1</div><div class="k">Held for review, never guessed</div></div>
+          <div class="stat"><div class="v tnum">1</div><div class="k">Rows set aside from your file</div></div>
+          <div class="stat"><div class="v tnum">1597</div><div class="k">Factors present in both years</div></div>
+        </div>
+      </div>
+
+      <div style="margin-top:var(--space-4)">
+        <details class="disc" open>
+          <summary>
+            <span class="pill yellow"><span class="dot"></span>Held for review</span>
+            <span class="disc-title">1 inventory line needs a human</span>
+          </summary>
+          <div class="disc-body">
+            <p class="spec" style="margin-bottom:var(--space-3)">
+              Nothing below the confidence threshold was assumed. Each line needs a
+              person to confirm the right DEFRA activity, or to say there is not one.
+            </p>
+            <div class="table-scroll">
+              <table>
+                <caption>Inventory lines that did not match a DEFRA activity with confidence</caption>
+                <thead><tr><th scope="col">Line item</th><th scope="col">Unit</th><th scope="col" class="num">Best score</th><th scope="col">What happened</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td class="item">Proprietary specialty resin (custom compound)</td>
+                    <td>tonne</td>
+                    <td class="num tnum">49.3</td>
+                    <td>Best match scored 49.3, below the 80 confidence threshold, so nothing was assumed.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- 3. MOVERS -->
+    <section class="sect" id="s-movers">
+      <div class="sect-head">
+        <div>
+          <p class="eyebrow">Section 3</p>
+          <h2>Movers</h2>
+        </div>
+      </div>
+      <p class="lede" style="margin-bottom:var(--space-4)">
+        Which factors moved, and which of your own lines those movements actually
+        shifted. Renames are paired separately so they do not read as real movement.
+      </p>
+
+      <div class="card flush" style="margin-bottom:var(--space-4)">
+        <div class="factstrip" style="border-top:0">
+          <div><div class="k">In both years</div><div class="v tnum">1597</div></div>
+          <div><div class="k">Past threshold</div><div class="v tnum">67</div></div>
+          <div><div class="k">Genuinely new</div><div class="v tnum">76</div></div>
+          <div><div class="k">Paired as renames</div><div class="v tnum">460</div></div>
+        </div>
+      </div>
+
+      <div class="table-scroll">
+        <table>
+          <caption>Your inventory lines, largest change first</caption>
+          <thead>
+            <tr>
+              <th scope="col">Line item</th>
+              <th scope="col" class="num">Factor 2025</th>
+              <th scope="col" class="num">Factor 2026</th>
+              <th scope="col" class="num">kg 2025</th>
+              <th scope="col" class="num">kg 2026</th>
+              <th scope="col" class="num">Line delta</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="item">Electricity generated, UK</td>
+              <td class="num tnum">0.1770</td><td class="num tnum">0.1310</td>
+              <td class="num tnum">0.1505</td><td class="num tnum">0.1113</td>
+              <td class="num">
+                <span class="bar"><span class="track"><span class="fill" style="width:100%"></span></span>
+                <span class="tnum">&#9660; 0.0391<span class="visually-hidden">, fell</span></span></span>
+              </td>
+            </tr>
+            <tr>
+              <td class="item">Diesel (average biofuel blend)</td>
+              <td class="num tnum">2.5708</td><td class="num tnum">2.5835</td>
+              <td class="num tnum">0.1285</td><td class="num tnum">0.1292</td>
+              <td class="num">
+                <span class="bar"><span class="track"><span class="fill" style="width:2%"></span></span>
+                <span class="tnum">&#9650; 0.0006<span class="visually-hidden">, rose</span></span></span>
+              </td>
+            </tr>
+            <tr>
+              <td class="item">Paper and board, primary production</td>
+              <td class="num tnum">1199.73</td><td class="num tnum">1198.24</td>
+              <td class="num tnum">0.3599</td><td class="num tnum">0.3595</td>
+              <td class="num">
+                <span class="bar"><span class="track"><span class="fill" style="width:1%"></span></span>
+                <span class="tnum">&#9660; 0.0004<span class="visually-hidden">, fell</span></span></span>
+              </td>
+            </tr>
+            <tr>
+              <td class="item">Aluminium cans and foil, primary production</td>
+              <td class="num tnum">9115.90</td><td class="num tnum">9113.58</td>
+              <td class="num tnum">1.6409</td><td class="num tnum">1.6404</td>
+              <td class="num">
+                <span class="bar"><span class="track"><span class="fill" style="width:1%"></span></span>
+                <span class="tnum">&#9660; 0.0004<span class="visually-hidden">, fell</span></span></span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-top:var(--space-4)">
+        <details class="disc">
+          <summary>
+            <span class="pill grey">Renames</span>
+            <span class="disc-title">460 renamed factors, grouped into 11 families</span>
+            <span class="disc-meta">not counted as movement</span>
+          </summary>
+          <div class="disc-body">
+            <p class="spec" style="margin-bottom:var(--space-3)">
+              Same factor, renamed across versions. Only high confidence pairs (same
+              unit, same scope) are grouped. Anything unclear stays added or removed
+              rather than guessed.
+            </p>
+            <div class="table-scroll">
+              <table>
+                <caption>DEFRA renames, grouped into families</caption>
+                <thead><tr><th scope="col">Old name</th><th scope="col">New name</th><th scope="col">Scope</th><th scope="col" class="num">Variants</th><th scope="col">Movement</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td class="item">HGV (all diesel)</td>
+                    <td class="item">HGV (non-refrigerated, all diesel)</td>
+                    <td><span class="pill">Scope 1</span></td>
+                    <td class="num tnum">420</td>
+                    <td class="tnum">16.5% to 0.4% lighter</td>
+                  </tr>
+                  <tr>
+                    <td class="item">Incineration with energy recovery</td>
+                    <td class="item">Combustion</td>
+                    <td><span class="pill">Scope 3</span></td>
+                    <td class="num tnum">18</td>
+                    <td class="tnum">mixed direction</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- 4. EXPLANATIONS -->
+    <section class="sect" id="s-explanations">
+      <div class="sect-head">
+        <div>
+          <p class="eyebrow">Section 4</p>
+          <h2>Explanations</h2>
+        </div>
+        <span class="pill green" style="margin-left:auto"><span class="dot"></span>AI written</span>
+      </div>
+      <p class="lede" style="margin-bottom:var(--space-4)">
+        Ordered by how much each change moved this product's footprint, largest first.
+        Grounded strictly in the DEFRA changes notes. Where the notes are silent, the
+        tool says so instead of inventing a reason.
+      </p>
+
+      <details class="disc" open>
+        <summary>
+          <span class="xhead">
+            <span class="pill green"><span class="dot"></span>Cited</span>
+            <span class="who">
+              <span class="name">Electricity generated, Electricity: UK</span>
+              <span class="meta">Scope 2 &nbsp;&middot;&nbsp; 0.1770 to 0.1310 kg CO2e/kwh &nbsp;&middot;&nbsp; 26.0% lighter</span>
+            </span>
+            <span class="impact">
+              <span class="v tnum">0.0391 kg</span>
+              <span class="k">99.3% of the total change</span>
+            </span>
+          </span>
+        </summary>
+        <div class="disc-body">
+          <div class="kv">
+            <div>
+              <div class="k">Why it changed</div>
+              <div class="v">
+                A revised methodology has been introduced for calculating UK electricity
+                emissions. The previous approach divided total electricity related emissions
+                from the UK Greenhouse Gas Inventory by total electricity generation, which
+                tied the factor to the inventory publication cycle and produced a two year lag.
+                <blockquote class="src">
+                  "Revision to the calculation method for UK electricity (affected tabs: UK
+                  electricity; Transmission and distribution; indirect knock-on effects on
+                  other factors that include electricity including Rail, xEVs and Homeworking)."
+                  <cite>DEFRA 2026 full set, What's new sheet. Retrieval relevance 1.00</cite>
+                </blockquote>
+              </div>
+            </div>
+            <div>
+              <div class="k">Methodology note</div>
+              <div class="v">Reported under the same GHG Protocol scope classification. The change is a
+              factor version update, so year over year comparisons should note the DEFRA
+              release year (ISO 14064 comparability).</div>
+            </div>
+            <div>
+              <div class="k">Target impact</div>
+              <div class="v">This factor decreased, easing the product footprint.</div>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="disc">
+        <summary>
+          <span class="xhead">
+            <span class="pill grey">Not explained</span>
+            <span class="who">
+              <span class="name">Liquid fuels, Diesel (average biofuel blend)</span>
+              <span class="meta">Scope 1 &nbsp;&middot;&nbsp; 2.5708 to 2.5835 kg CO2e/litre &nbsp;&middot;&nbsp; 0.5% heavier</span>
+            </span>
+            <span class="impact">
+              <span class="v tnum">0.0006 kg</span>
+              <span class="k">1.6% of the total change</span>
+            </span>
+          </span>
+        </summary>
+        <div class="disc-body">
+          <div class="kv">
+            <div>
+              <div class="k">Why it changed</div>
+              <div class="v">No official reason found in the DEFRA changes report.</div>
+            </div>
+            <div>
+              <div class="k">Methodology note</div>
+              <div class="v">Reported under the same GHG Protocol scope classification. Treat as a factor
+              version update and state the release year alongside the figure.</div>
+            </div>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <!-- 5. EXPORT -->
+    <section class="sect" id="s-export">
+      <div class="sect-head">
+        <div>
+          <p class="eyebrow">Section 5</p>
+          <h2>Export</h2>
+        </div>
+      </div>
+      <p class="lede" style="margin-bottom:var(--space-4)">
+        Four files from one run, all stamped with the same run id. Anything still
+        unresolved is written into the front matter of every one of them.
+      </p>
+
+      <div class="grid g-2" style="align-items:start">
+        <div class="card">
+          <div class="eyebrow" style="margin-bottom:var(--space-3)">Who this is for</div>
+          <div class="grid" style="gap:var(--space-3)">
+            <label class="field"><span class="lab">Client</span><input class="control" value="Acme Ltd"></label>
+            <label class="field"><span class="lab">Product</span><input class="control" placeholder="Widget"></label>
+            <label class="field"><span class="lab">Prepared by</span><input class="control" placeholder="Your name"></label>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="eyebrow" style="margin-bottom:var(--space-2)">Before you send it</div>
+          <div class="check">
+            <div class="row"><span class="pill green"><span class="dot"></span>Resolved</span>
+              <span class="tx"><b>Grounding source</b>DEFRA 2026 What's new sheet, read end to end.</span></div>
+            <div class="row"><span class="pill yellow"><span class="dot"></span>Open</span>
+              <span class="tx"><b>Coverage</b>85.7%, below the 95% bar.</span></div>
+            <div class="row"><span class="pill yellow"><span class="dot"></span>Open</span>
+              <span class="tx"><b>Lines held for review</b>1 line still needs a human.</span></div>
+            <div class="row"><span class="pill green"><span class="dot"></span>Resolved</span>
+              <span class="tx"><b>Explanations</b>Every flagged change carries a cited reason or says the notes are silent.</span></div>
+          </div>
+          <div class="note review" style="margin-top:var(--space-4)">
+            <span class="ic" aria-hidden="true">!</span>
+            <span class="tx"><b>Nothing ships silently</b>
+            2 items are still open. You can send this now, and every file will say on
+            its first page exactly what was unresolved.</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:var(--space-5)" class="card">
+        <div class="btn-row" style="margin-bottom:var(--space-4)">
+          <button class="btn primary">Download the pack (.zip)</button>
+          <span class="spec">Run EF-2026-08-04-1147, generated 2026-08-04 11:47 UTC.</span>
+        </div>
+        <div class="grid g-4">
+          <a class="dl" href="#"><span class="ic" aria-hidden="true">XLSX</span><span><span class="nm">Workbook</span><span class="mt">Every line and factor</span></span></a>
+          <a class="dl" href="#"><span class="ic" aria-hidden="true">HTML</span><span><span class="nm">Memo to print</span><span class="mt">Print to PDF</span></span></a>
+          <a class="dl" href="#"><span class="ic" aria-hidden="true">MD</span><span><span class="nm">Report</span><span class="mt">One page, Markdown</span></span></a>
+          <a class="dl" href="#"><span class="ic" aria-hidden="true">JSON</span><span><span class="nm">Data</span><span class="mt">Raw pipeline output</span></span></a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</section>
+
+<!-- =============================== SYSTEM =============================== -->
+<section class="screen" id="screen-system" hidden>
+  <main class="shell">
+    <div class="sect" style="padding-top:var(--space-6)">
+      <div class="sect-head">
+        <div>
+          <p class="eyebrow">Reference</p>
+          <h2>The system behind the screens</h2>
+          <p class="lede" style="margin-top:6px">
+            Same palette as today, every hex taken from src/ui/tokens.css. What is new
+            is the surface system, the type scale, and the states.
+          </p>
+        </div>
+      </div>
+
+      <div class="stack">
+
+        <div class="card">
+          <div class="eyebrow" style="margin-bottom:var(--space-3)">Palette, unchanged</div>
+          <div class="swatches">
+            <div class="sw"><div class="chip" style="background:#00703c"></div><div class="nm"><b>Green</b>#00703c action, complete</div></div>
+            <div class="sw"><div class="chip" style="background:#0b0c0c"></div><div class="nm"><b>Ink</b>#0b0c0c text, controls</div></div>
+            <div class="sw"><div class="chip" style="background:#505a5f"></div><div class="nm"><b>Secondary</b>#505a5f meta</div></div>
+            <div class="sw"><div class="chip" style="background:#f3f2f1"></div><div class="nm"><b>Wash</b>#f3f2f1 surfaces</div></div>
+            <div class="sw"><div class="chip" style="background:#1d70b8"></div><div class="nm"><b>Blue</b>#1d70b8 links</div></div>
+            <div class="sw"><div class="chip" style="background:#d4351c"></div><div class="nm"><b>Red</b>#d4351c errors only</div></div>
+            <div class="sw"><div class="chip" style="background:#ffdd00"></div><div class="nm"><b>Focus</b>#ffdd00 with ink underline</div></div>
+            <div class="sw"><div class="chip" style="background:#fff7bf"></div><div class="nm"><b>Review</b>#fff7bf held, never guessed</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="eyebrow" style="margin-bottom:var(--space-3)">Status, the only place hue is spent</div>
+          <div class="btn-row">
+            <span class="pill green"><span class="dot"></span>Cited</span>
+            <span class="pill grey">Not explained</span>
+            <span class="pill yellow"><span class="dot"></span>Held for review</span>
+            <span class="pill red"><span class="dot"></span>Error</span>
+            <span class="pill">Scope 2</span>
+            <span class="pill green"><span class="dot"></span>Complete</span>
+          </div>
+          <p class="spec" style="margin-top:var(--space-3)">
+            Hue encodes how far a number can be trusted. Direction of travel is a glyph,
+            a sign and a word, never a colour, so a falling footprint is never painted
+            as an alarm: <span class="tnum">&#9660; 1.68%<span class="visually-hidden">, fell</span></span>
+            and <span class="tnum">&#9650; 0.5%<span class="visually-hidden">, rose</span></span>
+            are the same ink.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="eyebrow" style="margin-bottom:var(--space-3)">Controls</div>
+          <div class="btn-row">
+            <button class="btn primary">Run analysis</button>
+            <button class="btn">Download the pack</button>
+            <button class="btn quiet small">Replace file</button>
+            <button class="btn" disabled>Run analysis</button>
+          </div>
+          <p class="spec" style="margin-top:var(--space-3)">
+            44px minimum target. Interactive edges use the ink border (19.59:1), never
+            the decorative grey (2.08:1). Focus is the yellow block with an ink underline.
+          </p>
+        </div>
+
+        <div class="grid g-2" style="align-items:start">
+          <div class="card stack-3">
+            <div class="eyebrow">Messages, four roles</div>
+            <div class="note ok"><span class="ic" aria-hidden="true">&#10003;</span><span class="tx"><b>Done</b>Real DEFRA full set detected.</span></div>
+            <div class="note"><span class="ic" aria-hidden="true">!</span><span class="tx"><b>Assessment</b>Stays within a flat baseline.</span></div>
+            <div class="note review"><span class="ic" aria-hidden="true">!</span><span class="tx"><b>Held</b>1 line needs a human.</span></div>
+            <div class="note err"><span class="ic" aria-hidden="true">!</span><span class="tx"><b>Error</b>That file has no columns to read.</span></div>
+          </div>
+          <div class="card stack-3">
+            <div class="eyebrow">States</div>
+            <p class="empty">Empty: nothing to show here yet.</p>
+            <div>
+              <div class="skel" style="width:60%"></div>
+              <div class="skel" style="width:90%"></div>
+              <div class="skel" style="width:40%"></div>
+              <p class="spec" style="margin-top:var(--space-3)">
+                Loading: the shape of the answer, not a spinner over a blank page.
+              </p>
+            </div>
+            <div class="meter">
+              <div class="meter-track"><div class="meter-fill" style="width:100%"></div><div class="meter-mark" style="left:95%"></div></div>
+              <div class="meter-legend"><span>Full coverage</span><span>95% bar</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="eyebrow" style="margin-bottom:var(--space-3)">What changed, and why</div>
+          <div class="kv">
+            <div><div class="k">Shell</div><div class="v">A masthead that names the product and the two versions being compared,
+              plus a sticky section nav. A long report now tells you where you are.</div></div>
+            <div><div class="k">Setup</div><div class="v">Three numbered steps in the canvas with a live preview of your file,
+              instead of a sidebar that disappears below 768px.</div></div>
+            <div><div class="k">Result</div><div class="v">Two figures and a delta, not one string. Green moved from a slab to a
+              rail and a pill, so the number reads as ink on paper and the completion
+              signal stays intact.</div></div>
+            <div><div class="k">Coverage</div><div class="v">A meter against the 95% bar, so partial is visible rather than
+              inferred from a percentage.</div></div>
+            <div><div class="k">Explanations</div><div class="v">Cards that lead with the status pill and the impact on your own
+              footprint, with the DEFRA quote set as a source block.</div></div>
+            <div><div class="k">Type</div><div class="v">A system font stack, so it looks native on every platform and still
+              loads nothing from the network. Figures are tabular everywhere.</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</section>
+
+<script>
+(function () {
+  var buttons = document.querySelectorAll('.pv-seg button');
+  var pill = document.getElementById('mastPill');
+  var labels = {
+    setup: '<span class="dot"></span>Not run yet',
+    report: '<span class="dot"></span>Analysis complete',
+    system: '<span class="dot"></span>Reference'
+  };
+  buttons.forEach(function (b) {
+    b.addEventListener('click', function () {
+      buttons.forEach(function (o) { o.setAttribute('aria-selected', String(o === b)); });
+      ['setup', 'report', 'system'].forEach(function (name) {
+        document.getElementById('screen-' + name).hidden = (name !== b.dataset.screen);
+      });
+      pill.innerHTML = labels[b.dataset.screen];
+      pill.className = 'pill on-dark';
+      window.scrollTo(0, 0);
+    });
+  });
+
+  var toggle = document.getElementById('themeToggle');
+  function currentIsDark() {
+    var set = document.documentElement.getAttribute('data-theme');
+    if (set) { return set === 'dark'; }
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+  function sync() { toggle.textContent = currentIsDark() ? 'Light' : 'Dark'; }
+  toggle.addEventListener('click', function () {
+    document.documentElement.setAttribute('data-theme', currentIsDark() ? 'light' : 'dark');
+    sync();
+  });
+  sync();
+
+  var links = document.querySelectorAll('.subnav a');
+  var sections = [].map.call(links, function (a) { return document.querySelector(a.getAttribute('href')); });
+  window.addEventListener('scroll', function () {
+    var best = 0;
+    sections.forEach(function (s, i) {
+      if (s && s.getBoundingClientRect().top <= 180) { best = i; }
+    });
+    links.forEach(function (a, i) {
+      if (i === best) { a.setAttribute('aria-current', 'true'); } else { a.removeAttribute('aria-current'); }
+    });
+  }, { passive: true });
+})();
+</script>
+</body>
+</html>

@@ -91,6 +91,19 @@ def table(df, caption, columns=None, numeric_cols=(), direction_cols=(),
     if len(df) == 0:
         return alert(empty_text or "Nothing to show here.", kind="none")
 
+    # A magnitude bar beside each movement, scaled to the largest movement in
+    # its own column. It is what turns "which of these numbers matters" from an
+    # arithmetic exercise into a glance. The bar is ink in both directions: size
+    # is the only thing it encodes, exactly as the glyph is the only thing that
+    # encodes direction.
+    widest = {}
+    for col in moving:
+        try:
+            biggest = max(abs(float(v)) for v in df[col] if v == v and v is not None)
+        except (TypeError, ValueError):
+            biggest = 0.0
+        widest[col] = biggest or 0.0
+
     head = "".join(
         f'<th scope="col" class="{"num" if col in numeric else "item"}">'
         f"{esc(human_column(col))}</th>"
@@ -104,10 +117,16 @@ def table(df, caption, columns=None, numeric_cols=(), direction_cols=(),
             value = row.get(col)
             if col in moving:
                 way = direction(value)
+                try:
+                    share = abs(float(value)) / widest[col] * 100 if widest[col] else 0.0
+                except (TypeError, ValueError):
+                    share = 0.0
+                mark = movement(value, way["glyph"], way["word"], figure=signed(value, figures))
                 cells.append(
-                    f'<td class="num">'
-                    f'{movement(value, way["glyph"], way["word"], figure=signed(value, figures))}'
-                    f"</td>"
+                    '<td class="num"><span class="bar">'
+                    '<span class="track" aria-hidden="true">'
+                    f'<span class="fill" style="width:{share:.4g}%"></span></span>'
+                    f"{mark}</span></td>"
                 )
             elif col in numeric:
                 cells.append(f'<td class="num">{esc(sig_figs(value, figures))}</td>')
@@ -178,30 +197,45 @@ def stat_row(items):
     return f'<div class="stats">{cells}</div>'
 
 
+ALERT_VARIANTS = {
+    "warning": "",                  # a plain statement that needs attention
+    "ok": " warning--ok",           # something completed or was confirmed
+    "review": " warning--review",   # held for a human, never guessed
+    "error": " warning--error",     # something genuinely went wrong
+}
+
+
 def alert(text, kind="warning", title=None):
     """A message with a role, so assistive tech announces it as one.
 
-    kind="none" is the quiet empty state ("nothing to show"), which is not a
-    warning and must not be dressed as one.
+    Four roles, four looks. kind="none" is the quiet empty state ("nothing to
+    show"), which is not a warning and must not be dressed as one.
     """
     if kind == "none":
         return f'<p class="empty">{esc(text)}</p>'
     role = "alert" if kind == "error" else "note"
+    variant = ALERT_VARIANTS.get(kind, "")
     heading = f'<span class="hd">{esc(title)}</span>' if title else ""
     return (
-        f'<div class="warning" role="{role}">'
+        f'<div class="warning{variant}" role="{role}">'
         '<span class="icon" aria-hidden="true">!</span>'
         f'<span class="txt">{heading}{esc(text)}</span></div>'
     )
 
 
-def disclosure(summary, body_html, count=None, open_by_default=False):
+def disclosure(summary, body_html, count=None, open_by_default=False,
+               summary_html=None):
     """A named, collapsible section.
 
     Every disclosure carries a summary that says what is inside and how much of
     it (defect A-05 was disclosures whose only label was a chevron). Uses a real
     `<details>` element, so it is keyboard-operable without any JavaScript and
     prints expanded under the print rules.
+
+    summary_html is for the explanation cards, whose summary is a composed row
+    (status tag, what changed, what it did to this footprint) rather than a
+    sentence. It is markup this module built, never user text, and `summary` is
+    still required so the plain label exists for anyone reading the source.
     """
     label = esc(summary)
     if count is not None:
@@ -209,41 +243,222 @@ def disclosure(summary, body_html, count=None, open_by_default=False):
     is_open = " open" if open_by_default else ""
     return (
         f"<details class=\"disclosure\"{is_open}>"
-        f"<summary>{label}</summary>"
+        f"<summary>{summary_html or label}</summary>"
         f'<div class="disclosure-body">{body_html}</div>'
         "</details>"
     )
 
 
-def verdict_card(headline, figure, movement_html, note=None, partial=False):
+def verdict_card(headline, figure, movement_html, note=None, partial=False,
+                 pair=None, facts=(), status=None, run_id=None):
     """The result, stated once, at the top.
 
-    The green panel means "the run completed and this is the answer", not "good
-    news". That is why the direction of travel lives inside it as a glyph and a
-    word rather than as the panel's colour, and why the neutral `partial`
-    variant exists: when coverage is below the stated bar, the honest signal is
-    that the number is incomplete, which is neither good nor bad.
+    Green means "the run completed and this is the answer", not "good news".
+    It is carried by the 4px rail and the status tag rather than by filling the
+    card, so the figure itself stays ink on ground where a number is most
+    readable. The neutral `partial` variant is the honest signal when coverage
+    sits below the stated bar: the number is incomplete, which is neither good
+    news nor bad.
+
+    pair renders the two totals as two figures with an arrow between them
+    (("2025", "2.344"), ("2026", "2.305")), which is what lets old and new be
+    compared at a glance. Without it the card shows the single `figure`.
+
+    facts is the strip along the bottom: the handful of things a reader needs
+    beside the headline so the number is never read on its own.
     """
     variant = " panel--partial" if partial else ""
-    tail = f'<div class="base">{esc(note)}</div>' if note else ""
+
+    tags = badge(*status) if status else ""
+    run = f'<span class="run">{esc(run_id)}</span>' if run_id else ""
+    top = (
+        f'<div class="top"><span class="eyebrow">{esc(headline)}</span>{tags}{run}</div>'
+        if (headline or tags or run) else ""
+    )
+
+    if pair:
+        (old_label, old_figure), (new_label, new_figure) = pair
+        figures = (
+            f'<div class="figure"><div class="lab">{esc(old_label)}</div>'
+            f'<div class="fig tnum">{esc(old_figure)}</div>'
+            '<div class="unit">kg CO2e</div></div>'
+            '<div class="arrow" aria-hidden="true">&#8594;</div>'
+            f'<div class="figure"><div class="lab">{esc(new_label)}</div>'
+            f'<div class="fig tnum">{esc(new_figure)}</div>'
+            '<div class="unit">kg CO2e</div></div>'
+        )
+    else:
+        figures = f'<div class="figure"><div class="fig tnum">{esc(figure)}</div></div>'
+
+    words = f'<div class="words">{esc(note)}</div>' if note else ""
+    delta = (
+        f'<div class="delta"><span class="amount">{movement_html}</span>{words}</div>'
+        if (movement_html or note) else ""
+    )
+
+    strip = ""
+    if facts:
+        cells = "".join(
+            f'<div><div class="k">{esc(key)}</div><div class="v tnum">{esc(value)}</div></div>'
+            for key, value in facts
+        )
+        strip = f'<div class="facts">{cells}</div>'
+
     return (
         f'<div class="panel{variant}">'
-        f'<div class="lab">{esc(headline)}</div>'
-        f'<div class="fig tnum">{esc(figure)}</div>'
-        f'<div class="sub">{movement_html}</div>'
-        f"{tail}</div>"
+        '<div class="rail"></div>'
+        f"{top}"
+        f'<div class="main">{figures}{delta}</div>'
+        f"{strip}</div>"
     )
 
 
-def section(title, level=2, caption=None):
-    """A section heading with the GOV.UK rule above it.
+def meter(value_pct, bar_pct, label, beside=None, legend=None):
+    """A percentage measured against the bar it has to clear.
+
+    A bare "85.7%" does not say whether that is enough, so the stated bar is
+    drawn on the track. There is no hue in here on purpose: partial coverage is
+    a fact about the answer, not an alarm.
+    """
+    fill = max(0.0, min(100.0, float(value_pct or 0)))
+    mark = max(0.0, min(100.0, float(bar_pct)))
+    reading = f"{label}. Bar is {bar_pct:g} percent."
+    ends = legend or ("0%", f"{bar_pct:g}% bar", "100%")
+    marks = "".join(f"<span>{esc(text)}</span>" for text in ends)
+    aside = f'<span class="beside">{esc(beside)}</span>' if beside else ""
+    return (
+        f'<div class="headline"><span class="big tnum">{esc(label)}</span>{aside}</div>'
+        '<div class="meter">'
+        f'<div class="track" role="img" aria-label="{esc(reading)}">'
+        f'<div class="fill" style="width:{fill:.4g}%"></div>'
+        f'<div class="mark" style="left:{mark:.4g}%"></div>'
+        "</div>"
+        f'<div class="legend">{marks}</div>'
+        "</div>"
+    )
+
+
+def fact_bar(items):
+    """A row of counted facts: [(label, value)].
+
+    Used where a paragraph of statistics was doing the work of a table, for
+    example the version scan. Counts are scannable; a sentence full of numbers
+    is not.
+    """
+    cells = "".join(
+        f'<div><div class="k">{esc(key)}</div><div class="v tnum">{esc(value)}</div></div>'
+        for key, value in items
+    )
+    return f'<div class="factbar">{cells}</div>'
+
+
+def masthead(product, subtitle, fact_label=None, fact_value=None, status=None):
+    """The app shell's top bar: what this is, what it is comparing, run state.
+
+    It exists because the page opened on a bare title that said none of those
+    things, so a reader arriving at a long report had no way to tell which two
+    releases produced it.
+    """
+    fact = (
+        f'<div class="fact"><b>{esc(fact_label)}</b>{esc(fact_value)}</div>'
+        if fact_label else ""
+    )
+    tag = badge(*status) if status else ""
+    return (
+        '<div class="masthead">'
+        '<span class="mark" aria-hidden="true">EF</span>'
+        f'<span class="word">{esc(product)}<span>{esc(subtitle)}</span></span>'
+        f'<span class="right">{fact}{tag}</span>'
+        "</div>"
+    )
+
+
+def subnav(items):
+    """The sticky section nav: [(anchor, label)] in reading order.
+
+    Numbered because the sections ARE a sequence: result, then whether it can be
+    trusted, then what moved, then why, then what to send. The number is the
+    argument, not decoration.
+    """
+    links = "".join(
+        f'<a href="#{esc(anchor)}"><span class="n">{i}</span>{esc(label)}</a>'
+        for i, (anchor, label) in enumerate(items, start=1)
+    )
+    return f'<nav class="subnav" aria-label="Report sections">{links}</nav>'
+
+
+def step(number, title, hint=None, state="now"):
+    """One numbered step of the setup flow.
+
+    state is "now", "done" or "next", so a reader can see where they are in a
+    sequence rather than being handed three controls at once.
+    """
+    mark = "&#10003;" if state == "done" else esc(number)
+    note = f'<div class="h">{esc(hint)}</div>' if hint else ""
+    return (
+        f'<div class="step {esc(state)}"><span class="n" aria-hidden="true">{mark}</span>'
+        f'<span><span class="t">{esc(title)}</span>{note}</span></div>'
+    )
+
+
+def file_chip(name, detail):
+    """The uploaded file, named and measured, so it is clear what will be read."""
+    suffix = (str(name).rsplit(".", 1)[-1] if "." in str(name) else "file")[:4]
+    return (
+        '<div class="file">'
+        f'<span class="ic" aria-hidden="true">{esc(suffix.upper())}</span>'
+        f'<span class="nm">{esc(name)}<span class="mt">{esc(detail)}</span></span>'
+        "</div>"
+    )
+
+
+def explanation_head(status_html, name, meta, impact=None, impact_note=None):
+    """The summary row of an explanation card.
+
+    Status first, then what changed, then what it did to THIS product, because
+    the status is what decides whether the rest can be quoted to a client.
+    """
+    right = ""
+    if impact is not None:
+        note = f'<span class="k">{esc(impact_note)}</span>' if impact_note else ""
+        right = f'<span class="impact"><span class="v">{esc(impact)}</span>{note}</span>'
+    return (
+        f'<span class="xhead">{status_html}'
+        f'<span class="who"><span class="name">{esc(name)}</span>'
+        f'<span class="meta">{esc(meta)}</span></span>{right}</span>'
+    )
+
+
+def source_quote(text, cite):
+    """A DEFRA extract, set as a source rather than as our own prose."""
+    return (
+        f'<blockquote class="src">{esc(text)}'
+        f"<cite>{esc(cite)}</cite></blockquote>"
+    )
+
+
+def checklist(rows):
+    """The pre-send list: state first, then the item, then the detail."""
+    body = "".join(
+        f'<div class="row">{state_html}'
+        f'<span class="tx"><b>{esc(label)}</b>{esc(detail)}</span></div>'
+        for state_html, label, detail in rows
+    )
+    return f'<div class="check">{body}</div>'
+
+
+def section(title, level=2, caption=None, eyebrow=None, anchor=None):
+    """A section heading, with its place in the sequence stated above it.
 
     level is explicit so the page keeps one H1 and a clean H2/H3 spine, which is
-    defect A-12 (the live page ran H2, H1, H3).
+    defect A-12 (the live page ran H2, H1, H3). anchor is what the sticky nav
+    scrolls to.
     """
     tag = f"h{int(level)}"
+    top = f'<div class="eyebrow">{esc(eyebrow)}</div>' if eyebrow else ""
     note = f'<p class="caption">{esc(caption)}</p>' if caption else ""
+    ident = f' id="{esc(anchor)}"' if anchor else ""
     return (
-        f'<div class="section"><div class="h2wrap">'
-        f"<{tag}>{esc(title)}</{tag}></div>{note}</div>"
+        f'<div class="section"{ident}>{top}'
+        f"<{tag}>{esc(title)}</{tag}>{note}</div>"
     )
