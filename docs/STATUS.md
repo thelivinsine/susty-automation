@@ -143,7 +143,11 @@ programmatic accessible name and neither CSS nor Python can give it one), the
 best-candidate name on a below-threshold match, turning on the sign-in gate when
 the live link goes public (deferred, D18), header-row tolerance in ingest,
 semantic relabels, and lockfile pinning. The design-system build is DONE
-(`docs/PLAN_design_system.md`, D20), so "GOV.UK theming" leaves the backlog.
+(`docs/PLAN_design_system.md`, D20) and the product-UI rework on top of it is DONE
+(D22), so neither is a backlog item. Two things the rework deliberately left: the
+section nav has no active-section highlight (Streamlit does not execute scripts in
+markdown, so scroll-spy needs a custom component), and the app stays light-only
+because Streamlit's own chrome is pinned light in `config.toml`.
 
 ## Resume here
 Most recent handoffs (older ones rotate into `docs/archive/`):
@@ -185,23 +189,6 @@ Most recent handoffs (older ones rotate into `docs/archive/`):
   to confirm the citation block appears and survives print media. Known wrinkle
   logged, not hidden: in offline mode the reason already embeds the note, so it
   reads twice. Shipped as PR #22, squash-merged `12e27f1`.
-
-- H20 (2026-07-31): Design session for the CITED half of VISION move #3, planned
-  in `docs/PLAN_cited_memo.md`. Scope shrank on contact with D20: the dated,
-  printable memo shipped in the export pack, so only the citations are left. The
-  gap, stated precisely: `_explanations_html` prints a green "Cited" tag whenever
-  the reason is not the verbatim NO_REASON sentence, but never prints what the
-  reason was grounded in, so the memo asserts groundedness without evidence and
-  the reader cannot tell a correct grounding from a wrong one. That matters
-  because D11 exists to stop wrong groundings and its gold set proves they were
-  possible. Underneath, most of the provenance is not in the data: the loader
-  records the sheet but not the source file or row, `retrieve_passage` returns the
-  matched note and `explain._finalize` drops it, `load_change_chunks` never records
-  whether the PDF or the "What's new" sheet won, and no publication date is parsed
-  anywhere. Decided: write into D20's memo rather than build a second document,
-  change what is RETURNED and never what is CHOSEN so D11 stays locked, and print
-  a missing publication date as not stated rather than inferring it. Design only,
-  no code changed.
 
 Next likely task: **A-07, the one defect left open.** Streamlit's file uploader
 renders an `<input type="file">` with no programmatic accessible name, and that

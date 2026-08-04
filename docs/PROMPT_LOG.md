@@ -985,3 +985,41 @@ src/ui/tokens.css, src/ui/components.css, src/ui/components.py, src/ui/format.py
 src/export.py, src/report.py, app.py, tests/test_export_pack.py,
 docs/DECISIONS.md (D22), docs/STATUS.md (H22), docs/PROMPT_LOG.md.
 PR #24, squash-merged as `e21222b`.
+
+
+---
+
+### 2026-08-04 · P38
+Branch: `claude/app-design-ui-overhaul-wmb9df` (level with `main` at `3a47e8a`).
+
+**Prompt (verbatim):** "document the session"
+
+**Response summary:** The build itself was already written up in the same PR as
+the work (P37, H22, D22, and the mockups README), per the house rule that doc
+updates ship with the change, and the ship record for PR #24 was stamped in
+straight after the merge. What was genuinely missing was everything after that
+merge, plus two pieces of housekeeping the session had let slide.
+
+Recorded here: the docs-only follow-up shipped as **PR #25, squash-merged
+`3a47e8a`**. Rotated **H20** out of `STATUS.md` into
+`docs/archive/STATUS_2026-W31.md` (verbatim, per the archive rule) because H22
+landing pushed the Resume-here list to three, and updated the archive index to
+say so. Refreshed the Known-gaps paragraph, which still described the design
+system as the most recent interface work.
+
+Three honest limits from the rework went into the `REFERENCE.md` backlog rather
+than being left in a commit message where nobody would find them again: the
+section nav has no active-section highlight (Streamlit does not execute
+`<script>` inside markdown, so scroll-spy needs a custom component); the app is
+light-only by decision, because Streamlit paints its own chrome before our CSS
+loads and `config.toml` pins it light, so dark mode is a Streamlit-theme job and
+not a CSS one; and
+`[data-testid="stElementContainer"]:has(.subnav)` is the one selector doing
+structural work, so it names both of the things outside our control that could
+break it (a Streamlit internal, and `:has()` support).
+
+No code changed in this entry. Nothing about the rework itself was restated: P37,
+H22 and D22 were accurate and verified when written.
+
+**Artifacts:** docs/PROMPT_LOG.md, docs/STATUS.md,
+docs/archive/STATUS_2026-W31.md, docs/archive/README.md, docs/REFERENCE.md.

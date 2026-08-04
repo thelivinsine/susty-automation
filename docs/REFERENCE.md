@@ -67,6 +67,23 @@ How to apply it:
   means editing the offline explainer's output, which is the grounding layer, so
   it was left out of a citation-rendering change. Worth doing when the offline
   explainer is next opened.
+- **The section nav has no active-section highlight (from D22).** It is sticky
+  and numbered, which carries most of the value, but nothing marks which section
+  you are currently in. Streamlit does not execute `<script>` inside markdown, so
+  scroll-spy needs a small custom component. Worth doing if the report grows more
+  sections; not worth a component today.
+- **The app is light-only, by decision not omission.** `tokens.css` carries a
+  full dark theme and the printable memo uses it, but Streamlit paints its own
+  chrome before our CSS loads and `.streamlit/config.toml` pins it light, so a
+  dark-mode visitor would get a half-dark page. Turning dark on means Streamlit
+  theme support for both, not a CSS change.
+- **`[data-testid="stElementContainer"]:has(.subnav)` is the one selector doing
+  structural work (from D22).** It is what makes the section nav stick, because a
+  sticky box cannot leave its containing block and Streamlit sizes every markdown
+  wrapper to its content. It depends on two things outside our control: the
+  `data-testid` (a Streamlit internal, like the others) and `:has()` (Chrome 105+,
+  Safari 15.4+). If the nav ever stops sticking, check those two before the CSS.
+
 - Semantic relabels with low string overlap (Incineration -> Combustion) still
   read as added/removed; would need DEFRA's own relabel notes.
 - Package-manager pin + lockfile for reproducible installs (deps are audited now,

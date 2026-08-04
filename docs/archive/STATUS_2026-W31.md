@@ -45,3 +45,20 @@
   (480px of blank space at 375px) unless the container carries `contain:paint`.
   **Docs and mockups only, no pipeline or app code touched**; 44 tests green.
   Next: implement `docs/PLAN_design_system.md`, starting with the token layer.
+
+- H20 (2026-07-31): Design session for the CITED half of VISION move #3, planned
+  in `docs/PLAN_cited_memo.md`. Scope shrank on contact with D20: the dated,
+  printable memo shipped in the export pack, so only the citations are left. The
+  gap, stated precisely: `_explanations_html` prints a green "Cited" tag whenever
+  the reason is not the verbatim NO_REASON sentence, but never prints what the
+  reason was grounded in, so the memo asserts groundedness without evidence and
+  the reader cannot tell a correct grounding from a wrong one. That matters
+  because D11 exists to stop wrong groundings and its gold set proves they were
+  possible. Underneath, most of the provenance is not in the data: the loader
+  records the sheet but not the source file or row, `retrieve_passage` returns the
+  matched note and `explain._finalize` drops it, `load_change_chunks` never records
+  whether the PDF or the "What's new" sheet won, and no publication date is parsed
+  anywhere. Decided: write into D20's memo rather than build a second document,
+  change what is RETURNED and never what is CHOSEN so D11 stays locked, and print
+  a missing publication date as not stated rather than inferring it. Design only,
+  no code changed.
