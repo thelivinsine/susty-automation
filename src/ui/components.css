@@ -186,12 +186,15 @@
   color: #ffffff;
 }
 
-/* Section nav. Sticky, so a long report always says where you are. The offset
-   clears Streamlit's own header bar. */
+/* Section nav. Sticky, so a long report always says where you are.
+
+   The stickiness is applied to Streamlit's element container rather than to
+   this element (see the rule near the bottom of this file): a sticky element
+   can only travel inside its own containing block, and Streamlit wraps every
+   markdown block in a box exactly as tall as its content, so `position: sticky`
+   here would have nowhere to go. Measured before the fix: the nav sat 1420px
+   above the viewport while the reader was in the Movers section. */
 .stApp .subnav {
-  position: sticky;
-  top: 3.25rem;
-  z-index: 5;
   display: flex;
   gap: var(--space-1);
   overflow-x: auto;
@@ -1094,11 +1097,12 @@
   padding-bottom: var(--space-8);
 }
 
-/* Streamlit's own header bar floats above the page and would sit on top of the
-   masthead. Making it transparent lets our shell own the top of the screen
-   while the menu stays reachable. Verified against Streamlit 1.60.0. */
+/* Streamlit's own header bar floats above the page. It has to stay OPAQUE and
+   on our ground colour: it is what the page scrolls under, and the sticky
+   section nav parks directly beneath it. Transparent here leaves a 52px strip
+   of moving content above the nav. Verified against Streamlit 1.60.0. */
 [data-testid="stHeader"] {
-  background: transparent;
+  background: var(--ground);
 }
 
 /* A-03: captions rendered at 3.69:1, below the AA floor. The no-guess sentence,
@@ -1205,6 +1209,18 @@
   background: var(--wash);
   min-height: 44px;
   font-weight: 700;
+}
+
+/* The section nav has to stick to Streamlit's element container, not to our own
+   nav element. Streamlit gives every markdown block a wrapper sized to its
+   content, and a sticky box cannot travel outside its containing block, so the
+   nav scrolled away with the page. Sticking the wrapper puts the containing
+   block back to the full-height column. Verified against Streamlit 1.60.0. */
+[data-testid="stElementContainer"]:has(.subnav) {
+  position: sticky;
+  top: 3.25rem;
+  z-index: 5;
+  background: var(--ground);
 }
 
 /* A-10: the dataframe toolbar's controls were 22px, half the pointer-target

@@ -619,3 +619,18 @@ token pair carries an `@contrast` annotation and is measured in both themes;
 end to end on the real 2025 and 2026 workbooks, and the masthead status reads
 "Report ready" beside a finished report (which needed a slot, because on a first
 visit the run happens further down the same script).
+
+Three defects that only a browser could catch, worth knowing before the next
+change of this kind:
+
+- **A card opened in one `st.markdown` call never wraps the next one.** Streamlit
+  closes every block it renders, so a card has to be built as a single string.
+- **`position: sticky` on our own nav element does nothing.** Streamlit wraps
+  every markdown block in a box exactly as tall as its content, and a sticky box
+  cannot travel outside its containing block. Measured: the nav sat 1420px above
+  the viewport while the reader was in Movers. The fix sticks Streamlit's
+  element container instead, via `[data-testid="stElementContainer"]:has(.subnav)`,
+  which puts the containing block back to the full-height column.
+- **Streamlit's header has to stay opaque.** It is what the page scrolls under.
+  Making it transparent so "our shell owns the top" left a 52px strip of moving
+  content above the sticky nav.
