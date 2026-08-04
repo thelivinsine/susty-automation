@@ -3,9 +3,8 @@
 
    This file has two halves.
 
-   HALF ONE: our own component classes, ported from the chosen GOV.UK mockup
-   (docs/mockups/govuk_report_view.html, DECISIONS D19). These style markup we
-   emit ourselves, so they are stable.
+   HALF ONE: our own component classes. These style markup we emit ourselves,
+   so they are stable.
 
    HALF TWO: overrides of Streamlit's built-in widgets, targeted by
    `data-testid`. Those attributes are Streamlit INTERNALS, not a public API,
@@ -13,16 +12,23 @@
    defect it closes and the version it was verified against, so a future upgrade
    that breaks one is diagnosable rather than mysterious.
 
-   Verified against: Streamlit 1.60.0. The four attributes used below were
-   confirmed present in that release's frontend bundle. If a rule stops taking
-   effect after an upgrade, grep the new bundle for the attribute name before
-   assuming the CSS is wrong.
+   Verified against: Streamlit 1.60.0. The attributes used below were confirmed
+   present in that release's frontend bundle. If a rule stops taking effect
+   after an upgrade, grep the new bundle for the attribute name before assuming
+   the CSS is wrong.
 
    THE RULE THIS FILE OBEYS
    Hue encodes epistemic status, never direction of travel. There is no
    ".up is red, .down is green" pair anywhere in here, and there must not be:
    that convention is what painted a falling footprint as an alarm (defect
    A-01). Direction is a glyph, a sign and a word.
+
+   WHAT CHANGED IN v2 (the product-UI rework)
+   The palette is untouched, every hex still comes from tokens.css. What is new
+   is a surface system (cards, hairlines, one soft radius, two shadow levels),
+   a type scale, an app shell (masthead plus a sticky section nav), a stepped
+   setup flow, and real states. The look moved from "a form on paper" to "a
+   tool", without spending a single new hue to do it.
    ========================================================================= */
 
 /* ---------------------------------------------------------------------------
@@ -33,19 +39,20 @@
   background: var(--ground);
   color: var(--body-tx);
   font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
 }
 
 .stApp p,
 .stApp li,
 .stApp label {
-  font-size: var(--font-body);
-  line-height: 1.47;
+  font-size: var(--t-body);
+  line-height: 1.5;
 }
 
 .stApp a {
   color: var(--blue);
   text-decoration: underline;
-  text-underline-offset: 0.1em;
+  text-underline-offset: 0.12em;
 }
 
 .stApp a:hover {
@@ -58,6 +65,7 @@
 .stApp td.num,
 .stApp th.num {
   font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
 }
 
 /* Screen-reader-only text. Direction and status are carried in words as well
@@ -87,6 +95,7 @@
   background: var(--focus);
   box-shadow: 0 -2px var(--focus), 0 4px var(--focus-edge);
   text-decoration: none;
+  border-radius: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -97,33 +106,246 @@
 }
 
 /* ---------------------------------------------------------------------------
+   The app shell: masthead and section nav.
+
+   Why a shell at all. The page is one long report, and until now it opened on
+   a bare title with no sense of place: nothing said which two releases were
+   being compared or whether a run had happened. The masthead answers both at
+   every scroll position, and the nav turns five stacked sections into
+   something you can move around in.
+   ------------------------------------------------------------------------ */
+
+.stApp .masthead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  background: var(--black);
+  color: var(--ground);
+  border-bottom: 3px solid var(--green);
+  border-radius: var(--radius-2) var(--radius-2) 0 0;
+  padding: var(--space-3) var(--space-4);
+}
+
+.stApp .masthead .mark {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-1);
+  background: var(--green);
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.stApp .masthead .word {
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  min-width: 0;
+}
+
+.stApp .masthead .word span {
+  display: block;
+  font-weight: 400;
+  font-size: var(--t-meta);
+  opacity: 0.75;
+}
+
+.stApp .masthead .right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.stApp .masthead .fact {
+  display: none;
+  text-align: right;
+  font-size: var(--t-meta);
+  line-height: 1.3;
+  opacity: 0.82;
+}
+
+.stApp .masthead .fact b {
+  display: block;
+  font-size: 14px;
+  opacity: 1;
+}
+
+@media (min-width: 860px) {
+  .stApp .masthead .fact { display: block; }
+}
+
+/* The status pill sits on the black bar, so it uses a translucent white rather
+   than a tint from the light palette. */
+.stApp .masthead .tag {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+/* Section nav. Sticky, so a long report always says where you are. The offset
+   clears Streamlit's own header bar. */
+.stApp .subnav {
+  position: sticky;
+  top: 3.25rem;
+  z-index: 5;
+  display: flex;
+  gap: var(--space-1);
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: var(--ground);
+  border-bottom: 1px solid var(--hair);
+  margin-bottom: var(--space-2);
+  /* Same containment rule as the tables: a scroller that is wider than its
+     parent must not lend its width back to the page. */
+  contain: paint;
+}
+
+.stApp .subnav::-webkit-scrollbar { display: none; }
+
+.stApp .subnav a {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  font-size: var(--t-small);
+  font-weight: 600;
+  color: var(--secondary);
+  text-decoration: none;
+  border-bottom: 3px solid transparent;
+}
+
+.stApp .subnav a:hover {
+  color: var(--body-tx);
+  text-decoration: none;
+}
+
+.stApp .subnav a .n {
+  min-width: 19px;
+  height: 19px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-pill);
+  background: var(--grey-1);
+  color: var(--secondary);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+/* ---------------------------------------------------------------------------
    Section headings. One H1, then H2 per section, then H3 within, which is the
    spine defect A-12 asked for (the live page ran H2, H1, H3).
+
+   The rule above the heading is gone. It read as a page break in a document;
+   an eyebrow plus the heading does the same separating work and tells you
+   where in the sequence you are.
    ------------------------------------------------------------------------ */
 
 .stApp .section {
   margin-top: var(--space-7);
+  scroll-margin-top: 6rem;
 }
 
-.stApp .section > .h2wrap {
-  border-top: 2px solid var(--body-tx);
-  padding-top: var(--space-3);
-  margin-bottom: var(--space-4);
+.stApp .section .eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--secondary);
+  margin-bottom: var(--space-1);
 }
 
 .stApp .section h2,
 .stApp .section h3 {
   color: var(--heading);
   font-weight: 700;
+  letter-spacing: -0.015em;
   margin: 0;
   padding: 0;
 }
 
+.stApp .section h2 { font-size: var(--t-h2); }
+.stApp .section h3 { font-size: var(--t-h3); }
+
 .stApp .caption {
   color: var(--secondary);
-  font-size: var(--font-small);
-  margin: var(--space-1) 0 0;
+  font-size: var(--t-small);
+  margin: var(--space-2) 0 0;
   max-width: var(--measure);
+}
+
+/* The page's one H1. It states the JOB rather than the product name, because
+   the masthead already carries the name and a first-time visitor needs to know
+   what the tool does before what it is called. */
+.stApp .page-head {
+  margin-top: var(--space-5);
+}
+
+.stApp .page-head h1 {
+  font-size: var(--t-h1);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--heading);
+  margin: 0;
+  padding: 0;
+  text-wrap: balance;
+  max-width: var(--measure);
+}
+
+/* A plain sub-heading inside a section. */
+.stApp .subhead {
+  font-size: var(--t-h3);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-top: var(--space-5);
+}
+
+/* ---------------------------------------------------------------------------
+   Cards. The surface everything else sits on.
+   ------------------------------------------------------------------------ */
+
+.stApp .card {
+  background: var(--ground);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-2);
+  box-shadow: var(--shadow-1);
+  padding: var(--space-5);
+  margin-top: var(--space-4);
+}
+
+.stApp .card.flush { padding: 0; overflow: hidden; }
+
+.stApp .card-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--hair);
+  background: var(--wash);
+}
+
+.stApp .card-body { padding: var(--space-5); }
+
+.stApp .card-foot {
+  padding: var(--space-3) var(--space-5);
+  border-top: 1px solid var(--hair);
+  background: var(--wash);
+  font-size: var(--t-meta);
+  color: var(--secondary);
+}
+
+.stApp .eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--secondary);
 }
 
 /* ---------------------------------------------------------------------------
@@ -133,17 +355,31 @@
    ------------------------------------------------------------------------ */
 
 .stApp .tag {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-weight: 700;
-  font-size: 13px;
-  line-height: 1.2;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  padding: 4px 8px;
+  font-size: 12px;
+  line-height: 1.25;
+  letter-spacing: 0.03em;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
   white-space: nowrap;
   background: var(--tag-blue-bg);
   color: var(--tag-blue-tx);
 }
+
+.stApp .tag::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* The plain label variant (a scope, a unit) carries no state, so it carries no
+   dot either. */
+.stApp .tag.blue::before { display: none; }
 
 .stApp .tag.green  { background: var(--tag-green-bg);  color: var(--tag-green-tx); }
 .stApp .tag.grey   { background: var(--tag-grey-bg);   color: var(--tag-grey-tx); }
@@ -175,91 +411,297 @@
 }
 
 /* ---------------------------------------------------------------------------
-   The verdict panel. Green means "the run completed and this is the answer",
-   not "good news". The partial variant is the honest neutral for a run whose
-   coverage sits below the stated bar: the number is incomplete, which is
-   neither good nor bad.
+   The verdict.
+
+   v1 painted this as a solid green slab with the two totals inside it as one
+   string. Two changes, both deliberate:
+
+   1. Green moved from the fill to a 4px rail and a "Complete" tag. The
+      completion signal survives (that is what green means here, not "good
+      news"), and the figure goes back to ink on ground, which is where a
+      number is most readable.
+   2. The two totals are two figures with an arrow between them, not one
+      string, so old and new can be compared at a glance.
+
+   The partial variant keeps its meaning: below the coverage bar the rail turns
+   neutral and the tag says so, because an incomplete number is neither good
+   news nor bad.
    ------------------------------------------------------------------------ */
 
 .stApp .panel {
-  background: var(--panel-bg);
-  color: var(--panel-tx);
-  padding: var(--pad-card);
-  margin-top: var(--space-5);
-  text-align: center;
+  background: var(--ground);
+  color: var(--body-tx);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-3);
+  box-shadow: var(--shadow-2);
+  overflow: hidden;
+  margin-top: var(--space-4);
 }
 
+.stApp .panel .rail {
+  height: 4px;
+  background: var(--panel-bg);
+}
+
+.stApp .panel--partial .rail {
+  background: var(--border-control);
+}
+
+.stApp .panel .top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding: var(--space-4) var(--space-5) 0;
+}
+
+.stApp .panel .top .run {
+  margin-left: auto;
+  font-size: var(--t-meta);
+  color: var(--secondary);
+}
+
+.stApp .panel .main {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+  padding: var(--space-4) var(--space-5) var(--space-5);
+}
+
+.stApp .panel .figure { min-width: 0; }
+
 .stApp .panel .lab {
-  font-size: 15px;
-  letter-spacing: 0.05em;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  font-weight: 700;
+  color: var(--secondary);
+  margin-bottom: 2px;
 }
 
 .stApp .panel .fig {
+  font-weight: 800;
+  font-size: var(--t-display);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--heading);
+}
+
+.stApp .panel .unit {
+  font-size: var(--t-meta);
+  color: var(--secondary);
+  margin-top: 6px;
+}
+
+.stApp .panel .arrow {
+  font-size: 26px;
+  line-height: 1;
+  padding-bottom: 16px;
+  color: var(--secondary);
+}
+
+.stApp .panel .delta {
+  margin-left: auto;
+  text-align: right;
+}
+
+.stApp .panel .delta .amount {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: clamp(18px, 2.6vw, 24px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  padding: 7px 16px;
+  border: 1px solid var(--hair-strong);
+  border-radius: var(--radius-pill);
+  background: var(--grey-1);
+}
+
+.stApp .panel .delta .words {
+  font-size: var(--t-meta);
+  color: var(--secondary);
+  margin-top: 7px;
+}
+
+@media (max-width: 700px) {
+  .stApp .panel .delta { margin-left: 0; text-align: left; width: 100%; }
+}
+
+/* The context strip: the four facts a reader needs beside the headline so the
+   number is never read on its own. */
+.stApp .facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-top: 1px solid var(--hair);
+  background: var(--wash);
+}
+
+.stApp .facts > div {
+  padding: var(--space-3) var(--space-5);
+  border-right: 1px solid var(--hair);
+  min-width: 0;
+}
+
+.stApp .facts > div:last-child { border-right: 0; }
+
+.stApp .facts .k {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--secondary);
+}
+
+.stApp .facts .v {
+  font-size: var(--t-small);
   font-weight: 700;
-  font-size: clamp(30px, 6.5vw, 50px);
-  line-height: 1.05;
-  margin-top: var(--space-2);
+  margin-top: 2px;
 }
 
-.stApp .panel .sub {
-  font-size: clamp(16px, 2.4vw, 20px);
-  margin-top: var(--space-3);
-  font-weight: 700;
+@media (max-width: 700px) {
+  .stApp .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-.stApp .panel .base {
-  font-size: 15px;
-  margin-top: var(--space-2);
-  font-weight: 400;
+/* The same strip, standing on its own: a row of counted facts where a
+   paragraph of statistics used to be. */
+.stApp .factbar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-2);
+  background: var(--ground);
+  box-shadow: var(--shadow-1);
+  margin-top: var(--space-4);
+  overflow: hidden;
 }
 
-.stApp .panel--partial {
-  background: var(--panel-quiet);
-  color: var(--panel-quiet-tx);
-  border: 1px solid var(--border-control);
+.stApp .factbar > div {
+  padding: var(--space-3) var(--space-4);
+  border-right: 1px solid var(--hair);
+  min-width: 0;
+}
+
+.stApp .factbar > div:last-child { border-right: 0; }
+
+.stApp .factbar .k {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--secondary);
+}
+
+.stApp .factbar .v {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-top: 2px;
+}
+
+@media (max-width: 700px) {
+  .stApp .factbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 /* ---------------------------------------------------------------------------
-   Big-number stat row
+   Big-number stats, now on cards rather than in a bare rule-ruled row.
    ------------------------------------------------------------------------ */
 
 .stApp .stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  margin-top: var(--space-5);
-  border-top: 1px solid var(--border);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-4);
 }
 
-/* Grid children default to min-width:auto and refuse to shrink below their
-   content, which is one of the two phantom-scroll sources. */
-.stApp .stats > * {
-  min-width: 0;
-}
+.stApp .stats > * { min-width: 0; }
 
-@media (max-width: 620px) {
-  .stApp .stats {
-    grid-template-columns: repeat(2, 1fr);
-  }
+@media (max-width: 900px) {
+  .stApp .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 .stApp .stat {
-  padding: var(--space-4) var(--space-4) var(--space-4) 0;
-  border-bottom: 1px solid var(--border);
+  background: var(--ground);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-2);
+  box-shadow: var(--shadow-1);
+  padding: var(--space-4);
 }
 
 .stApp .stat .v {
-  font-weight: 700;
-  font-size: 34px;
-  line-height: 1;
+  font-weight: 800;
+  font-size: 30px;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
   color: var(--heading);
 }
 
 .stApp .stat .k {
-  font-size: var(--font-meta);
+  font-size: var(--t-meta);
   color: var(--secondary);
+  margin-top: 6px;
+}
+
+/* ---------------------------------------------------------------------------
+   Coverage meter. A percentage on its own does not say whether it is enough,
+   so the stated bar is drawn on the track. No hue: the fill is ink and the bar
+   is a marked line, because partial coverage is a fact, not an alarm.
+   ------------------------------------------------------------------------ */
+
+.stApp .meter { margin-top: var(--space-3); }
+
+.stApp .meter .track {
+  position: relative;
+  height: 12px;
+  border-radius: var(--radius-pill);
+  background: var(--grey-2);
+  overflow: hidden;
+}
+
+.stApp .meter .fill {
+  height: 100%;
+  background: var(--body-tx);
+  border-radius: var(--radius-pill);
+}
+
+.stApp .meter .mark {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--ground);
+  box-shadow: 0 0 0 1px var(--body-tx);
+}
+
+.stApp .meter .legend {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--t-meta);
+  color: var(--secondary);
+  margin-top: 7px;
+}
+
+.stApp .headline {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  flex-wrap: wrap;
   margin-top: var(--space-1);
+}
+
+.stApp .headline .big {
+  font-size: 38px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--heading);
+}
+
+.stApp .headline .beside {
+  font-size: var(--t-meta);
+  color: var(--secondary);
 }
 
 /* ---------------------------------------------------------------------------
@@ -268,39 +710,47 @@
 
 .stApp .kv {
   display: grid;
-  grid-template-columns: 1fr;
-  border: 1px solid var(--border);
-  margin-top: var(--space-4);
-}
-
-.stApp .kv .row {
-  padding: var(--space-4);
-  border-bottom: 1px solid var(--border);
-}
-
-.stApp .kv .row:last-child {
-  border-bottom: 0;
+  gap: var(--space-4);
+  margin-top: var(--space-2);
 }
 
 .stApp .kv .key {
-  font-size: 13px;
-  letter-spacing: 0.06em;
+  font-size: 11px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--secondary);
-  font-weight: 700;
+  font-weight: 800;
   margin-bottom: var(--space-1);
 }
 
 .stApp .kv .val {
-  font-size: var(--font-small);
+  font-size: var(--t-small);
   color: var(--body-tx);
   max-width: var(--measure);
 }
 
+/* The DEFRA extract, set as a source rather than as body text, so the reader
+   can see where the sentence ends and the citation begins. */
+.stApp blockquote.src {
+  margin: var(--space-3) 0 0;
+  padding: var(--space-3) var(--space-4);
+  border-left: 3px solid var(--green);
+  border-radius: 0 var(--radius-1) var(--radius-1) 0;
+  background: var(--grey-1);
+  font-size: var(--t-small);
+}
+
+.stApp blockquote.src cite {
+  display: block;
+  margin-top: 6px;
+  font-size: var(--t-meta);
+  color: var(--secondary);
+  font-style: normal;
+}
+
 /* ---------------------------------------------------------------------------
-   Warning text and the quiet empty state. An empty state is not a warning and
-   must not be dressed as one (defect A-11 was three message types sharing one
-   style).
+   Messages, four roles. An empty state is not a warning and must not be
+   dressed as one (defect A-11 was three message types sharing one style).
    ------------------------------------------------------------------------ */
 
 .stApp .warning {
@@ -308,35 +758,49 @@
   gap: var(--space-3);
   align-items: flex-start;
   margin-top: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--hair);
+  border-left: 4px solid var(--body-tx);
+  border-radius: var(--radius-2);
+  background: var(--wash);
 }
 
 .stApp .warning .icon {
   flex: 0 0 auto;
-  width: 35px;
-  height: 35px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   background: var(--body-tx);
   color: var(--ground);
-  font-weight: 700;
-  font-size: 24px;
-  line-height: 35px;
+  font-weight: 800;
+  font-size: 16px;
+  line-height: 26px;
   text-align: center;
 }
 
 .stApp .warning .txt {
-  font-weight: 700;
-  font-size: 17px;
+  font-size: var(--t-small);
   color: var(--body-tx);
   max-width: var(--measure);
 }
 
 .stApp .warning .txt .hd {
   display: block;
+  font-weight: 700;
+  margin-bottom: 2px;
 }
+
+.stApp .warning--ok { border-left-color: var(--green); }
+.stApp .warning--ok .icon { background: var(--green); color: #ffffff; }
+.stApp .warning--review { border-left-color: var(--tag-yellow-tx); }
+.stApp .warning--review .icon { background: var(--tag-yellow-tx); color: #ffffff; }
+.stApp .warning--error { border-left-color: var(--red); }
+.stApp .warning--error .icon { background: var(--red); color: #ffffff; }
 
 .stApp .empty {
   color: var(--secondary);
-  font-size: var(--font-small);
+  font-size: var(--t-small);
+  margin-top: var(--space-3);
 }
 
 /* ---------------------------------------------------------------------------
@@ -346,23 +810,171 @@
    ------------------------------------------------------------------------ */
 
 .stApp details.disclosure {
-  border: 1px solid var(--border-control);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-2);
+  background: var(--ground);
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
   margin-top: var(--space-3);
 }
 
 .stApp details.disclosure > summary {
-  padding: var(--space-3) var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding: var(--space-4) var(--space-5);
   font-weight: 700;
+  font-size: var(--t-small);
   color: var(--heading);
-  background: var(--grey-1);
   cursor: pointer;
   min-height: 44px;
+  list-style: none;
+}
+
+.stApp details.disclosure > summary::-webkit-details-marker { display: none; }
+
+/* The affordance: a plus that becomes a minus. The label always says what is
+   inside, so this is a state indicator, not the only cue. */
+.stApp details.disclosure > summary::after {
+  content: "+";
+  margin-left: auto;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--secondary);
+}
+
+.stApp details.disclosure[open] > summary::after { content: "\2212"; }
+
+.stApp details.disclosure[open] > summary {
+  border-bottom: 1px solid var(--hair);
+  background: var(--wash);
 }
 
 .stApp details.disclosure > .disclosure-body {
-  padding: var(--space-4);
-  border-top: 1px solid var(--border);
+  padding: var(--space-5);
 }
+
+/* A composed summary: the label that says what is inside, and the quiet meta
+   that qualifies it. */
+.stApp .disc-title { font-weight: 700; font-size: var(--t-small); min-width: 0; }
+
+.stApp .disc-meta {
+  font-weight: 400;
+  font-size: var(--t-meta);
+  color: var(--secondary);
+}
+
+/* An explanation's summary line: status first, then what changed, then what it
+   did to this product's footprint. Ordered that way on purpose, because the
+   status is what decides whether the rest can be quoted to a client. */
+.stApp .xhead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.stApp .xhead .who { flex: 1 1 240px; min-width: 0; }
+.stApp .xhead .who .name { display: block; font-weight: 700; font-size: var(--t-small); }
+.stApp .xhead .who .meta {
+  display: block;
+  font-weight: 400;
+  font-size: var(--t-meta);
+  color: var(--secondary);
+  margin-top: 2px;
+}
+
+.stApp .xhead .impact { text-align: right; }
+.stApp .xhead .impact .v {
+  display: block;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.stApp .xhead .impact .k {
+  display: block;
+  font-weight: 400;
+  font-size: var(--t-meta);
+  color: var(--secondary);
+}
+
+/* ---------------------------------------------------------------------------
+   Setup steps. The flow moved out of the sidebar and into the canvas, so it
+   survives the sidebar collapsing below 768px and so a first-time visitor is
+   given a sequence rather than an instruction.
+   ------------------------------------------------------------------------ */
+
+.stApp .step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+.stApp .step .n {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 14px;
+  background: var(--grey-1);
+  color: var(--secondary);
+  border: 1px solid var(--hair);
+}
+
+.stApp .step.now .n { background: var(--black); color: var(--ground); border-color: var(--black); }
+.stApp .step.done .n { background: var(--green); color: #ffffff; border-color: var(--green); }
+
+.stApp .step .t { font-weight: 700; font-size: var(--t-h3); letter-spacing: -0.01em; }
+.stApp .step .h { font-size: var(--t-meta); color: var(--secondary); margin-top: 1px; }
+
+/* An uploaded file, named and measured, so the reader can see what the tool is
+   about to read. */
+.stApp .file {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-2);
+  background: var(--ground);
+  padding: var(--space-3) var(--space-4);
+  margin-top: var(--space-3);
+}
+
+.stApp .file .ic {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-1);
+  background: var(--grey-1);
+  color: var(--secondary);
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.stApp .file .nm { font-weight: 700; font-size: var(--t-small); min-width: 0; }
+.stApp .file .mt { display: block; font-weight: 400; font-size: var(--t-meta); color: var(--secondary); }
+
+/* A pre-send checklist row: the state first, then the item, then the detail. */
+.stApp .check .row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--hair);
+}
+
+.stApp .check .row:last-child { border-bottom: 0; }
+.stApp .check .row .tx { font-size: var(--t-small); min-width: 0; }
+.stApp .check .row .tx b { display: block; }
 
 /* ---------------------------------------------------------------------------
    Tables. Real markup, not a canvas (defect A-04), and horizontally scrollable
@@ -372,7 +984,10 @@
 .stApp .table-scroll {
   overflow-x: auto;
   max-width: 100%;
-  margin-top: var(--space-2);
+  margin-top: var(--space-3);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-2);
+  background: var(--ground);
   /* Load-bearing. Without `contain: paint` a table wider than this container
      still contributes its width to the initial containing block, so the PAGE
      gains a phantom horizontal scroll into blank space even though the table
@@ -384,28 +999,38 @@
 .stApp table {
   border-collapse: collapse;
   width: 100%;
-  font-size: var(--font-table);
+  font-size: var(--t-small);
 }
 
+/* The caption is the table's own header bar rather than a floating line of
+   grey text: it is what tells a screen-reader user what they are entering, so
+   it should look like part of the table. */
 .stApp caption {
   text-align: left;
   color: var(--secondary);
-  font-size: var(--font-small);
-  padding-bottom: var(--space-2);
+  font-size: var(--t-meta);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--hair);
+  background: var(--wash);
 }
 
 .stApp th,
 .stApp td {
   text-align: left;
-  padding: 11px 14px 11px 0;
-  border-bottom: 1px solid var(--border);   /* decorative rule, not a control */
+  padding: 11px var(--space-4);
+  border-bottom: 1px solid var(--hair);
   vertical-align: top;
 }
 
+.stApp tbody tr:last-child td { border-bottom: 0; }
+
 .stApp thead th {
   font-weight: 700;
-  color: var(--heading);
-  border-bottom: 2px solid var(--body-tx);
+  font-size: var(--t-meta);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--secondary);
+  white-space: nowrap;
 }
 
 .stApp td.num,
@@ -415,12 +1040,39 @@
   white-space: nowrap;
 }
 
-.stApp td.item {
-  padding-right: var(--space-5);
+.stApp td.item { font-weight: 600; }
+
+/* The magnitude bar beside a movement. Width carries size, the glyph and the
+   spoken word carry direction, and neither carries hue. */
+.stApp .bar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.stApp .bar .track {
+  width: 56px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--grey-2);
+  overflow: hidden;
+}
+
+.stApp .bar .fill {
+  display: block;
+  height: 100%;
+  background: var(--body-tx);
+  border-radius: var(--radius-pill);
+}
+
+@media (max-width: 620px) {
+  .stApp .bar .track { display: none; }
 }
 
 /* ---------------------------------------------------------------------------
-   HALF TWO: Streamlit widget overrides. Each closes a measured defect.
+   HALF TWO: Streamlit widget overrides. Each closes a measured defect or
+   carries the v2 surface system into a widget we do not render ourselves.
    ------------------------------------------------------------------------ */
 
 /* The other phantom-scroll source: flex children default to min-width:auto and
@@ -431,6 +1083,24 @@
   min-width: 0;
 }
 
+/* The page frame. Streamlit ships a 6rem top pad and a wide-mode container
+   that runs edge to edge on a large monitor, which leaves the report with no
+   measure at all. Capping it is what makes the shell read as an app rather
+   than as a document stretched to the window. Verified against Streamlit
+   1.60.0. */
+[data-testid="stMainBlockContainer"] {
+  max-width: 1180px;
+  padding-top: var(--space-5);
+  padding-bottom: var(--space-8);
+}
+
+/* Streamlit's own header bar floats above the page and would sit on top of the
+   masthead. Making it transparent lets our shell own the top of the screen
+   while the menu stays reachable. Verified against Streamlit 1.60.0. */
+[data-testid="stHeader"] {
+  background: transparent;
+}
+
 /* A-03: captions rendered at 3.69:1, below the AA floor. The no-guess sentence,
    which is the credibility of the whole tool, was the least legible text on the
    page. Streamlit dims captions with opacity; --secondary is 7.07:1 on white.
@@ -439,7 +1109,7 @@
 [data-testid="stCaptionContainer"] p {
   opacity: 1 !important;
   color: var(--secondary) !important;
-  font-size: var(--font-small);
+  font-size: var(--t-small);
 }
 
 /* A-02: the primary action was Streamlit's default red at 3.30:1, and red is
@@ -454,8 +1124,17 @@
   color: var(--action-tx) !important;
   font-weight: 700;
   min-height: 44px;
-  border-radius: 0;
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+  border-radius: var(--radius-1);
+  box-shadow: var(--shadow-1);
+}
+
+/* The pressed and hovered states of the primary action, using the deeper green
+   already in the palette rather than a new one. Verified against Streamlit
+   1.60.0. */
+[data-testid="stBaseButton-primary"]:hover,
+[data-testid="stBaseButton-primaryFormSubmit"]:hover {
+  background: var(--green-deep) !important;
+  border-color: var(--green-deep) !important;
 }
 
 /* A-08: secondary control borders measured 1.45:1. Interactive boundaries owe
@@ -467,8 +1146,65 @@
 [data-testid="stDownloadButton"] button {
   border: 1px solid var(--border-control) !important;
   color: var(--body-tx) !important;
+  background: var(--ground);
+  font-weight: 700;
   min-height: 44px;
-  border-radius: 0;
+  border-radius: var(--radius-1);
+}
+
+/* The download row is a set of file cards, so each button fills its column and
+   reads as one target rather than as a label with space around it. Verified
+   against Streamlit 1.60.0. */
+[data-testid="stDownloadButton"] button:hover {
+  background: var(--grey-1);
+}
+
+/* Text inputs and selects: same radius and same interactive boundary as the
+   buttons, so a form does not look assembled from two different kits.
+   Streamlit renders the visible box as a child of the widget wrapper.
+   Verified against Streamlit 1.60.0. */
+[data-testid="stTextInput"] > div > div,
+[data-testid="stSelectbox"] > div > div,
+[data-testid="stNumberInput"] > div > div {
+  border-radius: var(--radius-1);
+  border-color: var(--border-control) !important;
+  background: var(--ground);
+}
+
+/* Widget labels are the field names in the setup flow, so they carry the same
+   weight as our own .lab. Verified against Streamlit 1.60.0. */
+[data-testid="stWidgetLabel"] p {
+  font-size: var(--t-small) !important;
+  font-weight: 700;
+  color: var(--body-tx);
+}
+
+/* The uploader is the front door of the whole tool. Streamlit's default is a
+   flat grey bar; this makes it a dropzone that looks like one, with the 3:1
+   boundary the audit asked for. Verified against Streamlit 1.60.0. */
+[data-testid="stFileUploaderDropzone"] {
+  background: var(--wash);
+  border: 2px dashed var(--hair-strong);
+  border-radius: var(--radius-2);
+  padding: var(--space-5);
+}
+
+/* The setup flow lives in an expander so it can fold away once a report
+   exists. Given the same surface as our own cards, it reads as one panel
+   rather than as a widget bolted onto the page. Verified against Streamlit
+   1.60.0. */
+[data-testid="stExpander"] > details {
+  border: 1px solid var(--hair) !important;
+  border-radius: var(--radius-2);
+  background: var(--ground);
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+}
+
+[data-testid="stExpander"] summary {
+  background: var(--wash);
+  min-height: 44px;
+  font-weight: 700;
 }
 
 /* A-10: the dataframe toolbar's controls were 22px, half the pointer-target
@@ -476,6 +1212,26 @@
 [data-testid="stElementToolbarButton"] {
   min-width: 44px;
   min-height: 44px;
+}
+
+/* Streamlit's own alerts (used for sign-in state and read errors) inherit the
+   card system so they sit in the same world as our .warning component.
+   Verified against Streamlit 1.60.0. */
+[data-testid="stAlert"] {
+  border-radius: var(--radius-2);
+  font-size: var(--t-small);
+}
+
+/* The sidebar is settings and account only now, so it reads as chrome: one
+   hairline, the page wash, no competing white surface. Verified against
+   Streamlit 1.60.0. */
+[data-testid="stSidebar"] {
+  background: var(--grey-1);
+  border-right: 1px solid var(--hair);
+}
+
+[data-testid="stSidebarContent"] {
+  padding-top: var(--space-5);
 }
 
 /* ---------------------------------------------------------------------------
@@ -500,6 +1256,21 @@
 
   .stApp a {
     color: #0b0c0c !important;
+  }
+
+  /* The shell is navigation, which paper does not have. */
+  .stApp .subnav,
+  .stApp .masthead {
+    display: none !important;
+  }
+
+  /* Shadows and washes cost ink and say nothing on paper. */
+  .stApp .card,
+  .stApp .panel,
+  .stApp .stat,
+  .stApp details.disclosure {
+    box-shadow: none !important;
+    border: 1px solid #b1b4b6 !important;
   }
 
   /* A printed report must contain the reasoning, not a row of closed drawers.

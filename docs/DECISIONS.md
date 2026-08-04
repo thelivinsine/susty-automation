@@ -554,3 +554,68 @@ model the reason is a short plain-English sentence and the quote earns its space
 Fixing the offline duplication means editing the offline explainer's output, which
 is the grounding layer, so it is deliberately not done in a citation-rendering
 change. Logged in `REFERENCE.md`.
+
+## D22. The product-UI rework: same palette, a different object
+
+D19 chose the palette and D20 built the design layer under it. This records the
+next move, which the owner asked for in one line: make the app look and behave
+like something a senior product team shipped, and **keep the colour palette
+intact**.
+
+**The palette is untouched, and that is checkable.** Every hex in the new
+interface already existed in `tokens.css`. Nothing was added except neutrals
+that are alpha composites of the ink colour (`--hair`, `--hair-strong`,
+`--wash`, the two shadow levels) and `--green-deep: #005a30`, which was already
+in the palette as the "cited" tag ink and is now also the primary action's
+pressed state. `docs/mockups/v2_product_ui.html` carries a swatch sheet so the
+claim can be verified by looking rather than by trusting this paragraph.
+
+**What was actually wrong.** The v1 layer was correct and legible, and it read
+as a government form: one long scroll of flat sections separated by rules, with
+no sense of place, no sequence, and setup hidden in a sidebar. Correct is not
+the same as usable. The rework spends its effort on the five things that gap
+is made of.
+
+1. **A shell.** A masthead (product, the two releases being compared, run
+   status) and a sticky, numbered section nav. Before this, a reader arriving
+   at a long report had nothing telling them which two DEFRA years produced it
+   or where in the report they were. The nav is numbered because the sections
+   ARE a sequence: result, then whether it can be trusted, then what moved,
+   then why, then what to send.
+2. **Setup became a flow.** Three numbered steps in the main canvas (versions,
+   inventory, confirm your columns) with a preview of the file as read, inside
+   an expander that folds away once a report exists. This also finishes the
+   A-09 fix: the sidebar collapses below 768px, and it no longer holds anything
+   a first run needs. The sidebar is account and settings only.
+3. **The verdict stopped being a green slab.** The two totals are now two
+   figures with an arrow between them and a delta chip, over a strip of the
+   four facts that qualify the number (coverage, lines matched, factors moved,
+   baseline). Green moved from the fill to a 4px rail and a "Complete" tag, so
+   the completion signal survives while the figure goes back to ink on ground,
+   where a number is most readable. The partial variant is unchanged in meaning:
+   neutral rail, "Partial answer" tag.
+4. **Coverage became a measurement.** A percentage on its own does not say
+   whether it is enough, so the 95% bar is drawn on the track. Still no hue:
+   partial coverage is a fact about the answer, not an alarm.
+5. **Movement became scannable.** Every delta column now carries a magnitude bar
+   scaled to the largest movement in that column, and the explanations lead with
+   the status tag and the impact on the reader's own footprint. The DEFRA quote
+   (D21) is now rendered in the app as a source block, not only in the memo.
+
+**A system font stack, not Arial.** `--font` is now the platform UI stack. It
+looks native on every device and still makes zero network requests, which is
+what mattered for a tool handling confidential client data. Arial remains in the
+stack as a fallback.
+
+**The load-bearing rules from D20 all survive, unchanged and still enforced:**
+hue encodes epistemic status and direction is a glyph, a sign and a word; every
+token pair carries an `@contrast` annotation and is measured in both themes;
+`--border` never bounds a control; tables are real tables with captions; every
+`data-testid` rule names its defect and its verified Streamlit version;
+`contain: paint` stays on every scroll container. The suite is 151 tests, green.
+
+**Verified in a browser, not eyeballed.** `streamlit run` plus Playwright at 375,
+768 and 1440px: zero horizontal page scroll at every width, the report renders
+end to end on the real 2025 and 2026 workbooks, and the masthead status reads
+"Report ready" beside a finished report (which needed a slot, because on a first
+visit the run happens further down the same script).

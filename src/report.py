@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import pandas as pd
 
+from ui.format import plural
+
 
 def _fmt(x, nd=3):
     if x is None or (isinstance(x, float) and pd.isna(x)):
@@ -47,7 +49,7 @@ def build_markdown_report(results: dict) -> str:
     lines.append(
         f"- Coverage: **{s['coverage_pct']}%** of the bill-of-materials could be "
         f"computed ({s['lines_included']}/{s['lines_total']} lines). "
-        f"{s['lines_excluded']} line(s) excluded. See *Needs review* below."
+        f"{plural(s['lines_excluded'], 'line')} excluded. See *Needs review* below."
     )
     if results["context"].get("breaches_baseline"):
         lines.append(

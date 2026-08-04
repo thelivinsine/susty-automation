@@ -29,17 +29,23 @@ The Google Cloud budget cap is set (the D17 backstop) and the owner deliberately
 deferred the sign-in gate. Turn it on when the link goes public, when the budget
 alert fires, or when anyone relies on the tool. Secrets edit, no code change.
 
-**Interface:** the app now renders through an owned design layer (`src/ui/`)
-rather than Streamlit defaults, on the GOV.UK palette the owner chose (D19). The
-page reads Result, Confidence, Movers, Explanations, Export, with the trust gate
-second rather than near the bottom. Hue carries epistemic status only; direction
-of travel is a glyph, a sign and a word, so a falling footprint is never painted
-as an alarm. Tables are real tables (caption, column scopes, printable), the Run
-control sits in the main canvas so it survives the sidebar collapsing below
-768px, and one run exports four artifacts sharing a run id, each carrying its
-unresolved items in the front matter (D20).
+**Interface:** the app renders through an owned design layer (`src/ui/`) rather
+than Streamlit defaults, on the GOV.UK palette the owner chose (D19). As of D22
+it is an app shell rather than a document: a masthead naming the two releases
+being compared and the run status, a sticky numbered section nav, setup as three
+steps in the main canvas (so nothing a first run needs lives in the sidebar that
+collapses below 768px), the verdict as two figures and a delta over a strip of
+qualifying facts, coverage as a meter against the 95% bar, magnitude bars beside
+every delta, and the DEFRA quote shown as a source block in the app as well as
+the memo. The palette is unchanged: every hex still comes from `tokens.css`.
+The page reads Result, Confidence, Movers, Explanations, Export, with the trust
+gate second rather than near the bottom. Hue carries epistemic status only;
+direction of travel is a glyph, a sign and a word, so a falling footprint is
+never painted as an alarm. Tables are real tables (caption, column scopes,
+printable), and one run exports four artifacts sharing a run id, each carrying
+its unresolved items in the front matter (D20).
 
-Gates: `pytest` green (149 tests, including the grounding trap, a real-workbook
+Gates: `pytest` green (151 tests, including the grounding trap, a real-workbook
 test, the microcopy gate, the relabel suite (detection + family grouping), the
 material-relabel explanation path, the retrieval-quality gold set, loader/diff
 golden vectors, the real-data ingest suite, and the access-gating suite (free
@@ -57,6 +63,15 @@ explained from the real DEFRA text. On real data, relabel pairing collapses
 paired renames group into 11 readable families.
 
 ## What shipped
+- **Product-UI rework (D22), palette untouched:** app shell (masthead + sticky
+  numbered section nav), setup as a three-step flow in the canvas, the verdict as
+  two figures plus a delta chip and a fact strip, a coverage meter against the
+  95% bar, magnitude bars on every delta column, explanation cards that lead with
+  status and footprint impact, the DEFRA quote rendered in the app, a system font
+  stack, and a surface system (cards, hairlines, one radius, two shadow levels)
+  built only from alpha composites of the existing ink. Preview:
+  `docs/mockups/v2_product_ui.html`. Verified in headless Chromium at 375, 768
+  and 1440px: zero horizontal page scroll.
 - **Goal reframed around genuine usefulness** (`docs/VISION.md`): a six-persona
   panel + critique set the primary audience as the UK solo/boutique DEFRA
   consultant, with getting-hired as an explicit side effect. Honest verdict:
@@ -132,6 +147,23 @@ semantic relabels, and lockfile pinning. The design-system build is DONE
 
 ## Resume here
 Most recent handoffs (older ones rotate into `docs/archive/`):
+
+- H22 (2026-08-04): REWORKED the interface (D22) on the owner's brief: make it
+  look and behave like a senior product team shipped it, keep the palette. Built
+  the direction as a preview first (`docs/mockups/v2_product_ui.html`, three
+  screens plus a swatch sheet so "palette intact" is checkable by looking), then
+  implemented it. `tokens.css` gained a surface system and a type scale and no new
+  hue; `components.css` was rewritten around cards, a shell and real states;
+  `components.py` gained masthead, subnav, meter, fact_bar, step, file_chip,
+  explanation_head, source_quote and checklist, and `verdict_card` learned the
+  two-figure layout; `app.py` moved setup out of the sidebar into three numbered
+  steps. Every D20 rule still holds and is still enforced. 151 tests green (the
+  one changed assertion was a test pinning the literal "1 row(s)", now written as
+  "1 row" by `ui.format.plural`). Checked in a real browser at 375, 768 and
+  1440px: zero horizontal scroll, report renders end to end on the real 2025 and
+  2026 workbooks. Not done, and deliberately: A-07 is still open (Streamlit's
+  file input still has no programmatic accessible name), and the app remains
+  light-only because Streamlit's own chrome is pinned light in config.toml.
 
 - H21 (2026-07-31): BUILT the citations (D21), so the memo now shows its work.
   Validated the risky step first: the loader records `source_file`,

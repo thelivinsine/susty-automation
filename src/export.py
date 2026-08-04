@@ -39,6 +39,7 @@ from explain import NO_REASON
 from report import build_markdown_report
 from ui import stylesheet_text
 from ui.components import esc
+from ui.format import plural
 from ui.format import direction, sig_figs, signed, signed_pct
 
 # Coverage at or above this is treated as a complete answer. Kept here as well as
@@ -143,7 +144,7 @@ def completeness_checklist(results, set_aside=None):
             "detail": (
                 "All lines matched with confidence."
                 if review.empty
-                else f"{len(review)} line(s) held for review and excluded from the totals: "
+                else f"{plural(len(review), 'line')} held for review and excluded from the totals: "
                      + ", ".join(str(x) for x in review["line_item"].head(5))
             ),
         },
@@ -154,7 +155,7 @@ def completeness_checklist(results, set_aside=None):
             "detail": (
                 "No rows were set aside."
                 if not aside
-                else f"{len(aside)} row(s) skipped before matching, for a missing "
+                else f"{plural(len(aside), 'row')} skipped before matching, for a missing "
                      "item name, unit or quantity."
             ),
         },
@@ -171,7 +172,7 @@ def completeness_checklist(results, set_aside=None):
             "detail": (
                 "Every change carries an official reason."
                 if not unexplained
-                else f"{len(unexplained)} change(s) have no reason in the DEFRA notes, "
+                else f"{plural(len(unexplained), 'change')} with no reason in the DEFRA notes, "
                      "and say so rather than guessing."
             ),
         },
