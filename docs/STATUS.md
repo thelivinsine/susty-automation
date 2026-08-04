@@ -164,6 +164,7 @@ Most recent handoffs (older ones rotate into `docs/archive/`):
   2026 workbooks. Not done, and deliberately: A-07 is still open (Streamlit's
   file input still has no programmatic accessible name), and the app remains
   light-only because Streamlit's own chrome is pinned light in config.toml.
+  Shipped as PR #24, squash-merged `e21222b`.
 
 - H21 (2026-07-31): BUILT the citations (D21), so the memo now shows its work.
   Validated the risky step first: the loader records `source_file`,

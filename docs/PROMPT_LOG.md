@@ -984,3 +984,4 @@ a slot, because on a first visit the run happens further down the same script.
 src/ui/tokens.css, src/ui/components.css, src/ui/components.py, src/ui/format.py,
 src/export.py, src/report.py, app.py, tests/test_export_pack.py,
 docs/DECISIONS.md (D22), docs/STATUS.md (H22), docs/PROMPT_LOG.md.
+PR #24, squash-merged as `e21222b`.
