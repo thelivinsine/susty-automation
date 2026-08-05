@@ -1023,3 +1023,46 @@ H22 and D22 were accurate and verified when written.
 
 **Artifacts:** docs/PROMPT_LOG.md, docs/STATUS.md,
 docs/archive/STATUS_2026-W31.md, docs/archive/README.md, docs/REFERENCE.md.
+
+
+---
+
+### 2026-08-05 · P39
+Branch: `claude/app-design-ui-overhaul-wmb9df` (from `main` at `d925278`).
+
+**Prompt (verbatim):** "add the active-section highlight to the nav"
+
+**Response summary:** Built it, which meant reversing the judgement in P38 that
+it "needs a custom component". It does need to escape markdown, but
+`st.components.v1.html` is built into Streamlit, runs scripts, and is same-origin
+with the page hosting it, so no component package and no new dependency.
+`components.scrollspy()` returns the script; `app.py` renders it last in a
+zero-height iframe, because it reads the sections it highlights.
+
+Written as an addition, not a dependency: the reach into the parent document is
+inside a `try/catch` that returns, so if a future Streamlit sandboxes the iframe
+the nav loses its highlight and nothing else. It stores no DOM node, because
+Streamlit replaces nodes on rerun and a cached reference would point at detached
+elements. The current section is marked in three channels (green underline,
+darker label, filled number), so it survives greyscale and a colour-blind reader.
+The scroll listener is in the capture phase on the document, since scroll events
+do not bubble and the page scrolls inside Streamlit's main element.
+
+Verified in the browser rather than asserted: at 1280px the highlight tracks
+scrolling through all five sections and follows a click on the nav; at 390px it
+also scrolls the marked link into view inside the horizontally scrolling strip
+(`scrollLeft` set directly, because `scrollIntoView` would drag the page too).
+Three unit tests pin the parts a browser cannot check cheaply: that the nav and
+the highlight are built from one list, that the failure path returns, and that
+nothing is cached.
+
+Found and fixed while checking at 390px, on the same surface: Streamlit 1.60
+keeps `st.columns` side by side at every width, so the export checklist rendered
+about one word per line on a phone. Columns now wrap to full width below 640px.
+
+154 tests green (was 151), microcopy gate clean, zero horizontal page scroll at
+375, 640, 768 and 1440.
+
+**Artifacts:** src/ui/components.py, src/ui/components.css, app.py,
+tests/test_ui_components.py, docs/DECISIONS.md (D22 follow-up), docs/STATUS.md,
+docs/REFERENCE.md, docs/PROMPT_LOG.md.

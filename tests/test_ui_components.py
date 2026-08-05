@@ -240,6 +240,36 @@ def test_unknown_columns_still_get_a_readable_heading():
 # Seeing it work
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# The nav's active-section highlight
+# ---------------------------------------------------------------------------
+
+def test_the_scrollspy_watches_exactly_the_sections_it_was_given():
+    """The nav and the highlight are built from one list, so they cannot drift."""
+    html = c.scrollspy([("s-result", "Result"), ("s-export", "Export")])
+    assert '["s-result", "s-export"]' in html
+    assert "aria-current" in html
+
+
+def test_the_scrollspy_gives_up_quietly_when_it_cannot_reach_the_page():
+    """It is an enhancement, not a dependency.
+
+    The script runs inside a components iframe and reaches its parent document.
+    If a Streamlit upgrade sandboxes that away, the nav has to keep working with
+    no highlight rather than throwing on every scroll, so the reach is inside a
+    try/catch that returns.
+    """
+    html = c.scrollspy([("s-result", "Result")])
+    assert "try { win = window.parent; doc = win.document; } catch (e) { return; }" in html
+
+
+def test_the_scrollspy_holds_no_reference_to_a_node():
+    """Streamlit replaces DOM nodes on rerun, so anything cached goes stale."""
+    html = c.scrollspy([("s-result", "Result")])
+    assert "doc.querySelectorAll('.subnav a')" in html, "links must be re-queried, not stored"
+    assert "doc.getElementById(IDS[i])" in html, "sections must be re-queried, not stored"
+
+
 def _demo():
     move = f.direction(-0.03913)
     print("A rendered table:\n")

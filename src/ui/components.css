@@ -228,6 +228,24 @@
   text-decoration: none;
 }
 
+/* The section you are currently reading. Set by components.scrollspy(), which
+   is best-effort: if the script cannot run, every link simply stays in its
+   resting state and the nav still works. So this must READ as an addition to
+   the default, never as the thing that makes the default legible.
+
+   Green underline plus a darker label plus a filled number: three channels, so
+   the current section survives greyscale and a colour-blind reader. Hue is not
+   carrying meaning on its own here, which is the D20 rule. */
+.stApp .subnav a[aria-current="true"] {
+  color: var(--body-tx);
+  border-bottom-color: var(--green);
+}
+
+.stApp .subnav a[aria-current="true"] .n {
+  background: var(--body-tx);
+  color: var(--ground);
+}
+
 .stApp .subnav a .n {
   min-width: 19px;
   height: 19px;
@@ -1084,6 +1102,21 @@
 [data-testid="stHorizontalBlock"] > *,
 [data-testid="stColumn"] > * {
   min-width: 0;
+}
+
+/* Columns stack on a phone. Streamlit 1.60 keeps `st.columns` side by side at
+   every width, so at 390px the export checklist rendered about one word per
+   line. Two columns of 150px is not a layout, it is a column of syllables.
+   Verified against Streamlit 1.60.0. */
+@media (max-width: 640px) {
+  [data-testid="stHorizontalBlock"] {
+    flex-wrap: wrap;
+  }
+
+  [data-testid="stColumn"] {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+  }
 }
 
 /* The page frame. Streamlit ships a 6rem top pad and a wide-mode container

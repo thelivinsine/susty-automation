@@ -634,3 +634,40 @@ change of this kind:
 - **Streamlit's header has to stay opaque.** It is what the page scrolls under.
   Making it transparent so "our shell owns the top" left a 52px strip of moving
   content above the sticky nav.
+
+**Follow-up, shipped after D22 landed: the nav's active-section highlight.** D22
+left it open on the grounds that Streamlit does not execute `<script>` inside
+markdown. The way through is `st.components.v1.html`, which does run scripts and,
+being same-origin, can reach the page hosting it. `components.scrollspy()` returns
+that script; `app.py` renders it last, in a zero-height iframe, because it reads
+the sections it highlights.
+
+Three properties it was written to have, all of them about it being an addition
+rather than a dependency:
+
+- **It fails silently.** The reach into the parent document is inside a
+  `try/catch` that returns. If a future Streamlit sandboxes the iframe, the nav
+  loses its highlight and loses nothing else, which is why the resting state of
+  the nav has to stay legible on its own.
+- **It stores no node.** Streamlit replaces DOM nodes on every rerun, so the
+  handler re-queries the links and the sections each frame instead of holding
+  references that would quietly point at detached elements.
+- **It carries three channels, not a colour.** The current section gets a green
+  underline, a darker label AND a filled number, so it survives greyscale and a
+  colour-blind reader. Consistent with the rule that hue never carries meaning
+  alone.
+
+The scroll listener is registered in the CAPTURE phase on the document, because
+scroll events do not bubble and the page scrolls inside Streamlit's main element
+rather than the window. On a narrow screen the marked link can sit off the end of
+the horizontally scrolling nav, so the strip's `scrollLeft` is set directly:
+`scrollIntoView` would also scroll the page and fight the reader.
+
+Verified in the browser at 1280px and 390px: the highlight tracks scrolling
+through all five sections, follows a click on the nav, and the strip scrolls the
+marked link into view at 390px.
+
+**One defect found while checking that, and fixed in the same change.**
+Streamlit 1.60 keeps `st.columns` side by side at every width, so at 390px the
+export checklist rendered about one word per line. Two columns of 150px is not a
+layout. Columns now wrap to full width below 640px.

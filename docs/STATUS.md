@@ -144,10 +144,9 @@ best-candidate name on a below-threshold match, turning on the sign-in gate when
 the live link goes public (deferred, D18), header-row tolerance in ingest,
 semantic relabels, and lockfile pinning. The design-system build is DONE
 (`docs/PLAN_design_system.md`, D20) and the product-UI rework on top of it is DONE
-(D22), so neither is a backlog item. Two things the rework deliberately left: the
-section nav has no active-section highlight (Streamlit does not execute scripts in
-markdown, so scroll-spy needs a custom component), and the app stays light-only
-because Streamlit's own chrome is pinned light in `config.toml`.
+(D22), so neither is a backlog item. The nav's active-section highlight, left open
+by D22, shipped after it. What the interface still leaves: the app stays
+light-only, because Streamlit's own chrome is pinned light in `config.toml`.
 
 ## Resume here
 Most recent handoffs (older ones rotate into `docs/archive/`):

@@ -35,6 +35,7 @@ import sys
 
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as st_components
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
@@ -77,6 +78,7 @@ from ui.components import (               # noqa: E402
     movement,
     section,
     source_quote,
+    scrollspy,
     stat_row,
     step,
     subnav,
@@ -841,3 +843,12 @@ four.download_button(
     "Data (.json)", data=pack[names[".json"]], file_name=names[".json"],
     mime="application/json", width="stretch",
 )
+
+
+# --- The nav's active-section highlight -------------------------------------
+# Last, because it reads the sections it highlights: they have to exist first.
+# Streamlit does not execute scripts inside markdown, so this rides in a
+# zero-height components iframe. It is best-effort by design (see
+# components.scrollspy): if it cannot run, the nav keeps working without a
+# highlight.
+st_components.html(scrollspy(SECTIONS), height=0)
