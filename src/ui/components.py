@@ -387,6 +387,95 @@ def subnav(items):
     return f'<nav class="subnav" aria-label="Report sections">{links}</nav>'
 
 
+def scrollspy(items):
+    """Mark the section the reader is currently in, in the nav.
+
+    Streamlit does not execute `<script>` inside markdown, so this is returned
+    as the body of a `st.components.v1.html` iframe, which does run scripts and
+    (being same-origin) can reach the page that hosts it.
+
+    Three properties this deliberately has:
+
+    1. **Best-effort.** Every step is inside a try/catch and the first failure
+       returns silently. If a Streamlit upgrade sandboxes the iframe away from
+       its parent, the nav loses its highlight and loses nothing else. That is
+       why the resting state of the nav is legible on its own.
+    2. **No stored references.** The handler re-queries the links and sections
+       on every frame it runs, because Streamlit replaces DOM nodes on rerun and
+       anything cached would point at detached elements.
+    3. **No user text.** The only values interpolated are the anchor ids this
+       module was given, JSON-encoded. Nothing from an uploaded file reaches it.
+
+    items is the same [(anchor, label)] the nav was built from; only the anchors
+    are used, so the two cannot drift apart.
+    """
+    import json
+
+    anchors = json.dumps([anchor for anchor, _ in items])
+
+    return (
+        "<script>(function () {\n"
+        "  var doc, win;\n"
+        "  try { win = window.parent; doc = win.document; } catch (e) { return; }\n"
+        "  if (!doc) { return; }\n"
+        "  var IDS = __ANCHORS__;\n"
+        # The nav parks under Streamlit's header, so a section counts as current
+        # once its heading passes just below that. Same number as the CSS
+        # scroll-margin, so a clicked link lands on the section it just lit.
+        "  var LINE = 150;\n"
+        "  var queued = false;\n"
+        "  function paint() {\n"
+        "    queued = false;\n"
+        "    try {\n"
+        "      var current = null;\n"
+        "      for (var i = 0; i < IDS.length; i++) {\n"
+        "        var el = doc.getElementById(IDS[i]);\n"
+        "        if (el && el.getBoundingClientRect().top <= LINE) { current = IDS[i]; }\n"
+        "      }\n"
+        "      if (!current) { current = IDS[0]; }\n"
+        "      var links = doc.querySelectorAll('.subnav a');\n"
+        "      var here = null;\n"
+        "      for (var j = 0; j < links.length; j++) {\n"
+        "        var mine = links[j].getAttribute('href') === '#' + current;\n"
+        "        if (mine) { links[j].setAttribute('aria-current', 'true'); here = links[j]; }\n"
+        "        else { links[j].removeAttribute('aria-current'); }\n"
+        "      }\n"
+        # Narrow screens scroll the nav sideways, so the marked link can sit off
+        # the end of it. scrollLeft is set directly rather than with
+        # scrollIntoView, which would also scroll the page and fight the reader.
+        "      if (here && current !== win.__efNavAt) {\n"
+        "        win.__efNavAt = current;\n"
+        "        var strip = here.parentNode;\n"
+        "        var left = here.offsetLeft;\n"
+        "        var right = left + here.offsetWidth;\n"
+        "        if (left < strip.scrollLeft) { strip.scrollLeft = left; }\n"
+        "        else if (right > strip.scrollLeft + strip.clientWidth) {\n"
+        "          strip.scrollLeft = right - strip.clientWidth;\n"
+        "        }\n"
+        "      }\n"
+        "    } catch (e) { /* a half-built page on rerun: the next frame retries */ }\n"
+        "  }\n"
+        "  function schedule() {\n"
+        "    if (queued) { return; }\n"
+        "    queued = true;\n"
+        "    win.requestAnimationFrame(paint);\n"
+        "  }\n"
+        # Scroll events do not bubble, and the page scrolls inside Streamlit's
+        # main element rather than the window, so the listener is registered in
+        # the CAPTURE phase on the document. That catches the scroll whichever
+        # element turns out to be the scroller.
+        "  if (!win.__efNavSpy) {\n"
+        "    win.__efNavSpy = true;\n"
+        "    doc.addEventListener('scroll', schedule, true);\n"
+        "    win.addEventListener('resize', schedule);\n"
+        "  }\n"
+        # On a rerun the script runs again over fresh nodes, so paint once now
+        # rather than waiting for the reader to scroll.
+        "  schedule();\n"
+        "}());</script>"
+    ).replace("__ANCHORS__", anchors)
+
+
 def step(number, title, hint=None, state="now"):
     """One numbered step of the setup flow.
 
