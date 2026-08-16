@@ -130,3 +130,76 @@ def diff_versions(df_old: pd.DataFrame, df_new: pd.DataFrame) -> pd.DataFrame:
         columns="_abs"
     )
     return out.reset_index(drop=True)
+
+
+# Every status a browsable row can carry, in the order a reader wants them, with
+# the words a reader actually uses. "renamed" is not a status diff_versions
+# produces: it is the relabel pairing laid over the top (see pipeline.compare_
+# versions), which is why a renamed row is excluded from "new" and "retired"
+# below. Without that, DEFRA's ~500 renames read as 500 new factors.
+STATUS_LABELS = {
+    "changed": "Changed",
+    "unchanged": "Unchanged",
+    "added": "New",
+    "removed": "Retired",
+    "renamed": "Renamed",
+}
+
+
+def filter_changes(diff_df, query="", scopes=None, statuses=None,
+                   min_pct=0.0, material_only=False):
+    """Narrow a diff table to the rows a reader asked for. Pure, no UI.
+
+    Every filter is a plain AND, and an empty filter means "do not narrow on
+    this", so the resting state is the whole table rather than an empty one.
+
+    `min_pct` drops rows with no percent change at all (added, retired, or a
+    change from zero) as soon as it is above zero, because asking for "moved by
+    at least 10%" is asking about movement, and a row with no computable
+    movement cannot answer it. At zero, nothing is dropped.
+
+    Lives here rather than in app.py so the rule that decides what a reader is
+    shown is testable without booting Streamlit.
+    """
+    out = diff_df
+    if out is None or len(out) == 0:
+        return out
+
+    if query:
+        needle = str(query).strip().lower()
+        if needle:
+            hay = (
+                out["activity"].astype(str).str.lower()
+                + " "
+                + out["unit"].astype(str).str.lower()
+            )
+            out = out[hay.str.contains(needle, regex=False, na=False)]
+
+    if scopes:
+        out = out[out["scope"].isin(list(scopes))]
+
+    if statuses:
+        wanted = set(statuses)
+        renamed = (
+            out["renamed"].fillna(False).astype(bool)
+            if "renamed" in out.columns
+            else pd.Series(False, index=out.index)
+        )
+        keep = pd.Series(False, index=out.index)
+        if "renamed" in wanted:
+            keep |= renamed
+        for name in ("changed", "unchanged", "added", "removed"):
+            if name in wanted:
+                # A paired rename is reported as a rename, never also as a new
+                # or retired factor. Counting it twice is the exact noise the
+                # relabel pairing exists to remove.
+                keep |= (out["status"] == name) & ~renamed
+        out = out[keep]
+
+    if min_pct and min_pct > 0:
+        out = out[out["pct_change"].abs() >= float(min_pct)]
+
+    if material_only:
+        out = out[out["flagged"].fillna(False).astype(bool)]
+
+    return out

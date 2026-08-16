@@ -671,3 +671,78 @@ marked link into view at 390px.
 Streamlit 1.60 keeps `st.columns` side by side at every width, so at 390px the
 export checklist rendered about one word per line. Two columns of 150px is not a
 layout. Columns now wrap to full width below 640px.
+
+---
+
+## D23. The comparison is the front door, not the report
+
+**Decision:** the app's first section is an interactive, filterable table of the
+whole factor comparison. It runs on a cold visit with no upload, no sign-in and
+no API key. The product report (footprint, coverage, explanations, export) stays
+exactly as it was, but now sits behind a button that a person has to press.
+
+**Why.** The tool computed the full diff on every run and then threw almost all
+of it away. `diff_df` holds ~2,650 joined rows and the page rendered the handful
+that touched a bill of materials. The single most reusable thing the pipeline
+produces, "here is what DEFRA changed this year, all of it, with the renames
+already paired", was invisible unless you had already uploaded a product. That
+is backwards: the comparison is the part with no prerequisites and the part a
+practitioner asks for first.
+
+Worse, a cold visit ran the entire pipeline unasked, on a sample product, so the
+first thing the app did was make a stranger wait for an answer about someone
+else's widget. Now nothing heavier than the diff happens until someone asks.
+
+**How it is split.** `pipeline.compare_versions` is the BOM-free half: load both
+workbooks, diff, pair the renames, count. `run_pipeline` calls it rather than
+repeating it, so there is one definition of "what changed between these two
+releases" and the numbers on the landing page cannot drift from the numbers in
+the report.
+
+**The filters are five plain controls, not a query language.** Search, scope,
+what happened to the factor, minimum movement, and past-DEFRA-thresholds. Each
+one answers a question a consultant says out loud. The rule that decides what is
+shown lives in `diff.filter_changes`, in the same module as the thresholds it
+respects, so it is testable without booting Streamlit (`tests/test_filter_changes.py`).
+
+**Two honesty rules carried into the browse view:**
+
+1. A paired rename is reported as a rename and never also as a new or retired
+   factor. `compare_versions` adds a `renamed` column rather than overwriting
+   `status`, because a rename genuinely IS an added row and a removed row that
+   turned out to be the same factor twice, and the existing counts read
+   `status`. Without this, DEFRA's 460 relabels read as 460 arrivals.
+2. A minimum-movement filter above zero hides added and retired factors, which
+   have no percent change. Asking "what moved by at least 10%" is asking about
+   movement, and a factor that exists in only one release cannot answer it.
+
+**Table rendering is unchanged policy, newly load-bearing.** The full register is
+thousands of rows, so it draws as Streamlit's virtualised grid with the
+accessible, printable version one toggle away (`show_table`). Narrow it below
+500 and it becomes the real thing: captioned table, column scopes, a magnitude
+bar per change, direction in glyph, sign and word. Filtering down earns the good
+table, which is the right incentive.
+
+**One defect found while checking this in a browser, and fixed in the same
+change. It was serious.** `ui.inject_styles()` guarded on a session_state flag so
+it emitted the design layer only on the FIRST run of a session. Streamlit
+addresses elements by position, so the same `st.markdown` on a rerun REPLACES
+its predecessor; it never stacks. What the guard actually did was skip the
+element on every rerun, at which point Streamlit removed the one already on the
+page. **The entire design system fell off the moment a visitor touched any
+widget.** Measured in a real browser: captions went from #505a5f (7.07:1) back to
+Streamlit's default, and every card, masthead and table rule stopped resolving.
+The guard was protecting against a problem Streamlit does not have and causing
+one it does. It is gone, and `test_the_stylesheet_survives_a_rerun` asserts
+exactly one style block AFTER an interaction, so neither the bug nor the stacking
+it feared can return.
+
+This predates D23 (the flag shipped with D20), but D23 is what made it constant:
+every keystroke in a filter is a rerun.
+
+**What was deliberately not built:** filter state in the URL. `st.query_params`
+would make a filtered view shareable as a link, which is a real want for this
+audience ("send me every scope 3 factor that moved past threshold"). It is the
+next candidate, not part of this change: the download button already covers
+handing the view to someone, and syncing widget state to the URL in Streamlit is
+fiddly enough to deserve its own pass rather than being smuggled into this one.

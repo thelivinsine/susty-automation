@@ -7,6 +7,19 @@ The page is an app shell, not a document: a masthead that says what this is and
 which two DEFRA releases it is comparing, a setup flow, and then the report
 behind a sticky section nav.
 
+THE LANDING SURFACE IS THE COMPARISON, NOT A FORM.
+
+Section 1 is an interactive, filterable table of every factor that changed
+between the two releases. It needs no upload, no sign-in and no API key,
+because loading two workbooks and joining them is arithmetic on local files
+(pipeline.compare_versions). Before this, the diff was computed on every run
+and then almost entirely thrown away: the page showed only the handful of rows
+that touched a bill of materials, so the single most reusable thing the tool
+produces was invisible unless you had already uploaded a product. A visitor also
+arrived to a spinner, because the script ran the whole pipeline on a sample
+product unasked. It no longer does. Nothing heavier than the diff happens until
+someone presses a button.
+
 Setup lives in the MAIN canvas, in three numbered steps. Two reasons. Below
 768px Streamlit collapses the sidebar and takes every input with it, which left
 the app looking read-only (defect A-09). And a first-time visitor was previously
@@ -14,9 +27,9 @@ handed a blank page and the instruction "upload a file, confirm your columns in
 the sidebar, then click Run analysis", which is a set of directions rather than
 a flow. The sidebar now carries account and settings only.
 
-The report reads in the order a reader actually needs it:
+The page reads in the order a reader actually needs it:
 
-    Result -> Confidence -> Movers -> Explanations -> Export
+    Compare releases -> Result -> Confidence -> Movers -> Explanations -> Export
 
 Confidence comes second on purpose. The trust gate has to arrive before the
 conclusion is acted on, not two sections after it: a footprint computed over 85%
@@ -49,7 +62,8 @@ except Exception:
     pass
 
 from paths import resolve_paths          # noqa: E402
-from pipeline import run_pipeline         # noqa: E402
+from pipeline import compare_versions, run_pipeline  # noqa: E402
+from diff import STATUS_LABELS, filter_changes  # noqa: E402
 from explain import active_backend, NO_REASON  # noqa: E402
 from export import (                       # noqa: E402
     completeness_checklist,
@@ -100,7 +114,10 @@ inject_styles()
 # materials is the kind of quiet overclaim this tool exists to avoid.
 COVERAGE_BAR = 95.0
 
-SECTIONS = [
+# Section 1 exists on every visit. The rest exist once a report has been run,
+# so the nav never offers a link to a section that is not on the page.
+COMPARE_SECTION = [("s-compare", "Compare releases")]
+REPORT_SECTIONS = [
     ("s-result", "Result"),
     ("s-confidence", "Confidence"),
     ("s-movers", "Movers"),
@@ -266,10 +283,151 @@ write(
     "</div>"
 )
 
+# The nav is painted into a slot for the same reason as the masthead: a visitor
+# who presses Run gains five sections further down this same script run, and a
+# nav written before that would be missing every one of them.
+nav_slot = st.empty()
+
+
+def paint_nav(with_report):
+    nav_slot.markdown(
+        subnav(COMPARE_SECTION + (REPORT_SECTIONS if with_report else [])),
+        unsafe_allow_html=True,
+    )
+
+
+paint_nav(has_results)
+
+
+# ===========================================================================
+# 1. Compare releases: the landing surface
+# ===========================================================================
+# No upload, no sign-in, no API key. This is the whole factor register, diffed,
+# and it is the first thing on the page because it is the first thing a DEFRA
+# practitioner actually wants to look at.
+
+write(section(
+    "Compare releases",
+    eyebrow="Section 1",
+    anchor="s-compare",
+    caption=(
+        f"Every conversion factor in the {old_label} and {new_label} full sets, "
+        "joined on activity and unit. Filter it, sort it, take it away. Renames "
+        "are paired, so DEFRA's relabels do not read as new factors."
+    ),
+))
+
+
+@st.cache_data(show_spinner=False)
+def _compare(old_p, new_p, old_l, new_l):
+    return compare_versions(old_p, new_p, old_l, new_l)
+
+
+with st.spinner("Reading both DEFRA workbooks and diffing them..."):
+    comparison = _compare(
+        defaults["defra_old"], defaults["defra_new"], old_label, new_label
+    )
+
+all_changes = comparison["diff_df"]
+cstats = comparison["diff_stats"]
+
+write(fact_bar([
+    (f"Factors in {old_label}", f"{cstats['factors_old']:,}"),
+    (f"Factors in {new_label}", f"{cstats['factors_new']:,}"),
+    ("Past DEFRA thresholds", f"{cstats['flagged']:,}"),
+    ("Genuinely new", f"{cstats['added_net']:,}"),
+    ("Retired", f"{cstats['removed_net']:,}"),
+    ("Renamed", f"{cstats['relabels']:,}"),
+]))
+
+# --- The filters ---
+# Deliberately five plain controls rather than a query language. Every one of
+# them answers a question a consultant actually asks out loud: "what moved in
+# scope 3", "did anything to do with steel change", "show me only what breaks
+# DEFRA's own materiality bar".
+write('<div class="subhead">Filter the comparison</div>')
+
+f1, f2 = st.columns([2, 1], gap="medium")
+query = f1.text_input(
+    "Search activity or unit",
+    placeholder="For example: electricity, steel, HGV, tonne.km",
+)
+scope_options = sorted(str(s) for s in all_changes["scope"].dropna().unique())
+scopes = f2.multiselect("Scope", scope_options, placeholder="All scopes")
+
+f3, f4 = st.columns([1, 1], gap="medium")
+status_keys = list(STATUS_LABELS)
+statuses = f3.multiselect(
+    "What happened to the factor",
+    status_keys,
+    format_func=lambda key: STATUS_LABELS[key],
+    placeholder="Everything",
+)
+min_pct = f4.slider(
+    "Minimum change, either direction (%)", 0.0, 100.0, 0.0, step=0.5,
+    help=(
+        "Above zero this also hides new and retired factors, which have no "
+        "percent change to measure."
+    ),
+)
+
+material_only = st.toggle(
+    "Only factors past DEFRA's own materiality thresholds "
+    "(over 5% for scope 1 and 2, over 10% for scope 3)"
+)
+
+shown = filter_changes(
+    all_changes,
+    query=query,
+    scopes=scopes,
+    statuses=statuses,
+    min_pct=min_pct,
+    material_only=material_only,
+)
+
+filtered = len(shown) != len(all_changes)
+st.caption(
+    f"Showing {len(shown):,} of {len(all_changes):,} factors."
+    + (" Clear the filters to see all of them." if filtered else "")
+)
+
+if len(shown) == 0:
+    write(alert(
+        "No factor matches those filters. Widen the search, or clear a filter.",
+        kind="none",
+    ))
+else:
+    show_table(
+        shown,
+        f"DEFRA conversion factors, {old_label} against {new_label}, "
+        "largest movement first",
+        columns=["activity", "unit", "scope", "kg_co2e_old", "kg_co2e_new",
+                 "pct_change"],
+        numeric_cols=["kg_co2e_old", "kg_co2e_new"],
+        direction_cols=["pct_change"],
+    )
+    # The filtered view IS the work product for a lot of visits ("give me every
+    # scope 3 factor that moved more than 10%"), so it leaves as a file rather
+    # than as something to copy off the screen.
+    st.download_button(
+        f"Download this view ({len(shown):,} factors, .csv)",
+        data=shown.to_csv(index=False).encode("utf-8"),
+        file_name="ef_comparison_view.csv",
+        mime="text/csv",
+    )
+
 
 # ===========================================================================
 # Setup: three numbered steps, in the canvas
 # ===========================================================================
+
+# A transition, not a section: it carries no anchor and is not in the nav, so it
+# is a subhead rather than an <h2>. The <h2> ladder on this page means exactly
+# "a numbered section the nav can reach", and test_design_system asserts it.
+write('<div class="subhead">Now check it against your product</div>'
+      '<p class="caption">The comparison above is the whole register. Upload an '
+      "inventory and the tool recomputes your own footprint under both releases, "
+      "ranks the changes by what they did to your number, and explains them.</p>")
 
 # Once a report exists the setup collapses out of the way, because the answer
 # is what the reader came back for. Before that it is the whole page.
@@ -416,11 +574,19 @@ def _run(old_p, new_p, pdf_p, bom_df, old_l, new_l, use_ai):
     return run_pipeline(old_p, new_p, pdf_p, bom_df, old_l, new_l, use_ai=use_ai)
 
 
-# Recompute when the user clicks Run, on first load, OR when the explainer tier
-# changed (e.g. they just signed in and now qualify for AI). Both tiers are
-# cached, so toggling back and forth is instant and never re-spends the key.
-tier_changed = st.session_state.get("results_use_ai") != use_ai
-if (run or "results" not in st.session_state or tier_changed) and ingest_ready:
+# Recompute when the user clicks Run, or when the explainer tier changed under
+# an existing report (e.g. they just signed in and now qualify for AI). Both
+# tiers are cached, so toggling back and forth is instant and never re-spends
+# the key.
+#
+# Deliberately NOT on first load. This used to run the whole pipeline on a
+# sample product before the visitor had asked for anything, which meant the
+# first thing the app did was make someone wait for an answer about a product
+# that is not theirs. The comparison above is what a cold visit lands on now.
+tier_changed = "results" in st.session_state and (
+    st.session_state.get("results_use_ai") != use_ai
+)
+if (run or tier_changed) and ingest_ready:
     bom_df = clean_bom_df if clean_bom_df is not None else pd.read_csv(defaults["bom"])
     with st.spinner("Loading, diffing, matching, recomputing, explaining..."):
         results = _run(
@@ -436,12 +602,14 @@ if (run or "results" not in st.session_state or tier_changed) and ingest_ready:
         st.session_state["set_aside"] = set_aside
         st.session_state["results_use_ai"] = use_ai
     paint_masthead(("Report ready", "done"))
+    paint_nav(True)
 
 if "results" not in st.session_state:
     write(alert(
-        "Upload your inventory and confirm the columns above, then run the "
-        "analysis. Nothing is matched or assumed until you do.",
-        title="Nothing to show yet",
+        "Run the analysis above to add your own footprint, the coverage check, "
+        "and the written explanations. The comparison stays either way. Nothing "
+        "is matched or assumed until you run it.",
+        title="No product report yet",
     ))
     st.stop()
 
@@ -449,16 +617,14 @@ results = st.session_state["results"]
 s = results["summary"]
 labels = results["labels"]
 
-write(subnav(SECTIONS))
 
-
-# --- 1. Result --------------------------------------------------------------
+# --- 2. Result --------------------------------------------------------------
 # One card, one answer. Green is the rail and the tag ("the run completed and
 # this is the answer"), never the fill, so the figure stays ink on ground and no
 # reader mistakes the panel colour for good news.
 write(section(
     "Result",
-    eyebrow="Section 1",
+    eyebrow="Section 2",
     anchor="s-result",
     caption=(
         f"Your product's footprint under {labels['old']} and under {labels['new']}, "
@@ -528,11 +694,11 @@ else:
     ))
 
 
-# --- 2. Confidence ----------------------------------------------------------
+# --- 3. Confidence ----------------------------------------------------------
 # The trust gate, before the conclusion gets acted on.
 write(section(
     "Confidence",
-    eyebrow="Section 2",
+    eyebrow="Section 3",
     anchor="s-confidence",
     caption=(
         "What matched, what did not, and what was deliberately left for a human. "
@@ -612,10 +778,10 @@ if aside:
     ))
 
 
-# --- 3. Movers --------------------------------------------------------------
+# --- 4. Movers --------------------------------------------------------------
 write(section(
     "Movers",
-    eyebrow="Section 3",
+    eyebrow="Section 4",
     anchor="s-movers",
     caption=(
         "Which factors moved, and which of your own lines those movements actually "
@@ -689,10 +855,10 @@ if groups is not None and not groups.empty:
     ))
 
 
-# --- 4. Explanations --------------------------------------------------------
+# --- 5. Explanations --------------------------------------------------------
 write(section(
     "Explanations",
-    eyebrow="Section 4",
+    eyebrow="Section 5",
     anchor="s-explanations",
     caption=(
         "Ordered by how much each change moved this product's footprint, largest "
@@ -767,10 +933,10 @@ for e in results["explanations"]:
     ))
 
 
-# --- 5. Export --------------------------------------------------------------
+# --- 6. Export --------------------------------------------------------------
 write(section(
     "Export",
-    eyebrow="Section 5",
+    eyebrow="Section 6",
     anchor="s-export",
     caption=(
         "Four files from one run, all stamped with the same run id: a workbook, the "
@@ -851,4 +1017,4 @@ four.download_button(
 # zero-height components iframe. It is best-effort by design (see
 # components.scrollspy): if it cannot run, the nav keeps working without a
 # highlight.
-st_components.html(scrollspy(SECTIONS), height=0)
+st_components.html(scrollspy(COMPARE_SECTION + REPORT_SECTIONS), height=0)

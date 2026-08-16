@@ -29,6 +29,16 @@ The Google Cloud budget cap is set (the D17 backstop) and the owner deliberately
 deferred the sign-in gate. Turn it on when the link goes public, when the budget
 alert fires, or when anyone relies on the tool. Secrets edit, no code change.
 
+**Front door (D23):** the app now OPENS on the comparison. Section 1 is an
+interactive, filterable table of the whole factor register (2,647 joined rows on
+the real 2025/2026 workbooks), with search, scope, status, a minimum-movement
+slider and a past-DEFRA-thresholds toggle, plus a download of whatever view you
+have narrowed to. It runs on a cold visit with no upload, no sign-in and no API
+key, because `pipeline.compare_versions` is the BOM-free half of the pipeline and
+`run_pipeline` now calls it rather than repeating it. The product report is
+unchanged and sits behind the Run button, which a person now has to press: the
+app no longer runs the whole pipeline on a sample product unasked.
+
 **Interface:** the app renders through an owned design layer (`src/ui/`) rather
 than Streamlit defaults, on the GOV.UK palette the owner chose (D19). As of D22
 it is an app shell rather than a document: a masthead naming the two releases
@@ -38,14 +48,16 @@ collapses below 768px), the verdict as two figures and a delta over a strip of
 qualifying facts, coverage as a meter against the 95% bar, magnitude bars beside
 every delta, and the DEFRA quote shown as a source block in the app as well as
 the memo. The palette is unchanged: every hex still comes from `tokens.css`.
-The page reads Result, Confidence, Movers, Explanations, Export, with the trust
-gate second rather than near the bottom. Hue carries epistemic status only;
+The page reads Compare releases, Result, Confidence, Movers, Explanations,
+Export, with the trust gate before the movers rather than near the bottom, and
+every h2 on the page is a numbered section the nav can reach (a transition
+heading is a subhead, and the IA test asserts it). Hue carries epistemic status only;
 direction of travel is a glyph, a sign and a word, so a falling footprint is
 never painted as an alarm. Tables are real tables (caption, column scopes,
 printable), and one run exports four artifacts sharing a run id, each carrying
 its unresolved items in the front matter (D20).
 
-Gates: `pytest` green (151 tests, including the grounding trap, a real-workbook
+Gates: `pytest` green (177 tests, including the grounding trap, a real-workbook
 test, the microcopy gate, the relabel suite (detection + family grouping), the
 material-relabel explanation path, the retrieval-quality gold set, loader/diff
 golden vectors, the real-data ingest suite, and the access-gating suite (free
@@ -63,6 +75,16 @@ explained from the real DEFRA text. On real data, relabel pairing collapses
 paired renames group into 11 readable families.
 
 ## What shipped
+- **The comparison as the front door (D23):** `pipeline.compare_versions` (the
+  BOM-free half of the pipeline, reused by `run_pipeline` so the two can never
+  disagree), `diff.filter_changes` (the pure, tested rule that decides what a
+  reader is shown), a `renamed` column laid over the diff so a paired relabel is
+  never also counted as a new factor, section 1 in `app.py` with five filters and
+  a download of the narrowed view, and the removal of the unasked pipeline run on
+  a cold visit. Plus the defect this uncovered: `inject_styles` emitted the design
+  layer only on a session's FIRST run, so Streamlit dropped it on every rerun and
+  the whole design system fell off the moment anyone touched a widget. Guard
+  deleted, `test_the_stylesheet_survives_a_rerun` added.
 - **Product-UI rework (D22), palette untouched:** app shell (masthead + sticky
   numbered section nav), setup as a three-step flow in the canvas, the verdict as
   two figures plus a delta chip and a fact strip, a coverage meter against the
@@ -151,6 +173,30 @@ light-only, because Streamlit's own chrome is pinned light in `config.toml`.
 ## Resume here
 Most recent handoffs (older ones rotate into `docs/archive/`):
 
+- H23 (2026-08-17): MADE THE COMPARISON THE FRONT DOOR (D23), on the owner's
+  brief to check whether the interface really leads with an interactive EF
+  version comparison. It did not: the app opened on a setup form, ran the whole
+  pipeline on a sample product before anyone asked, had zero filter controls
+  anywhere, and rendered only the handful of diff rows that touched a bill of
+  materials. Split `compare_versions` out of `run_pipeline` (which now calls it,
+  so there is one definition of the delta), added `diff.filter_changes` with its
+  own suite (19 tests, runnable standalone), and built section 1: search, scope,
+  status, minimum-movement slider, materiality toggle, live count, and a CSV of
+  whatever view you have narrowed to. Removed the cold-load pipeline run. Real
+  numbers on the real workbooks: 2,647 joined factors, 67 past threshold, 76
+  genuinely new, 54 retired, 460 renamed. Checked in a real browser at 375, 768
+  and 1440px: zero horizontal scroll at every width, and every filter carries a
+  programmatic accessible name. **Found and fixed a serious pre-existing defect
+  while checking it:** `inject_styles`'s session_state guard meant the design
+  layer was emitted only on a session's first run, so Streamlit removed it on the
+  next rerun and the page reverted to Streamlit defaults (captions measured back
+  at the default ink instead of #505a5f) the instant a visitor touched anything.
+  The guard is gone and a test now asserts exactly one style block AFTER an
+  interaction. Also fixed `run_demo.py` writing its report without an explicit
+  encoding, which crashed the demo's last stage on Windows cp1252 on the owner's
+  own machine. 177 tests green, both CI gates clean. Not done, deliberately:
+  filter state in the URL (`st.query_params`), which is the next candidate.
+
 - H22 (2026-08-04): REWORKED the interface (D22) on the owner's brief: make it
   look and behave like a senior product team shipped it, keep the palette. Built
   the direction as a preview first (`docs/mockups/v2_product_ui.html`, three
@@ -189,7 +235,9 @@ Most recent handoffs (older ones rotate into `docs/archive/`):
   logged, not hidden: in offline mode the reason already embeds the note, so it
   reads twice. Shipped as PR #22, squash-merged `12e27f1`.
 
-Next likely task: **A-07, the one defect left open.** Streamlit's file uploader
+Next likely task: **filter state in the URL** (`st.query_params`), so a narrowed
+comparison is a link a consultant can send ("every scope 3 factor past
+threshold"). Then: **A-07, the one defect left open.** Streamlit's file uploader
 renders an `<input type="file">` with no programmatic accessible name, and that
 cannot be fixed from CSS or from Python. It needs either a Streamlit upgrade that
 labels it, or a small custom component. Then: header-row tolerance in ingest, and

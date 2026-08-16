@@ -1208,6 +1208,34 @@
   background: var(--ground);
 }
 
+/* The comparison filters. A multiselect is the same class of control as a
+   select, so it owes the same 3:1 boundary and the same radius; without this it
+   ships Streamlit's 1.45:1 default beside our own boxes. Verified against
+   Streamlit 1.60.0. */
+[data-testid="stMultiSelect"] > div > div {
+  border-radius: var(--radius-1);
+  border-color: var(--border-control) !important;
+  background: var(--ground);
+}
+
+/* Chosen filter values read as what they are: status tags, on the neutral tint
+   the palette already spends on labels. No new hue. Verified against Streamlit
+   1.60.0. */
+[data-testid="stMultiSelect"] span[data-baseweb="tag"] {
+  background: var(--tag-blue-bg) !important;
+  color: var(--tag-blue-tx) !important;
+  border-radius: var(--radius-pill);
+}
+
+/* The threshold slider. Its track is a boundary a user drags, so it uses the
+   control ink rather than the decorative rule, and the thumb gets the 44px
+   pointer target the rest of the controls have. Verified against Streamlit
+   1.60.0. */
+[data-testid="stSlider"] [role="slider"] {
+  background: var(--action-bg) !important;
+  border: 1px solid var(--border-control) !important;
+}
+
 /* Widget labels are the field names in the setup flow, so they carry the same
    weight as our own .lab. Verified against Streamlit 1.60.0. */
 [data-testid="stWidgetLabel"] p {

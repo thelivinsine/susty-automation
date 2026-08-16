@@ -107,7 +107,10 @@ def main() -> None:
     report_md = build_markdown_report(results)
     os.makedirs("reports", exist_ok=True)
     out_path = os.path.join("reports", "demo_report.md")
-    with open(out_path, "w") as f:
+    # encoding is explicit because Python on Windows defaults to cp1252, which
+    # cannot encode the arrow in a relabel name ("HGV (all diesel)" -> ...) and
+    # crashed the demo on the last stage after the whole pipeline had run.
+    with open(out_path, "w", encoding="utf-8") as f:
         f.write(report_md)
     print(f"STAGE 6    Wrote report -> {out_path}")
     _line("=")
