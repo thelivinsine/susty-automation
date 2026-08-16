@@ -79,6 +79,72 @@ def _cite_for(citation, source_file, source_sheet, source_row):
     }
 
 
+def compare_versions(
+    defra_old_path: str,
+    defra_new_path: str,
+    old_label: str = "old",
+    new_label: str = "new",
+) -> dict:
+    """Load both releases and diff them. No inventory, no model, no API key.
+
+    This is the half of run_pipeline that does not need the user's product, and
+    it is split out because it is the half a first-time visitor should be able
+    to use immediately. Loading two workbooks and joining them is arithmetic on
+    local files: there is no reason to make someone upload a bill of materials
+    before they are allowed to look at what DEFRA changed.
+
+    Adds one column diff_versions does not produce: `renamed`, true where the
+    relabel pairing matched this row to its counterpart in the other release.
+    It is laid on top rather than folded into `status` on purpose. Downstream
+    counts (diff_stats, added_net) read `status`, so overwriting it would move
+    numbers that are correct, and a rename genuinely IS an added row and a
+    removed row that turned out to be the same factor twice.
+    """
+    df_old = load_defra(defra_old_path, old_label)
+    df_new = load_defra(defra_new_path, new_label)
+    diff_df = diff_versions(df_old, df_new)
+
+    # Pair DEFRA renames so they stop reading as spurious added + removed factors.
+    relabels_df = detect_relabels(diff_df)
+    relabel_groups = group_relabels(relabels_df)
+
+    paired = set()
+    if not relabels_df.empty:
+        paired = set(relabels_df["old_activity"]) | set(relabels_df["new_activity"])
+    diff_df = diff_df.copy()
+    diff_df["renamed"] = diff_df["activity"].isin(paired) & diff_df["status"].isin(
+        ["added", "removed"]
+    )
+
+    added_raw = int((diff_df["status"] == "added").sum())
+    removed_raw = int((diff_df["status"] == "removed").sum())
+    n_relabels = len(relabels_df)
+    diff_stats = {
+        "factors_old": len(df_old),
+        "factors_new": len(df_new),
+        "joined": int((diff_df["status"].isin(["changed", "unchanged"])).sum()),
+        "flagged": int(diff_df["flagged"].sum()),
+        "added": added_raw,
+        "removed": removed_raw,
+        "relabels": n_relabels,
+        # How many rename FAMILIES those pairs collapse into (what the reader sees).
+        "relabel_families": len(relabel_groups),
+        # Net of paired renames: what is genuinely new / retired.
+        "added_net": added_raw - n_relabels,
+        "removed_net": removed_raw - n_relabels,
+    }
+
+    return {
+        "df_old": df_old,
+        "df_new": df_new,
+        "diff_df": diff_df,
+        "relabels": relabels_df,
+        "relabel_groups": relabel_groups,
+        "diff_stats": diff_stats,
+        "labels": {"old": old_label, "new": new_label},
+    }
+
+
 def run_pipeline(
     defra_old_path: str,
     defra_new_path: str,
@@ -96,12 +162,13 @@ def run_pipeline(
     tool is open to everyone while the paid model stays behind sign-in.
     """
     force_offline = not use_ai
-    df_old = load_defra(defra_old_path, old_label)
-    df_new = load_defra(defra_new_path, new_label)
-    diff_df = diff_versions(df_old, df_new)
-
-    # Pair DEFRA renames so they stop reading as spurious added + removed factors.
-    relabels_df = detect_relabels(diff_df)
+    # Loading, diffing and pairing the renames is the same work the standalone
+    # comparison does, so it is done once, there.
+    comparison = compare_versions(defra_old_path, defra_new_path, old_label, new_label)
+    df_old = comparison["df_old"]
+    diff_df = comparison["diff_df"]
+    relabels_df = comparison["relabels"]
+    relabel_groups = comparison["relabel_groups"]
 
     bom_df = (
         bom_path_or_df
@@ -259,26 +326,9 @@ def run_pipeline(
                 }
             )
 
-    # Collapse the per-variant relabel pairs into readable rename families.
-    relabel_groups = group_relabels(relabels_df)
-
-    added_raw = int((diff_df["status"] == "added").sum())
-    removed_raw = int((diff_df["status"] == "removed").sum())
-    n_relabels = len(relabels_df)
     diff_stats = {
-        "factors_old": len(df_old),
-        "factors_new": len(df_new),
-        "joined": int((diff_df["status"].isin(["changed", "unchanged"])).sum()),
-        "flagged": int(diff_df["flagged"].sum()),
-        "added": added_raw,
-        "removed": removed_raw,
-        "relabels": n_relabels,
-        # How many rename FAMILIES those pairs collapse into (what the reader sees).
-        "relabel_families": len(relabel_groups),
+        **comparison["diff_stats"],
         "material_relabel_families": len(relabel_explanations),
-        # Net of paired renames: what is genuinely new / retired.
-        "added_net": added_raw - n_relabels,
-        "removed_net": removed_raw - n_relabels,
     }
 
     return {

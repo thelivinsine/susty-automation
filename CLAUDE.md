@@ -88,7 +88,9 @@ Product BOM CSV ─►[matching]─►[recompute]──────────�
 | `src/recompute.py` | `recompute(matched_df, diff_df)` | Footprint old vs new; per-line deltas; totals; coverage % |
 | `src/explain.py` | `explain_change(...)` | Grounded Claude call → plain-English reason + methodology note + target flag |
 | `src/report.py` | `build_markdown_report(...)` | Assemble the one-page Markdown report |
-| `app.py` | Streamlit UI | Sidebar (pick versions, upload BOM) + main report view |
+| `src/pipeline.py` | `compare_versions(...)` | The BOM-free half: load both releases, diff, pair renames, count. No inventory, no model, no API key. What the landing page runs. |
+| `src/diff.py` | `filter_changes(...)` | The pure rule behind the interactive comparison: search, scope, status, minimum movement, materiality |
+| `app.py` | Streamlit UI | Section 1 is the filterable comparison (runs on a cold visit); the product report sits behind the Run button |
 | `run_demo.py` | end-to-end | Runs the whole pipeline on the sample product with one command |
 
 ## Data (data/)

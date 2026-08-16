@@ -36,6 +36,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "src"))  # also works when run directly
 
 import ui  # noqa: E402
+from ui.components import SEMANTIC_TABLE_MAX_ROWS  # noqa: E402
 
 TEXT_MIN = 4.5   # WCAG 2.1 AA, normal-size text
 UI_MIN = 3.0     # WCAG 2.1 1.4.11, non-text contrast (borders, controls)
@@ -306,12 +307,14 @@ def test_streamlit_internals_are_labelled_with_the_verified_version():
     )
 
 
-@pytest.fixture(scope="module")
-def rendered_app():
-    """Run app.py headlessly, once, and hand back what it drew.
+def _boot():
+    """A fresh headless run of the real app.py.
 
-    Streamlit's own test harness runs the real script through the real pipeline,
-    so this is the whole page as a visitor would receive it rather than a mock.
+    Each fixture gets its OWN instance. AppTest interactions mutate the instance
+    in place and `.run()` hands the same object back, so a shared instance would
+    let one test's button click decide what another test sees. The expensive
+    part (reading both workbooks) is behind st.cache_data and AppTest runs
+    in-process, so a second boot costs almost nothing.
     """
     from streamlit.testing.v1 import AppTest
 
@@ -320,47 +323,180 @@ def rendered_app():
     return app
 
 
+@pytest.fixture(scope="module")
+def cold_app():
+    """The page a first-time visitor receives, before pressing anything.
+
+    This is its own fixture because "what is on the page before any input" is
+    now a claim worth checking. The app used to run the whole pipeline on a
+    sample product unasked; it does not any more, and the comparison is what a
+    cold visit lands on instead.
+    """
+    return _boot()
+
+
+@pytest.fixture(scope="module")
+def rendered_app():
+    """The whole page, after a visitor has run the analysis.
+
+    The click is the point: the report exists because someone asked for it.
+    """
+    app = _boot()
+    run = [b for b in app.button if str(b.label).startswith("Run analysis")]
+    assert run, f"no Run analysis button on the page: {[b.label for b in app.button]}"
+    app = run[0].click().run()
+    assert not app.exception, f"app.py raised after Run: {app.exception}"
+    return app
+
+
+def test_a_cold_visit_lands_on_the_comparison_not_a_form(cold_app):
+    """The landing surface is the interactive comparison, and it costs nothing.
+
+    Two claims, both of which used to be false. The first thing on the page is
+    the factor comparison, not a setup form; and nothing that needs an upload,
+    a sign-in or an API key has run yet.
+    """
+    page = _page(cold_app)
+    headings = re.findall(r"<h2>([^<]+)</h2>", page)
+    assert headings and headings[0] == "Compare releases", headings
+    assert "Run the analysis above" in page, "the cold page does not say what is missing"
+
+    labels = [str(w.label) for w in cold_app.multiselect]
+    assert "Scope" in labels and "What happened to the factor" in labels, labels
+    assert cold_app.slider, "no minimum-change filter on the page"
+    assert cold_app.text_input, "no search box on the page"
+
+
+def test_the_comparison_filters_actually_narrow_the_table():
+    """Typing in the search box changes what is shown. The whole point.
+
+    Its own instance, because it types into the page and would otherwise leave
+    every later test looking at a filtered table.
+    """
+    app = _boot()
+    search = [w for w in app.text_input if "Search" in str(w.label)]
+    assert search, [str(w.label) for w in app.text_input]
+
+    before = _showing_count(app)
+    after = _showing_count(search[0].set_value("electricity").run())
+    assert after < before, f"filter did not narrow the table: {before} -> {after}"
+    assert after > 0, "no electricity factor survived the search"
+
+
+def test_a_narrowed_comparison_becomes_a_real_table_with_magnitude_bars():
+    """Filtering down is what earns the good table, and that is the point.
+
+    The full register is thousands of rows, so it is drawn as Streamlit's
+    virtualised grid. Narrow it to DEFRA's own material movers and it drops
+    under SEMANTIC_TABLE_MAX_ROWS, at which point show_table renders the real
+    thing: a captioned <table> with column scopes, a magnitude bar per change
+    and the direction spoken in words rather than carried by colour.
+    """
+    app = _boot()
+    material = [t for t in app.toggle if "materiality thresholds" in str(t.label)]
+    assert material, [str(t.label) for t in app.toggle]
+
+    app = material[0].set_value(True).run()
+    assert not app.exception, app.exception
+
+    narrowed = _showing_count(app)
+    assert 0 < narrowed <= SEMANTIC_TABLE_MAX_ROWS, narrowed
+
+    page = _page(app)
+    comparison = re.search(
+        r"<table><caption>DEFRA conversion factors.*?</table>", page, re.S
+    )
+    assert comparison, "the narrowed comparison did not render as a real table"
+    markup = comparison.group(0)
+    assert 'scope="col"' in markup
+    assert markup.count('class="fill"') >= narrowed, "a change has no magnitude bar"
+    assert "visually-hidden" in markup, "direction is not spoken anywhere in the table"
+
+
+def _showing_count(app):
+    """The "Showing N of M factors" figure the comparison prints.
+
+    Reads captions as well as markdown: the count is a st.caption, which AppTest
+    keeps in its own bucket rather than in `.markdown`.
+    """
+    text = _page(app) + "\n" + "\n".join(str(c.value) for c in app.caption)
+    match = re.search(r"Showing ([\d,]+) of ([\d,]+) factors", text)
+    assert match, "the comparison did not report how many factors it is showing"
+    return int(match.group(1).replace(",", ""))
+
+
 def _page(app):
     return "\n".join(str(block.value) for block in app.markdown)
 
 
-def test_app_injects_the_stylesheet_exactly_once(rendered_app):
-    """The layer is worthless if it never reaches the page.
+def _style_blocks(app):
+    return [str(b.value) for b in app.markdown if "<style>" in str(b.value)]
 
-    Also guards the session_state flag in inject_styles(): Streamlit reruns the
-    whole script on every interaction, so a missing guard would stack a style
-    block per rerun.
-    """
-    styles = [
-        str(block.value) for block in rendered_app.markdown if "<style>" in str(block.value)
-    ]
+
+def test_app_injects_the_stylesheet_on_the_first_render(cold_app):
+    """The layer is worthless if it never reaches the page."""
+    styles = _style_blocks(cold_app)
     assert len(styles) == 1, f"expected one injected style block, found {len(styles)}"
     assert "--border-control" in styles[0], "tokens.css did not reach the page"
     assert "stCaptionContainer" in styles[0], "components.css did not reach the page"
+    assert "stMultiSelect" in styles[0], "the comparison filters are unstyled"
 
 
-def test_the_page_reads_result_confidence_movers_explanations_export(rendered_app):
-    """The IA reorder, asserted.
+def test_the_stylesheet_survives_a_rerun(rendered_app):
+    """The design layer must still be there after a visitor touches something.
 
-    Confidence sits second on purpose: the trust gate has to arrive before the
-    conclusion gets acted on, not two sections after it. Previously the coverage
-    figure was a metric tile beside the headline and the review list was near the
-    bottom of the page.
+    This is the bug the old session_state guard caused, encoded so it cannot
+    come back. Streamlit reruns the whole script on every interaction, and this
+    app reruns constantly now: every filter keystroke on the comparison is a
+    rerun. The guard emitted the style block only on the first run, so Streamlit
+    dropped the element on the second and the page reverted to Streamlit
+    defaults, including the 3.69:1 captions the audit was opened over.
+
+    Exactly one, not zero and not two: one proves it survived, and more than one
+    would mean inject_styles is being called twice in a single run, which IS how
+    style blocks stack.
+    """
+    styles = _style_blocks(rendered_app)
+    assert len(styles) == 1, f"expected one style block after a rerun, found {len(styles)}"
+    assert "--border-control" in styles[0]
+
+
+def test_the_page_reads_compare_result_confidence_movers_explanations_export(rendered_app):
+    """The IA, asserted.
+
+    Compare sits first because it is the only section that needs nothing from
+    the visitor, and it is the thing a DEFRA practitioner came to look at.
+    Confidence sits before Movers for the opposite reason: the trust gate has to
+    arrive before the conclusion gets acted on, not two sections after it.
+
+    Every <h2> on this page is a numbered section the nav can reach. That is the
+    invariant, so a transition heading is a subhead rather than an <h2>.
     """
     headings = re.findall(r"<h2>([^<]+)</h2>", _page(rendered_app))
-    assert headings == ["Result", "Confidence", "Movers", "Explanations", "Export"]
+    assert headings == [
+        "Compare releases", "Result", "Confidence", "Movers", "Explanations", "Export",
+    ]
 
 
 def test_the_page_uses_real_tables_not_canvas_grids(rendered_app):
     """Defect A-04: Streamlit paints its grids to <canvas>, so they cannot be
-    read by assistive tech, selected, searched or printed."""
+    read by assistive tech, selected, searched or printed.
+
+    The rule is not "never a grid": above SEMANTIC_TABLE_MAX_ROWS rows the
+    virtualised grid genuinely is the better tool, and the full factor register
+    is thousands of rows. The rule is that a grid never appears ALONE, so a
+    reader who needs the accessible, printable version can always get it. That
+    is what show_table's toggle is for, and this counts them.
+    """
     page = _page(rendered_app)
     assert page.count("<table>") >= 3
     assert page.count("<caption>") == page.count("<table>"), "a table has no caption"
     assert 'scope="col"' in page
-    assert not rendered_app.dataframe, (
-        "a canvas-rendered dataframe reached the page; below "
-        "SEMANTIC_TABLE_MAX_ROWS the semantic table is the default"
+
+    escapes = [t for t in rendered_app.toggle if "Accessible" in str(t.label)]
+    assert len(escapes) >= len(rendered_app.dataframe), (
+        f"{len(rendered_app.dataframe)} canvas-rendered grid(s) on the page but "
+        f"only {len(escapes)} offer an accessible, printable version"
     )
 
 

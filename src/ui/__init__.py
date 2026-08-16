@@ -6,8 +6,9 @@ a Streamlit default. That is what the front-end audit measured 12 defects
 against (docs/audit/). This package holds the layer that replaces those
 defaults: the tokens, the components built on them, and the number formatting.
 
-`inject_styles()` is the entry point. Call it once, right after
+`inject_styles()` is the entry point. Call it once per script run, right after
 `st.set_page_config(...)`, and every component class in this package resolves.
+Once per RUN, not once per session: see the note in the function.
 
 The stylesheets are plain `.css` files rather than Python strings on purpose:
 they can be linted, diffed, opened in a browser, and read by someone who does
@@ -23,11 +24,6 @@ UI_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Order matters: tokens define the custom properties everything else consumes.
 STYLESHEETS = ("tokens.css", "components.css")
-
-# Streamlit reruns the whole script on every interaction, so the guard lives in
-# session_state rather than a module global.
-_INJECTED_FLAG = "_ui_styles_injected"
-
 
 def stylesheet_path(name):
     """Absolute path to one of this package's stylesheets."""
@@ -47,16 +43,26 @@ def stylesheet_text(names=None):
     return "\n".join(parts)
 
 
-def inject_styles(force=False):
-    """Emit the design layer into the page, once per session.
+def inject_styles():
+    """Emit the design layer into the page. Call it once per script run.
 
-    Returns True if it wrote the style block, False if it was already there.
-    Set force=True to re-emit (useful while editing CSS with the app running).
+    It used to guard on a session_state flag so that it wrote the block only on
+    the FIRST run of a session, on the theory that re-emitting would stack a
+    copy per rerun. That theory was wrong, and the guard was the bug.
+
+    Streamlit addresses elements by their position in the script, so the same
+    st.markdown at the same position REPLACES its predecessor on a rerun; it
+    never stacks. What the guard actually did was skip the element entirely on
+    every rerun, at which point Streamlit removed the one already on the page,
+    and the whole design layer went with it: the page silently fell back to
+    Streamlit defaults the moment a visitor touched any widget. Measured in a
+    real browser, first load against one rerun: captions went from #505a5f
+    (7.07:1) to the default ink, and every card, masthead and table rule
+    stopped resolving.
+
+    Stacking only happens if this is called more than once in a SINGLE run,
+    which is what test_design_system counts.
     """
     import streamlit as st
 
-    if not force and st.session_state.get(_INJECTED_FLAG):
-        return False
     st.markdown(f"<style>\n{stylesheet_text()}\n</style>", unsafe_allow_html=True)
-    st.session_state[_INJECTED_FLAG] = True
-    return True

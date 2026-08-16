@@ -1066,3 +1066,75 @@ about one word per line on a phone. Columns now wrap to full width below 640px.
 **Artifacts:** src/ui/components.py, src/ui/components.css, app.py,
 tests/test_ui_components.py, docs/DECISIONS.md (D22 follow-up), docs/STATUS.md,
 docs/REFERENCE.md, docs/PROMPT_LOG.md.
+
+---
+
+### 2026-08-17 · P40
+Branch: `main`.
+
+**Prompt (verbatim):** "can you clone my github repo susty-automation to the
+project folder?" followed by a back-and-forth on whether this local session can
+push to GitHub, and "document the session."
+
+**Response summary:** Local-machine setup, no product code touched. Cloned this
+repo fresh into the project folder over HTTPS. Confirmed no push credentials
+were configured yet, then checked and found Windows' Git Credential Manager
+already holds a GitHub CLI token for the owner's account (`gh auth status`:
+scopes `gist`, `read:org`, `repo`, `workflow`). Verified push actually works
+end to end: created a throwaway branch, committed a test file, pushed it,
+confirmed it landed on GitHub, then deleted the branch both remotely and
+locally so `main` stayed untouched. Flagged for the owner that the `repo` scope
+is account-wide (every repo, not just this one), and that the credential check
+command had echoed the live token value into the chat transcript, so it is
+worth rotating if that is a concern. Pointed the owner at GitHub Settings ->
+Applications -> Authorized OAuth Apps -> "GitHub CLI" as the one entry among
+their ~10 authorized apps that is actually in play here.
+
+**Artifacts:** none in the product tree (setup and investigation only, no
+commits left on `main`). docs/PROMPT_LOG.md (this entry).
+
+---
+
+### 2026-08-17 · P36
+**Prompt (verbatim):** "can you make sure the app has an intuitive user interface
+with clear visual heirarchy and design language of a billion dollar app? The main
+thing immediately available for the users at first should be an interactive EF
+version comparison feature with filters, relevant buttons, etc. Can you review if
+this goal is being achieved at the moment and what should be done next?" followed
+by "go" and "make sure to make best use of the skills and plugins you have
+available".
+
+**Response summary:** Reviewed first, then built. The review split the question in
+two: the design language and hierarchy were already there (owned design layer,
+contrast-annotated tokens, semantic tables, ordered sections, 151 tests), but the
+requested feature did not exist at all. The app had zero filter controls anywhere,
+opened on a setup form, ran the entire pipeline on a sample product before the
+visitor asked for anything, and computed ~2,650 diff rows only to render the
+handful that touched a bill of materials.
+
+Built the comparison as section 1 (D23): `pipeline.compare_versions` split out of
+`run_pipeline` as the BOM-free half, `diff.filter_changes` as the pure filtering
+rule with its own 19-test suite, a `renamed` column so paired relabels are never
+also counted as new factors, five filters, a live count and a CSV of the narrowed
+view, and the removal of the unasked cold-load pipeline run. Report sections
+renumbered behind it, nav and scrollspy extended, IA test updated to match.
+
+Verified in a real browser at 375, 768 and 1440px (zero horizontal scroll at every
+width; every filter has a programmatic accessible name) and that browser check
+caught a serious pre-existing defect: `inject_styles`'s session_state guard meant
+the design layer was emitted only on a session's first run, so Streamlit dropped
+it on the next rerun and the whole design system fell off the moment anyone
+touched a widget. Guard deleted, test flipped to assert survival after an
+interaction. Also fixed `run_demo.py` writing its report without an explicit
+encoding, which crashed the demo's last stage on Windows.
+
+177 tests green, microcopy linter clean, retrieval gate clean (0 wrong hits).
+Left undone and flagged: filter state in the URL.
+
+**Artifacts:** `src/pipeline.py` (compare_versions), `src/diff.py`
+(filter_changes, STATUS_LABELS), `src/ui/__init__.py` (guard removed),
+`src/ui/components.css` (multiselect and slider rules), `app.py` (section 1,
+renumbering, no cold-load run), `run_demo.py` (encoding), `tests/test_filter_changes.py`
+(new), `tests/test_design_system.py` (cold/rendered fixtures, IA, table policy,
+stylesheet survival), `docs/DECISIONS.md` (D23), `docs/STATUS.md` (H23),
+`docs/PROMPT_LOG.md` (this entry), `.claude/launch.json`.
