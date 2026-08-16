@@ -1137,4 +1137,7 @@ Left undone and flagged: filter state in the URL.
 renumbering, no cold-load run), `run_demo.py` (encoding), `tests/test_filter_changes.py`
 (new), `tests/test_design_system.py` (cold/rendered fixtures, IA, table policy,
 stylesheet survival), `docs/DECISIONS.md` (D23), `docs/STATUS.md` (H23),
-`docs/PROMPT_LOG.md` (this entry), `.claude/launch.json`.
+`docs/PROMPT_LOG.md` (this entry), `.claude/launch.json`. Shipped as
+[PR #28](https://github.com/thelivinsine/susty-automation/pull/28),
+squash-merged `9f604ec`. Feature branch deleted locally and on origin
+post-merge.
