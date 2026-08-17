@@ -1122,18 +1122,28 @@
 /* The page frame. Streamlit ships a 6rem top pad and a wide-mode container
    that runs edge to edge on a large monitor, which leaves the report with no
    measure at all. Capping it is what makes the shell read as an app rather
-   than as a document stretched to the window. Verified against Streamlit
-   1.60.0. */
+   than as a document stretched to the window.
+
+   The top pad also has to clear Streamlit's own floating header (the rule
+   below this one), or the masthead's own top edge renders underneath it,
+   clipped. That header measured 52px against Streamlit 1.60.0; a later
+   Streamlit upgrade grew it to 60px with no change on our side, and
+   --space-5 (24px) stopped being enough. --space-7 clears the 60px header
+   measured live against Streamlit 1.61.1, with a few px to spare. Re-measure
+   `stHeader`'s own height on the next Streamlit bump rather than assuming
+   this still holds. */
 [data-testid="stMainBlockContainer"] {
   max-width: 1180px;
-  padding-top: var(--space-5);
+  padding-top: var(--space-7);
   padding-bottom: var(--space-8);
 }
 
 /* Streamlit's own header bar floats above the page. It has to stay OPAQUE and
    on our ground colour: it is what the page scrolls under, and the sticky
-   section nav parks directly beneath it. Transparent here leaves a 52px strip
-   of moving content above the nav. Verified against Streamlit 1.60.0. */
+   section nav parks directly beneath it. Transparent here leaves a moving
+   strip of content above the nav (as tall as the header itself: 60px,
+   measured against Streamlit 1.61.1, see the pad rule above). Verified
+   against Streamlit 1.61.1. */
 [data-testid="stHeader"] {
   background: var(--ground);
 }

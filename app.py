@@ -92,6 +92,7 @@ from ui.components import (               # noqa: E402
     explanation_head,
     fact_bar,
     file_chip,
+    file_uploader_label,
     masthead,
     meter,
     movement,
@@ -634,12 +635,17 @@ with setup:
     write(step(2, "Your product inventory",
                "A .csv or .xlsx. Column names do not need to match anything.",
                state="now"))
+    upload_label = "Inventory file (.csv or .xlsx)"
     uploaded = st.file_uploader(
-        "Inventory file (.csv or .xlsx)",
+        upload_label,
         type=["csv", "xlsx"],
         help="Your bill of materials. Column names do not need to match anything.",
         label_visibility="collapsed",
     )
+    # A-07: Streamlit gives this widget's own two controls the wrong
+    # accessible names (see file_uploader_label's docstring). Fixable only
+    # from JS, so this runs right after the widget it labels.
+    st_components.html(file_uploader_label(upload_label), height=0)
 
     if uploaded is None:
         st.caption(

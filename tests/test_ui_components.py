@@ -270,6 +270,36 @@ def test_the_scrollspy_holds_no_reference_to_a_node():
     assert "doc.getElementById(IDS[i])" in html, "sections must be re-queried, not stored"
 
 
+# ---------------------------------------------------------------------------
+# A-07: the file uploader's accessible name
+# ---------------------------------------------------------------------------
+
+def test_file_uploader_label_names_both_hidden_controls():
+    """Both of Streamlit's own controls get a real name, not its generic one.
+
+    The native `<input type="file">` and the visible "Upload" button both
+    carry the wrong accessible name out of the box (see the docstring); this
+    is the one place that sets both right.
+    """
+    html = c.file_uploader_label("Inventory file (.csv or .xlsx)")
+    assert '"Inventory file (.csv or .xlsx)"' in html
+    assert "input.setAttribute('aria-label', label)" in html
+    assert "btn.setAttribute('aria-label', 'Upload ' + label)" in html
+
+
+def test_file_uploader_label_gives_up_quietly_when_it_cannot_reach_the_page():
+    """An enhancement, not a dependency, exactly like the scrollspy."""
+    html = c.file_uploader_label("Inventory file")
+    assert "try { win = window.parent; doc = win.document; } catch (e) { return; }" in html
+
+
+def test_file_uploader_label_escapes_its_own_argument():
+    """The label is JSON-encoded, so a stray quote cannot break out of the script."""
+    html = c.file_uploader_label('a" onmouseover="alert(1)')
+    assert "<script>" in html
+    assert 'onmouseover="alert(1)"' not in html
+
+
 def _demo():
     move = f.direction(-0.03913)
     print("A rendered table:\n")
