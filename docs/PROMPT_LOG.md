@@ -1059,7 +1059,9 @@ separate background task rather than folded into this change.
 **Artifacts:** `app.py` (H1/caption), `docs/STATUS.md` (H26; What shipped;
 Resume here), `docs/archive/STATUS_2026-W34.md` (H24 rotated out),
 `docs/archive/README.md`, `docs/PROMPT_LOG.md` (this entry). Branch
-`reframe-front-door-copy-to-register`, PR pending.
+`reframe-front-door-copy-to-register`. Shipped as
+[PR #33](https://github.com/thelivinsine/susty-automation/pull/33),
+squash-merged `aa0a601`.
 
 ---
 
@@ -1090,4 +1092,55 @@ touched; pure documentation housekeeping per the owner's standing convention.
 
 **Artifacts:** `docs/PROMPT_LOG.md` (P1 to P14 removed), `docs/archive/PROMPT_LOG_2026-W28.md`
 (new, P1 to P14), `docs/archive/README.md` (index entry). Branch
-`claude/rotate-prompt-log-9k3xhq`, PR pending.
+`claude/rotate-prompt-log-9k3xhq`. Shipped as
+[PR #34](https://github.com/thelivinsine/susty-automation/pull/34), merged
+`bcdffcb`.
+
+---
+
+### 2026-08-17 · P46
+Branch: `filter-state-in-url` (from `main`).
+
+**Prompt (verbatim):** "Yes, go ahead and build filter state in the URL"
+(after H26/P44 named it, and the owner's own `docs/audit/` P2 list item 7,
+as the next candidate).
+
+**Response summary:** The five section-1 filters (search, scope, status,
+minimum-movement slider, materiality toggle) now read `st.query_params` once
+per session, seeding `st.session_state` behind a `filters_seeded` guard so a
+URL a visitor lands on with is honoured on the FIRST run only; every rerun
+after that writes the widgets' current values back into the URL instead,
+so typing in a filter does not fight a stale URL on every keystroke. Each
+param is deleted rather than written empty/zero (`_sync_param`), so an
+unfiltered visit keeps a clean address bar. Two new tests in
+`tests/test_design_system.py` via `streamlit.testing.v1.AppTest`, whose
+`query_params` dict can be set before the FIRST `.run()` to simulate a
+visitor arriving with a link, and is readable after any run to check what
+got written: one confirms typing in the search box writes `?q=...`, one
+confirms `?material=1` set before boot lands with the toggle already on.
+Verified live too: typing in the search box updated `window.location.href`
+immediately, and navigating cold to `?material=1&scope=Scope+3` rendered the
+toggle on, Scope 3 selected, and the table pre-narrowed to 44 rows.
+
+Complication mid-session, not from this change: H27/P45 (rotating
+`docs/PROMPT_LOG.md`) ran concurrently in the SAME local checkout, since this
+environment has no git worktree isolation between sessions. That session's
+own housekeeping detected this session's uncommitted `app.py`/
+`tests/test_design_system.py` changes, stashed them with a considerate
+message before switching branches to do its own work, shipped and merged as
+PR #34, and left the shared checkout on its now-merged feature branch. Found
+this by running `git status` before pushing (the branch-safety habit this
+session already follows) and seeing an unfamiliar branch and a foreign
+commit; recovered by verifying the stash diff matched the pending work
+byte-for-byte, resetting local `main` to `origin/main`, branching fresh from
+there, and popping the stash back in, rather than assuming anything about
+the foreign branch's state. Also corrected two "PR pending" artifact notes
+left dangling in P44 and P45 once their actual PR numbers and merge SHAs
+were known (`#33`/`aa0a601`, `#34`/`bcdffcb`).
+
+**Artifacts:** `app.py` (filter/URL sync block),
+`tests/test_design_system.py` (two new tests), `docs/STATUS.md` (H28; What
+shipped; Resume here; H26 rotated to archive), `docs/archive/STATUS_2026-W34.md`
+(H26 appended), `docs/archive/README.md` (index entry), `docs/PROMPT_LOG.md`
+(this entry, plus the two PR-pending corrections above). Branch
+`filter-state-in-url`, PR pending.

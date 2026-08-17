@@ -76,3 +76,18 @@
   was needed for the actual bug. Documented the gotcha in `STATUS.md` and
   `docs/DEPLOY_GUIDE.md` so a future redacted-error report goes straight to
   "reboot, don't just redeploy" rather than repeating this investigation.
+
+- H26 (2026-08-17): Picked up the audit's own P2 list (STATUS's own "next
+  likely task" pointer, H24's note). Item 6, reframe the copy from product to
+  register: the H1 read "Compare two DEFRA releases against your product" and
+  its caption led with "Recompute your footprint," both product-first even
+  though section 1 (the register, diffed and explained with no upload) is the
+  actual front door and the whole point of `VISION.md`'s reframe. Changed the
+  H1 to "What changed between two DEFRA releases, and why" and the caption to
+  lead with the register explanation, naming the product recompute as the
+  second act rather than the headline. `app.py`'s H1/caption block only, no
+  pipeline change. 195 tests green (unchanged, nothing pinned this string),
+  microcopy gate clean, checked live in a running Streamlit app against the
+  real 2025/2026 workbooks rather than assumed from the diff. Shipped as
+  [PR #33](https://github.com/thelivinsine/susty-automation/pull/33),
+  squash-merged `aa0a601`.

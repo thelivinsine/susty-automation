@@ -93,6 +93,22 @@ families. Of the 67 real factors past DEFRA's thresholds, 46 (69%) carry a
 verbatim DEFRA citation on the front door with no upload and no model call.
 
 ## What shipped
+- **Filter state lives in the URL (H28, audit item P2-7):** the five section-1
+  filters (search, scope, status, minimum movement, materiality toggle) now
+  read `st.query_params` once on a fresh page load and write their current
+  state back into it on every rerun, so a narrowed comparison ("every scope 3
+  factor past threshold") is a link a consultant can send. Params are removed
+  rather than written empty/zero, so an unfiltered visit keeps a clean URL.
+  Seeded state and default state never fight: the URL is read into
+  `st.session_state` exactly once per session (guarded by a
+  `filters_seeded` flag), so typing in a filter afterward drives the URL, not
+  the other way round. Two new tests via `streamlit.testing.v1.AppTest`
+  (`tests/test_design_system.py`): one confirms a filter action writes its
+  param, one confirms query params set before the first run seed the widgets.
+  197 tests green (was 195), microcopy gate clean, checked live: typing in the
+  search box updated the address bar immediately, and navigating cold to
+  `?material=1&scope=Scope+3` landed on the toggle already on and Scope 3
+  already selected.
 - **Reframed the front-door H1 from product to register (H26, audit item
   P2-6):** `VISION.md` section 6 says kill the toy BOM as the hero; the
   audit's G6 finding was that the H1 still read "against your product" while
@@ -225,19 +241,6 @@ light-only, because Streamlit's own chrome is pinned light in `config.toml`.
 ## Resume here
 Most recent handoffs (older ones rotate into `docs/archive/`):
 
-- H26 (2026-08-17): Picked up the audit's own P2 list (STATUS's own "next
-  likely task" pointer, H24's note). Item 6, reframe the copy from product to
-  register: the H1 read "Compare two DEFRA releases against your product" and
-  its caption led with "Recompute your footprint," both product-first even
-  though section 1 (the register, diffed and explained with no upload) is the
-  actual front door and the whole point of `VISION.md`'s reframe. Changed the
-  H1 to "What changed between two DEFRA releases, and why" and the caption to
-  lead with the register explanation, naming the product recompute as the
-  second act rather than the headline. `app.py`'s H1/caption block only, no
-  pipeline change. 195 tests green (unchanged, nothing pinned this string),
-  microcopy gate clean, checked live in a running Streamlit app against the
-  real 2025/2026 workbooks rather than assumed from the diff.
-
 - H27 (2026-08-17): Rotated `docs/PROMPT_LOG.md`, flagged as overdue in H26/P44
   (it had passed the ~1,200 line threshold). Moved the two oldest sessions
   (2026-07-06, 2026-07-07, entries P1 to P14, both in ISO week 2026-W28) into
@@ -247,11 +250,22 @@ Most recent handoffs (older ones rotate into `docs/archive/`):
   rule. Docs only, no code touched. Shipped as its own small PR per the
   owner's standing convention.
 
+- H28 (2026-08-17): Next item on the audit's P2 list once the copy reframe
+  (H26) closed: filter state in the URL. The five section-1 filters now read
+  `st.query_params` once on a fresh visit (seeding `st.session_state`) and
+  write their current state back into the URL on every rerun, so a narrowed
+  comparison is a link a consultant can send. Ran concurrently with H27 in a
+  shared local checkout (no git worktree isolation this session); the other
+  session's own housekeeping stashed this work before switching branches and
+  it was restored intact afterward, verified byte-for-byte against the stash
+  diff before continuing. `app.py`'s filter block only. 197 tests green (was
+  195, two new `AppTest`-driven tests for the write and the seed paths),
+  microcopy gate clean, checked live: the address bar updated on typing, and
+  a cold visit to `?material=1&scope=Scope+3` landed pre-filtered.
+
 Next likely task: the audit's own P2/P3 list, now that P0/P1 (D24) and P2
-item 6, the copy reframe (H26), are closed. **Filter state in the URL**
-(`st.query_params`), so a narrowed comparison is a link a consultant can send
-("every scope 3 factor past threshold"). Then: **A-07, the one defect left
-open.** Streamlit's file uploader
+items 6 and 7 (the copy reframe, H26; filter state in the URL, H28) are
+closed. **A-07, the one defect left open.** Streamlit's file uploader
 renders an `<input type="file">` with a generic `aria-label="file upload"` on
 the current Streamlit build rather than no name at all; worth re-measuring
 before assuming it still needs a custom component. Then: header-row tolerance in
