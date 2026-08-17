@@ -404,34 +404,79 @@ write(fact_bar([
 # DEFRA's own materiality bar".
 write('<div class="subhead">Filter the comparison</div>')
 
+scope_options = sorted(str(s) for s in all_changes["scope"].dropna().unique())
+status_keys = list(STATUS_LABELS)
+
+# Filter state lives in the URL, so a narrowed comparison ("every scope 3
+# factor past threshold") is a link a consultant can send. The URL seeds
+# st.session_state once, on a fresh page load; every rerun after that is
+# driven by the widgets, and writes their current state back into the URL,
+# so the URL follows the filters rather than fighting them on every
+# keystroke.
+if "filters_seeded" not in st.session_state:
+    st.session_state["filters_seeded"] = True
+    st.session_state["f_query"] = st.query_params.get("q", "")
+    st.session_state["f_scopes"] = [
+        s for s in st.query_params.get_all("scope") if s in scope_options
+    ]
+    st.session_state["f_statuses"] = [
+        s for s in st.query_params.get_all("status") if s in status_keys
+    ]
+    try:
+        st.session_state["f_min_pct"] = float(st.query_params.get("min", 0.0))
+    except ValueError:
+        st.session_state["f_min_pct"] = 0.0
+    st.session_state["f_material_only"] = st.query_params.get("material") == "1"
+
 f1, f2 = st.columns([2, 1], gap="medium")
 query = f1.text_input(
     "Search activity or unit",
     placeholder="For example: electricity, steel, HGV, tonne.km",
+    key="f_query",
 )
-scope_options = sorted(str(s) for s in all_changes["scope"].dropna().unique())
-scopes = f2.multiselect("Scope", scope_options, placeholder="All scopes")
+scopes = f2.multiselect(
+    "Scope", scope_options, placeholder="All scopes", key="f_scopes"
+)
 
 f3, f4 = st.columns([1, 1], gap="medium")
-status_keys = list(STATUS_LABELS)
 statuses = f3.multiselect(
     "What happened to the factor",
     status_keys,
     format_func=lambda key: STATUS_LABELS[key],
     placeholder="Everything",
+    key="f_statuses",
 )
 min_pct = f4.slider(
-    "Minimum change, either direction (%)", 0.0, 100.0, 0.0, step=0.5,
+    "Minimum change, either direction (%)", 0.0, 100.0, step=0.5,
     help=(
         "Above zero this also hides new and retired factors, which have no "
         "percent change to measure."
     ),
+    key="f_min_pct",
 )
 
 material_only = st.toggle(
     "Only factors past DEFRA's own materiality thresholds "
-    "(over 5% for scope 1 and 2, over 10% for scope 3)"
+    "(over 5% for scope 1 and 2, over 10% for scope 3)",
+    key="f_material_only",
 )
+
+
+def _sync_param(name, value, empty):
+    """Mirror one filter into the URL, or drop it at its default so an
+    unfiltered visit keeps a clean URL instead of `?q=&scope=&min=0.0`."""
+    if value == empty:
+        if name in st.query_params:
+            del st.query_params[name]
+    else:
+        st.query_params[name] = value
+
+
+_sync_param("q", query, "")
+_sync_param("scope", scopes, [])
+_sync_param("status", statuses, [])
+_sync_param("min", str(min_pct), "0.0")
+_sync_param("material", "1" if material_only else "0", "0")
 
 shown = filter_changes(
     all_changes,

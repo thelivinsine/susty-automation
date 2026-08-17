@@ -413,6 +413,42 @@ def test_a_narrowed_comparison_becomes_a_real_table_with_magnitude_bars():
     assert "visually-hidden" in markup, "direction is not spoken anywhere in the table"
 
 
+def test_the_search_filter_writes_its_state_into_the_url():
+    """A narrowed comparison is a link a consultant can send.
+
+    Typing in the search box updates `st.query_params` with no click needed,
+    so copying the address bar after filtering carries the filter with it.
+    """
+    app = _boot()
+    search = [w for w in app.text_input if "Search" in str(w.label)]
+    app = search[0].set_value("electricity").run()
+    assert not app.exception, app.exception
+    assert app.query_params.get("q") == ["electricity"], app.query_params
+    assert "scope" not in app.query_params, (
+        "an untouched filter should not clutter the URL"
+    )
+
+
+def test_a_url_with_query_params_seeds_the_filters_on_a_fresh_visit():
+    """Opening a shared link lands on the same narrowed view, not the default.
+
+    No widget is touched here: the param is set before the FIRST run, the
+    same as a visitor arriving with a URL someone sent them.
+    """
+    from streamlit.testing.v1 import AppTest
+
+    app = AppTest.from_file(os.path.join(ROOT, "app.py"), default_timeout=300)
+    app.query_params["material"] = "1"
+    app = app.run()
+    assert not app.exception, app.exception
+
+    material = [t for t in app.toggle if "materiality thresholds" in str(t.label)]
+    assert material and material[0].value is True, "the URL's filter was not applied on load"
+
+    narrowed = _showing_count(app)
+    assert 0 < narrowed <= SEMANTIC_TABLE_MAX_ROWS, narrowed
+
+
 def _showing_count(app):
     """The "Showing N of M factors" figure the comparison prints.
 
