@@ -171,3 +171,17 @@ that the cap protects you) if you want zero-friction sharing.
 
 **Do users need to install anything?** No. They open the link in any browser.
 That's the whole point.
+
+**The app shows a red "ImportError" page after a change I made.** That page
+always hides the real reason ("redacted to prevent data leaks"), so the first
+step is always the same: open your app on `share.streamlit.io`, click **Manage
+app** (bottom right), and read the real error in the log panel there.
+
+If that real error names a function or file that you know is actually correct
+(2026-08-17 gotcha: it named `cited_reasons`, which was genuinely present the
+whole time), don't start editing code. Streamlit Cloud's quick redeploy
+sometimes keeps running a stale, cached copy of a file instead of loading the
+new one, even though it says it pulled your latest change. Open the **⋮** menu
+on your app and click **Reboot app**. That forces a full, clean rebuild and
+clears the stale copy. Only start debugging the code itself if the error
+persists after a reboot.

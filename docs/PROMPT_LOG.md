@@ -1242,3 +1242,63 @@ for an open one. Docs-only, no code touched. Microcopy lint clean.
 [PR #30](https://github.com/thelivinsine/susty-automation/pull/30),
 squash-merged `781492d`. Feature branch deleted locally and on origin
 post-merge.
+
+---
+
+### 2026-08-17 · P43
+Branch: `pin-python-runtime` (from `main`).
+
+**Prompt (verbatim):** A screenshot of a Streamlit Cloud red-box error, "This
+app has encountered an error. The original error message is redacted to
+prevent data leaks..." on `from pipeline import (...)` at app.py:65, with "i
+get this error". Then "Yes, add it" (approving a `runtime.txt` pin). Then
+"Merge it yourself, go ahead" (after the session's auto-mode classifier
+blocked an unattended `gh pr merge`). Then a pasted Streamlit Cloud log file
+(`logs-thelivinsine-susty-automation-main-app.py-....txt`). Then "rebooted and
+it works. document the session".
+
+**Response summary:** Streamlit's redaction hides the real exception on a
+public app's error page by design, so root-cause work started against the
+codebase per `superpowers:systematic-debugging`. Confirmed `pipeline.py`
+exports every name `app.py` imports, and the full import chain
+(`loader`/`diff`/`relabel`/`matching`/`recompute`/`changes_pdf`/`explain`/
+`paths`) imported clean both in the existing environment and in a fresh venv
+built from `requirements.txt` alone, with no module-level file/env-var reads
+anywhere in the chain, so nothing local reproduced it. The one real gap
+found: no `runtime.txt`, so Cloud picks its own default Python untested
+against this repo. Added it, pinning `python-3.14` (proven clean by the
+fresh-venv test), verified against the full 195-test suite, shipped as
+[PR #31](https://github.com/thelivinsine/susty-automation/pull/31) on branch
+`pin-python-runtime`. The unattended `gh pr merge` was blocked by the
+session's own auto-mode permission classifier (merging is shared-state); the
+owner then said to merge it, done as `d9cb493`, followed by the standard
+post-merge housekeeping (`fetch` + `reset --hard origin/main`).
+
+That fix didn't touch the actual bug. The owner's real Cloud log (Manage app
+→ logs) showed `ImportError: cannot import name 'cited_reasons' from
+'pipeline'` recurring identically across five separate "Pulling code
+changes" redeploys over about 26 minutes (17:48 to 18:14 UTC), even though
+the first of those pulls landed 2 seconds after the PR #29 merge that added
+`cited_reasons`, and even though the error's own `NameError`-style message
+lacked Python's "partially initialized module" wording that a real circular
+import would carry. Fetched `src/pipeline.py` directly from
+`raw.githubusercontent.com/thelivinsine/susty-automation/main` to check
+GitHub's actual content rather than trust the local clone: the function was
+there, byte-identical, the entire time. Concluded the fault was Streamlit
+Community Cloud's incremental hot-pull redeploy serving a stale cached
+module rather than a clean reload, a platform bug, not a defect in this
+repo. Recommended a full **Reboot app** over another push; the owner ran it
+and confirmed the live app working. Documented the diagnosis and the "reboot
+before you debug" lesson in `STATUS.md` (H25) and added a plain-English
+troubleshooting entry to `docs/DEPLOY_GUIDE.md` so a future redacted-error
+report starts from Manage app logs and a reboot, not a re-run of this
+investigation. No application code changed; the only shipped diff across the
+whole session is the one-line `runtime.txt`.
+
+**Artifacts:** `runtime.txt` (new), `docs/STATUS.md` (H25; What shipped;
+Live bullet), `docs/DEPLOY_GUIDE.md` (troubleshooting entry),
+`docs/archive/STATUS_2026-W34.md` (new, H23 rotated out),
+`docs/archive/README.md`, `docs/PROMPT_LOG.md` (this entry). Shipped as
+[PR #31](https://github.com/thelivinsine/susty-automation/pull/31),
+squash-merged `d9cb493`. Feature branch deleted locally and on origin
+post-merge.
