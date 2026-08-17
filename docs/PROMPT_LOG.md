@@ -1238,4 +1238,7 @@ already shipped the same day as D24, so a reader does not mistake a closed gap
 for an open one. Docs-only, no code touched. Microcopy lint clean.
 
 **Artifacts:** `docs/audit/2026-08-17_frontend_gap_analysis.md` (new),
-`docs/audit/README.md`, `docs/PROMPT_LOG.md` (this entry).
+`docs/audit/README.md`, `docs/PROMPT_LOG.md` (this entry). Shipped as
+[PR #30](https://github.com/thelivinsine/susty-automation/pull/30),
+squash-merged `781492d`. Feature branch deleted locally and on origin
+post-merge.
