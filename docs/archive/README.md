@@ -23,4 +23,4 @@ File naming, one per ISO week, matching each moved entry's own date:
 - `STATUS_2026-W32.md`: status handoff H22, rotated out on 2026-08-17 when H24
   landed.
 - `STATUS_2026-W34.md`: status handoff H23, rotated out on 2026-08-17 when H25
-  landed.
+  landed. Then H24 on 2026-08-17 when H26 landed.

@@ -1302,3 +1302,34 @@ Live bullet), `docs/DEPLOY_GUIDE.md` (troubleshooting entry),
 [PR #31](https://github.com/thelivinsine/susty-automation/pull/31),
 squash-merged `d9cb493`. Feature branch deleted locally and on origin
 post-merge.
+
+### 2026-08-17 · P44
+Branch: `reframe-front-door-copy-to-register` (from `main`).
+
+**Prompt (verbatim):** "what's next?"
+
+**Response summary:** No task was named, so read `docs/STATUS.md`'s own
+"Resume here" pointer: with D24's P0/P1 items closed, the next candidate was
+the front-end audit's P2 item 6, reframe the front-door copy from product to
+register (`docs/audit/2026-08-17_frontend_gap_analysis.md`, finding G6).
+`app.py`'s H1 read "Compare two DEFRA releases against your product" with a
+caption leading "Recompute your footprint," both product-first even though
+section 1 (the whole register, diffed and grounded in DEFRA's own words, no
+upload needed) is the actual front door and the point of `VISION.md` section
+6's reframe ("kill the toy BOM as the hero"). Changed the H1 to "What changed
+between two DEFRA releases, and why" and the caption to lead with the
+register explanation, naming the product recompute as the second act. No
+test pinned the old string, so verified by running the app live
+(`streamlit run app.py`) against the real 2025/2026 workbooks and reading the
+rendered page text rather than trusting the diff. 195 tests still green,
+microcopy gate (`scripts/lint_microcopy.py`) clean. Updated `docs/STATUS.md`
+(new H26 handoff, H24 rotated to archive per the two-most-recent rule, "What
+shipped," and the "Next likely task" pointer now points at filter state in
+the URL). Noted in passing, not actioned: `docs/PROMPT_LOG.md` had already
+passed the ~1,200 line rotation threshold before this entry; flagged as a
+separate background task rather than folded into this change.
+
+**Artifacts:** `app.py` (H1/caption), `docs/STATUS.md` (H26; What shipped;
+Resume here), `docs/archive/STATUS_2026-W34.md` (H24 rotated out),
+`docs/archive/README.md`, `docs/PROMPT_LOG.md` (this entry). Branch
+`reframe-front-door-copy-to-register`, PR pending.
