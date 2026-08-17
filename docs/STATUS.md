@@ -21,7 +21,12 @@ API key loaded from a git-ignored `.env`.
 <https://efdiff.streamlit.app/> (owner-run, first deploy 2026-07-31). The GitHub
 default branch is now `main`, so Streamlit redeploys from `main` on every merge.
 The sandbox cannot reach `*.streamlit.app` (proxy denies CONNECT), so live
-verification is the owner's.
+verification is the owner's. `runtime.txt` pins Python 3.14 (H25), the version
+this repo is actually tested against. **Known Cloud gotcha (H25):** an
+incremental redeploy can keep serving a stale cached module even when GitHub
+already has the fix (confirmed by diffing the live app's traceback against
+`raw.githubusercontent.com` directly); a full **Reboot app** from the Cloud
+dashboard, not another push, is what clears it.
 
 **Access on the live deploy (D18):** it runs OPEN. `GEMINI_API_KEY` is set with no
 `[auth]` section, so anonymous visitors get AI explanations on the owner's key.
@@ -88,6 +93,18 @@ families. Of the 67 real factors past DEFRA's thresholds, 46 (69%) carry a
 verbatim DEFRA citation on the front door with no upload and no model call.
 
 ## What shipped
+- **Diagnosed a live Cloud outage down to the platform, not the code (H25):**
+  the owner hit a redacted `ImportError` on the deployed app. Ruled out the
+  codebase first: the full import chain succeeded in a fresh venv built from
+  `requirements.txt`, and `runtime.txt` (new, pins `python-3.14`) closed the one
+  real gap found, that Cloud picked its own default Python untested against this
+  repo. The owner's actual Cloud log then showed the deploy repeating the
+  identical `cannot import name 'cited_reasons'` error across five redeploys
+  over ~26 minutes despite pulling the correct commit each time; fetching
+  `src/pipeline.py` straight from `raw.githubusercontent.com` proved GitHub's
+  `main` was correct throughout, so the fault was Streamlit Cloud serving a
+  stale cached module on incremental redeploy. A full **Reboot app** (not
+  another push) cleared it; owner confirmed the live app working.
 - **The front door explains itself, and stopped making anyone wait (D24):**
   `pipeline.cited_reasons` (no model call, shares `retrieve_citation`/D11's
   wrong-note guard with the product report) grounds every material mover in the
@@ -200,6 +217,34 @@ light-only, because Streamlit's own chrome is pinned light in `config.toml`.
 ## Resume here
 Most recent handoffs (older ones rotate into `docs/archive/`):
 
+- H25 (2026-08-17): Owner reported a redacted `ImportError` on the live Cloud
+  app (`from pipeline import (...)` at app.py:65). Investigated the codebase
+  first, per systematic debugging: `pipeline.py` exports every name app.py
+  imports, and the full chain (`loader`/`diff`/`relabel`/`matching`/
+  `recompute`/`changes_pdf`/`explain`/`paths`) imported clean both in the
+  existing environment and in a fresh venv built straight from
+  `requirements.txt`, so nothing local reproduced it. Closed the one real gap
+  found regardless: no `runtime.txt` existed, so Cloud picked its own default
+  Python untested against this repo (local dev runs 3.14). Added `runtime.txt`
+  pinning `python-3.14`, the version proven clean by that fresh-venv test and
+  195 green tests, shipped as
+  [PR #31](https://github.com/thelivinsine/susty-automation/pull/31),
+  squash-merged `d9cb493`. That alone did not fix the live app: the owner's
+  actual Cloud log (previously hidden by Streamlit's redaction) showed
+  `ImportError: cannot import name 'cited_reasons' from 'pipeline'` repeating
+  identically across five separate redeploys over ~26 minutes, even though the
+  first of those pulls landed 2 seconds after the PR #29 merge that added
+  `cited_reasons`. Fetched `src/pipeline.py` straight from
+  `raw.githubusercontent.com/thelivinsine/susty-automation/main` to rule out a
+  push/sync problem: the function was correctly there, byte-identical to the
+  local repo, the whole time. Root cause: a Streamlit Community Cloud platform
+  bug, not this codebase, an incremental hot-pull redeploy serving a stale
+  cached module instead of a clean reload. Fix was a full **Reboot app** (not
+  another push), which the owner ran; app confirmed working live. No code fix
+  was needed for the actual bug. Documented the gotcha in `STATUS.md` and
+  `docs/DEPLOY_GUIDE.md` so a future redacted-error report goes straight to
+  "reboot, don't just redeploy" rather than repeating this investigation.
+
 - H24 (2026-08-17): A front-end audit of the running app (real 2025/2026
   workbooks, measured in a browser) found the front door D23 built showed WHAT
   changed and never WHY, and took 15 to 44 measured seconds to paint on a cold
@@ -225,30 +270,6 @@ Most recent handoffs (older ones rotate into `docs/archive/`):
   the URL, a release picker, scrolling to the result after a run). Shipped as
   [PR #29](https://github.com/thelivinsine/susty-automation/pull/29),
   squash-merged `e6e2b90`.
-
-- H23 (2026-08-17): MADE THE COMPARISON THE FRONT DOOR (D23), on the owner's
-  brief to check whether the interface really leads with an interactive EF
-  version comparison. It did not: the app opened on a setup form, ran the whole
-  pipeline on a sample product before anyone asked, had zero filter controls
-  anywhere, and rendered only the handful of diff rows that touched a bill of
-  materials. Split `compare_versions` out of `run_pipeline` (which now calls it,
-  so there is one definition of the delta), added `diff.filter_changes` with its
-  own suite (19 tests, runnable standalone), and built section 1: search, scope,
-  status, minimum-movement slider, materiality toggle, live count, and a CSV of
-  whatever view you have narrowed to. Removed the cold-load pipeline run. Real
-  numbers on the real workbooks: 2,647 joined factors, 67 past threshold, 76
-  genuinely new, 54 retired, 460 renamed. Checked in a real browser at 375, 768
-  and 1440px: zero horizontal scroll at every width, and every filter carries a
-  programmatic accessible name. **Found and fixed a serious pre-existing defect
-  while checking it:** `inject_styles`'s session_state guard meant the design
-  layer was emitted only on a session's first run, so Streamlit removed it on the
-  next rerun and the page reverted to Streamlit defaults (captions measured back
-  at the default ink instead of #505a5f) the instant a visitor touched anything.
-  The guard is gone and a test now asserts exactly one style block AFTER an
-  interaction. Also fixed `run_demo.py` writing its report without an explicit
-  encoding, which crashed the demo's last stage on Windows cp1252 on the owner's
-  own machine. 177 tests green, both CI gates clean. Not done, deliberately:
-  filter state in the URL (`st.query_params`), which is the next candidate.
 
 Next likely task: the audit's own P2/P3 list, now that its P0/P1 items are
 closed (D24). **Reframe the front-door copy from product to register** (H1 reads
