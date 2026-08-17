@@ -6,279 +6,6 @@ Branch for all entries below: `claude/project-setup-i1gyff`.
 
 ---
 
-### 2026-07-06 · P1
-**Prompt (verbatim):** "start working on this project" (with two attachments: the
-Build Playbook markdown and the MVP Spec PDF).
-
-**Response summary:** Built the EF Version Explainer MVP end to end. Project
-skeleton, CLAUDE.md, requirements. Pipeline modules: loader, diff, matching (no
-guess), recompute (coverage), changes_pdf retrieval, explain (grounded, with
-offline fallback), report, pipeline, app, run_demo. Shipped clearly-labelled
-synthetic DEFRA-format data so it runs offline. Noted the build environment
-cannot reach gov.uk. Tests mirror the acceptance criteria including the grounding
-trap test.
-
-**Artifacts:** CLAUDE.md, README.md, requirements.txt, .gitignore, src/*.py,
-app.py, run_demo.py, scripts/make_synthetic_data.py, tests/*, data/synthetic/*.
-Commit `826726b`.
-
----
-
-### 2026-07-07 · P2
-**Prompt (verbatim):** "i uploaded defra files"
-
-**Response summary:** The files were not in the environment. Searched everywhere,
-found nothing, explained the likely upload-size cause and the options.
-
-**Artifacts:** none (investigation only).
-
----
-
-### 2026-07-07 · P3
-**Prompt (verbatim, via question):** "i think both are full sets but of different
-years"
-
-**Response summary:** Confirmed full-set expectation. Files still absent at that
-point.
-
-**Artifacts:** none.
-
----
-
-### 2026-07-07 · P4
-**Prompt (verbatim):** "they're already committed in github"
-
-**Response summary:** Found the two real full-set workbooks on the branch (2025
-1.8MB, 2026 2.1MB, user commit `becaf9e`). Inspected the real format, then
-reworked the loader to it (scope metadata, forward-fill fix, super-header block
-expansion, Year column ignored). Loaded 2111/2133 factors across 27 sheets.
-Stopped auto-flagging added/removed as movers (most are DEFRA relabels). Wired
-the workbook "What's new" sheet as the grounding source. Built a realistic
-real-data BOM. Demo footprint 2.344 to 2.305 kg CO2e, electricity change
-explained from the real DEFRA text. Added a real-workbook test.
-
-**Artifacts:** src/loader.py, src/diff.py, src/changes_pdf.py, src/paths.py,
-src/pipeline.py, src/report.py, app.py, run_demo.py, scripts/make_synthetic_data.py,
-data/sample_bom_real.csv, tests/test_pipeline.py, README.md, CLAUDE.md.
-Commit `81ed728`.
-
----
-
-### 2026-07-07 · P5
-**Prompt (verbatim):** "I want to use my gemini api key. not claude. where do i
-provide the key?"
-
-**Response summary:** Added a Gemini backend (google-genai). Backend selected by
-key: Gemini, else Claude, else offline. Grounding enforced in code for every
-backend. Confirmed the Gemini endpoint is blocked in the build sandbox and that
-it degrades gracefully. Documented where to set the key.
-
-**Artifacts:** src/explain.py, requirements.txt, app.py, run_demo.py, README.md,
-CLAUDE.md. Commit `477d9bd`.
-
----
-
-### 2026-07-07 · P6
-**Prompt (verbatim):** "can i just add it in github secrets?"
-
-**Response summary:** Explained GitHub secrets only reach GitHub Actions, not a
-local or Streamlit run. Set up the simplest path: auto-load a git-ignored `.env`
-via python-dotenv, with `.env.example`. Verified `.env` is ignored and the key
-plus model override load automatically.
-
-**Artifacts:** app.py, run_demo.py, requirements.txt, .env.example, README.md.
-Commit `ef09b29`.
-
----
-
-### 2026-07-07 · P7
-**Prompt (verbatim):** A standing "Working preferences & practices" message
-(non-technical owner, no em dashes, token discipline, auto-ship to main,
-post-merge housekeeping, required docs: status doc + decisions log + prompt log,
-locked-decisions convention, security posture). Full text is the source for
-`WORKING_PREFERENCES.md`.
-
-**Response summary:** Persisted preferences to `docs/WORKING_PREFERENCES.md` and
-referenced them from CLAUDE.md. Created the status doc, decisions log, and this
-prompt log. Scrubbed em dashes from user-facing output strings (report, app,
-run_demo). Established `main` as production from the green setup branch and
-adopted the auto-ship + housekeeping workflow going forward.
-
-**Artifacts:** docs/WORKING_PREFERENCES.md, docs/STATUS.md, docs/DECISIONS.md,
-docs/PROMPT_LOG.md, CLAUDE.md, src/report.py, app.py, run_demo.py. Commit and
-main-establishment recorded in STATUS.md.
-
----
-
-### 2026-07-07 · P8
-**Prompt (verbatim):** "what's next?"
-
-**Response summary:** Picked the first CI quality gate: a microcopy linter that
-enforces the no-em-dash house rule as code. Built `scripts/lint_microcopy.py`
-(AST-based: flags em dashes in user-facing Python string literals, excluding
-docstrings and comments, plus anywhere in Markdown; allowlists the synthetic
-data generator, which mirrors DEFRA's third-party formatting). Wired it into
-pytest (`tests/test_microcopy.py`) and a new GitHub Actions workflow
-(`.github/workflows/ci.yml`) that runs the gate then the tests on every PR into
-`main`. The linter caught two real user-facing violations the earlier scrub
-missed (`src/recompute.py` note strings), which are now fixed, plus scrubbed em
-dashes from README.md and CLAUDE.md. Verified: linter clean, fails correctly on
-a planted em dash, and `pytest` green at 8 passed.
-
-**Artifacts:** scripts/lint_microcopy.py, tests/test_microcopy.py,
-.github/workflows/ci.yml, src/recompute.py, README.md, CLAUDE.md, docs/STATUS.md,
-docs/PROMPT_LOG.md.
-
----
-
-### 2026-07-07 · P9
-**Prompt (verbatim):** "before you implement this - are you sure these lint gates
-or golden vector tests are the most effective solutions for the problems or are
-you just doing it becuase it was mentioned as best practices from previus
-projects?" then "alright then, go ahead with the revised recommendation and
-document this decision".
-
-**Response summary:** Owner challenged the priority. Agreed the microcopy linter
-was cosmetic (cheap, already shipped) and that loader golden-vectors would be
-incremental, since the real-workbook test already covers the loader. Reframed
-around the wedge (the explanation): its weak spots are retrieval quality and the
-added/removed clutter. Recommended and then built RELABEL MATCHING as the highest
-visible product value. `src/relabel.py::detect_relabels` pairs removed<->added
-under hard gates (same unit, same scope) + name similarity (token_set_ratio >=90)
-+ a leaf-substitution guard: the identifying leaf (last " - " segment, the fuel/
-variant) must not be swapped, so petrol->diesel and cng->lpg false positives are
-blocked while a genuine synonym rename (propylene->propene) passes. Greedy
-one-to-one; below the bar stays added/removed (no-guess). Wired into pipeline,
-report (a review-only "Relabels" section), app, and run_demo; added a synthetic
-relabel pair. On the owner's real data: 460 of ~525 added/removed paired, leaving
-76 genuinely new and 54 removed. Relabels are NOT used in the footprint math, so
-a mispair cannot corrupt the carbon number. Documented the decision and its
-boundaries in DECISIONS D9 (and updated D4). Verified: 17 tests green, linter
-clean, demo runs end-to-end on real data.
-
-**Artifacts:** src/relabel.py, tests/test_relabel.py, src/pipeline.py,
-src/report.py, app.py, run_demo.py, scripts/make_synthetic_data.py,
-data/synthetic/*, docs/DECISIONS.md, docs/STATUS.md, docs/PROMPT_LOG.md.
-
-Note: P8 to P10 were done on branch `claude/whats-next-syd3jf` (not the
-`claude/project-setup-i1gyff` named at the top of this file), each auto-shipped
-to `main` via a squash-merged PR (#1 microcopy gate, #2 relabel matching).
-
----
-
-### 2026-07-07 · P10
-**Prompt (verbatim):** "document the session"
-
-**Response summary:** Confirmed the session was already documented incrementally:
-STATUS.md (handoffs H3, H4), this log (P8, P9), and DECISIONS D9 all shipped with
-PRs #1 and #2 and are on `main`. Added this P10 entry to keep the append-only log
-one-per-prompt, and recorded that P8 to P10 ran on `claude/whats-next-syd3jf`.
-Session summary: (1) shipped the microcopy CI gate; (2) after the owner
-challenged the priority, pivoted to and built relabel matching with a leaf guard
-that blocks fuel-swap false positives; (3) documented the pivot and its
-boundaries. Gates at session end: 17 tests green, microcopy linter clean, demo
-runs end-to-end on real DEFRA data.
-
-**Artifacts:** docs/PROMPT_LOG.md.
-
----
-
-### 2026-07-07 · P11
-**Prompt (verbatim):** "What's the next task?" then "yes"
-
-**Response summary:** Realigned the stale dev branch onto `main` (it was 3 commits
-behind: the microcopy gate, relabel matching, and the P10 log entry were already
-merged). Recommended the D9 follow-up (explain renamed-and-moved factors) over a
-retrieval-quality harness because a material change shown without a reason is the
-more urgent hole in the wedge, then built it. Added `diff.is_material(pct, scope)`
-as the single shared materiality rule and refactored the `flagged` column onto it.
-In the pipeline, routed every material relabel pair through the same grounded
-explainer as the flagged factors, retrieving on both the old and new name and
-keeping the stronger hit (empty passage still yields the honest "no reason"). New
-`relabel_explanations` output surfaced in the report (⚠ marker + a "Why the
-renamed factors also moved" section), the app, and run_demo. Made the synthetic
-Fuel-oil relabel material (+6.9% Scope 1) and grounded it with a changes note so
-the path runs offline and is tested. Added an `is_material` unit test and a
-pipeline test. Verified: 19 tests green, microcopy linter clean, demo runs
-end-to-end on real DEFRA data (real material relabels explained). Documented in
-DECISIONS D10 and STATUS handoff H5. Branch `claude/next-task-ydh8wl`.
-
-**Artifacts:** src/diff.py, src/pipeline.py, src/report.py, app.py, run_demo.py,
-scripts/make_synthetic_data.py, data/synthetic/*, tests/test_relabel.py,
-docs/DECISIONS.md, docs/STATUS.md, docs/PROMPT_LOG.md.
-
----
-
-### 2026-07-07 · P12
-**Prompt (verbatim):** "go ahead"
-
-**Response summary:** Built the retrieval-quality harness for the grounding step
-(the next candidate from STATUS). Added `scripts/eval_retrieval.py`: it scores
-`changes_pdf.retrieve_passage` against a labelled gold set for precision, recall,
-and refusal accuracy, and fails on any WRONG grounding note (the failure a plain
-hit-count cannot see, and the one D2 forbids). The harness immediately surfaced a
-real defect: retrieval scored `max(keyword_overlap, title_fuzz)`, so a fuzzy title
-match on shared boilerplate could fire a hit on the wrong note ("Petrol (average
-biofuel blend)" -> the diesel note at 0.87; on real data, "Plug-in Hybrid" car/van
-factors -> a "Calculating emissions" heading at ~0.55). Fixed by making keyword
-overlap the gate so the title only refines a passage whose overlap already clears
-the bar. Verified empirically on the real "What's new" data: 7 title-only false
-positives became honest "no reason found" with zero genuine hits lost, and the
-real electricity retrieval stays covered. Added a 3-test gate
-(`tests/test_retrieval_quality.py`) and a CI step. 22 tests green, both linters
-clean. Documented in DECISIONS D11 and STATUS handoff H6. Branch
-`claude/next-task-ydh8wl`.
-
-**Artifacts:** src/changes_pdf.py, scripts/eval_retrieval.py,
-tests/test_retrieval_quality.py, .github/workflows/ci.yml, docs/DECISIONS.md,
-docs/STATUS.md, docs/PROMPT_LOG.md.
-
----
-
-### 2026-07-07 · P13
-**Prompt (verbatim):** "go ahead"
-
-**Response summary:** Added loader/diff golden-vector tests, the next CI gate the
-owner liked. Chose this over a dependency-audit gate (higher value: the loader is
-the fragile foundation and a silent parsing regression corrupts every carbon
-number) and over semantic relabels (needs unavailable DEFRA notes, risks the
-no-guess rule). Built `tests/test_golden_loader.py`: a small two-sheet fixture
-written in code (an INDEPENDENT oracle, not reusing make_synthetic_data.py) that
-exercises every tricky loader path (scope-from-metadata, "Scope 3 (indirect)"
-normalization, forward-filled descriptors, an ignored Year column, unit
-normalization, (activity, unit) dedup, and super-header block expansion). It pins
-the EXACT normalized loader output and the EXACT diff results (pct_change, status,
-flagged across a Scope-1 mover, a Scope-3 mover, a sub-threshold change, an equal
-factor, and an added/removed pair). Runs in the existing pytest CI step, so it
-gates every PR without the big data files. 26 tests green, both existing gates
-clean. Documented in DECISIONS D12 and STATUS handoff H7. Branch
-`claude/next-task-ydh8wl`.
-
-**Artifacts:** tests/test_golden_loader.py, docs/DECISIONS.md, docs/STATUS.md,
-docs/PROMPT_LOG.md.
-
----
-
-### 2026-07-07 · P14
-**Prompt (verbatim):** "go ahead"
-
-**Response summary:** Added the dependency-audit gate, chosen over semantic
-relabels (which need unavailable DEFRA notes and risk the no-guess rule). Built
-`scripts/audit_deps.py`, a wrapper that runs `pip-audit -r requirements.txt` over
-the declared deps and their transitive closure, and wired it into CI as its own
-step (installs pip-audit, then runs the wrapper). Kept it CI-only rather than a
-pytest test because a dependency audit is online and time-varying (a clean tree
-can flag later with no code change), unlike the deterministic offline gates; and
-kept pip-audit OUT of requirements.txt so the app's runtime deps stay lean.
-Verified it runs clean in the sandbox (no known vulnerabilities). 26 tests green,
-all three CI gates clean. Documented in DECISIONS D13 and STATUS handoff H8.
-Branch `claude/next-task-ydh8wl`.
-
-**Artifacts:** scripts/audit_deps.py, .github/workflows/ci.yml, docs/DECISIONS.md,
-docs/STATUS.md, docs/PROMPT_LOG.md.
-
----
-
 ### 2026-07-08 · P15
 **Prompt (verbatim):** "how can I view the product?"
 
@@ -1333,3 +1060,34 @@ separate background task rather than folded into this change.
 Resume here), `docs/archive/STATUS_2026-W34.md` (H24 rotated out),
 `docs/archive/README.md`, `docs/PROMPT_LOG.md` (this entry). Branch
 `reframe-front-door-copy-to-register`, PR pending.
+
+---
+
+### 2026-08-17 · P45
+Branch: `claude/rotate-prompt-log-9k3xhq` (from `main`).
+
+**Prompt (verbatim):** Rotate `docs/PROMPT_LOG.md` per the ~1,200 line
+threshold flagged in P44: move entries out by ISO week into
+`docs/archive/PROMPT_LOG_YYYY-Www.md`, append-only, filename matching each
+moved entry's own date, keep roughly the current session plus the last 5 live,
+update the archive index, ship as its own small doc-only PR.
+
+**Response summary:** Read the live log in full (1,335 lines) and mapped
+entries to session dates: 2026-07-06, 07-07, 07-08, 07-09, 07-31, 08-04, 08-05,
+08-17, eight sessions. Keeping the current session (08-17) plus the last 5
+(08-05, 08-04, 07-31, 07-09, 07-08) meant only the 07-06 and 07-07 sessions
+(P1 to P14) needed to move; both fall in ISO week 2026-W28, the same week
+`STATUS_2026-W28.md` already covers, so one new archive file
+(`PROMPT_LOG_2026-W28.md`) holds all 14 entries verbatim, moved with a plain
+line-range delete rather than a rewrite so no entry text changed in transit.
+First attempt at the cut swapped only the P1 header for the P15 header instead
+of deleting the whole P1-to-P14 body, caught immediately by re-grepping the
+headers post-edit (would have left duplicate/mismatched entries); reverted with
+`git checkout` and redid it as a straight line-range delete. Live file now 1,062
+lines (was 1,335), P15 through P44 unchanged and unrenumbered. Updated
+`docs/archive/README.md`'s index with the new file and rotation date. No code
+touched; pure documentation housekeeping per the owner's standing convention.
+
+**Artifacts:** `docs/PROMPT_LOG.md` (P1 to P14 removed), `docs/archive/PROMPT_LOG_2026-W28.md`
+(new, P1 to P14), `docs/archive/README.md` (index entry). Branch
+`claude/rotate-prompt-log-9k3xhq`, PR pending.

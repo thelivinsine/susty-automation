@@ -48,3 +48,31 @@
   the URL, a release picker, scrolling to the result after a run). Shipped as
   [PR #29](https://github.com/thelivinsine/susty-automation/pull/29),
   squash-merged `e6e2b90`.
+
+- H25 (2026-08-17): Owner reported a redacted `ImportError` on the live Cloud
+  app (`from pipeline import (...)` at app.py:65). Investigated the codebase
+  first, per systematic debugging: `pipeline.py` exports every name app.py
+  imports, and the full chain (`loader`/`diff`/`relabel`/`matching`/
+  `recompute`/`changes_pdf`/`explain`/`paths`) imported clean both in the
+  existing environment and in a fresh venv built straight from
+  `requirements.txt`, so nothing local reproduced it. Closed the one real gap
+  found regardless: no `runtime.txt` existed, so Cloud picked its own default
+  Python untested against this repo (local dev runs 3.14). Added `runtime.txt`
+  pinning `python-3.14`, the version proven clean by that fresh-venv test and
+  195 green tests, shipped as
+  [PR #31](https://github.com/thelivinsine/susty-automation/pull/31),
+  squash-merged `d9cb493`. That alone did not fix the live app: the owner's
+  actual Cloud log (previously hidden by Streamlit's redaction) showed
+  `ImportError: cannot import name 'cited_reasons' from 'pipeline'` repeating
+  identically across five separate redeploys over ~26 minutes, even though the
+  first of those pulls landed 2 seconds after the PR #29 merge that added
+  `cited_reasons`. Fetched `src/pipeline.py` straight from
+  `raw.githubusercontent.com/thelivinsine/susty-automation/main` to rule out a
+  push/sync problem: the function was correctly there, byte-identical to the
+  local repo, the whole time. Root cause: a Streamlit Community Cloud platform
+  bug, not this codebase, an incremental hot-pull redeploy serving a stale
+  cached module instead of a clean reload. Fix was a full **Reboot app** (not
+  another push), which the owner ran; app confirmed working live. No code fix
+  was needed for the actual bug. Documented the gotcha in `STATUS.md` and
+  `docs/DEPLOY_GUIDE.md` so a future redacted-error report goes straight to
+  "reboot, don't just redeploy" rather than repeating this investigation.
