@@ -1,0 +1,22 @@
+{
+  "old_file": "ghg-conversion-factors-2025-full-set.xlsx",
+  "old_sha256": "c08f24dac724a7598f54a7c7b28ad21fa88ca48d8ebd98cb9e172ffc184b5e5a",
+  "old_bytes": 1796009,
+  "new_file": "ghg-conversion-factors-2026-full-set.xlsx",
+  "new_sha256": "b5c4f2f86cdc74707337b2fb013b44ded189a1b528f5e29ea99856ba65ae0205",
+  "new_bytes": 2109334,
+  "built_utc": "2026-08-17T17:27:03+00:00",
+  "diff_rows": 2647,
+  "diff_stats": {
+    "factors_old": 2111,
+    "factors_new": 2133,
+    "joined": 1597,
+    "flagged": 67,
+    "added": 536,
+    "removed": 514,
+    "relabels": 460,
+    "relabel_families": 11,
+    "added_net": 76,
+    "removed_net": 54
+  }
+}

@@ -112,6 +112,22 @@ new workbook**, which explains that year's methodology revisions and relabels.
 Real full-set workbooks are large; `.gitignore` keeps the generic `defra_*.xlsx`
 aliases out of git, but the gov.uk-named files are tracked when committed.
 
+**Register snapshot (`data/register_snapshot/`):** a committed, pre-built diff
+of the two current workbooks (`diff.parquet` + `meta.json`, hashes included), so
+the app's front door (section 1) paints in well under a second instead of
+parsing both full-set workbooks live (~15s, measured). `pipeline.load_snapshot`
+checks the recorded hashes against the workbooks on disk on every load and
+refuses to serve it if either has changed, falling back to a live parse instead
+of ever showing a stale register. **After dropping in new or updated DEFRA
+workbooks, rebuild it:**
+
+```bash
+python scripts/build_register_snapshot.py
+```
+
+and commit the two files it writes. `tests/test_register_snapshot.py` fails the
+build if the committed snapshot and the real workbooks in `data/` drift apart.
+
 Until real files are added, `scripts/make_synthetic_data.py` generates
 **clearly-labelled SYNTHETIC** workbooks in the **same DEFRA layout** (metadata
 scope row, guidance preamble, `Activity | descriptor | Unit | kg CO2e` table,

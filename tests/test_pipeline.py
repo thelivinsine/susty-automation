@@ -15,6 +15,7 @@ from matching import match_bom, coverage_summary
 from recompute import recompute
 from changes_pdf import extract_changes_text, chunk_changes, retrieve_passage
 from explain import explain_change, NO_REASON
+from pipeline import compare_versions, run_pipeline
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SYNTH = os.path.join(ROOT, "data", "synthetic")
@@ -124,6 +125,60 @@ def test_explanation_is_grounded_and_wont_invent():
     assert passage2 == ""
     out = explain_change(trap, 3120, 3450, 10.58, passage2, {"breaches_baseline": True})
     assert out["plain_english_reason"] == NO_REASON
+
+
+# ---- comparison= reuse (P1-C: don't parse the workbooks twice) -------------
+# app.py's section 1 parses both workbooks before a visitor ever presses Run.
+# run_pipeline() must reuse that work when it is handed in, and must never
+# TRUST a comparison whose labels do not match what this call was asked for,
+# since that would be the one way a stale or wrong-version comparison could
+# silently produce a wrong-looking answer.
+
+def _run_pipeline(bom="sample_bom.csv", old_label="2025", new_label="2026", **kwargs):
+    return run_pipeline(
+        os.path.join(SYNTH, "defra_2025.xlsx"),
+        os.path.join(SYNTH, "defra_2026.xlsx"),
+        os.path.join(SYNTH, "changes_2026.pdf"),
+        pd.read_csv(os.path.join(SYNTH, bom)),
+        old_label,
+        new_label,
+        use_ai=False,
+        **kwargs,
+    )
+
+
+def test_a_matching_comparison_is_reused_not_reparsed():
+    comparison = compare_versions(
+        os.path.join(SYNTH, "defra_2025.xlsx"),
+        os.path.join(SYNTH, "defra_2026.xlsx"),
+        "2025",
+        "2026",
+    )
+    # A sentinel column a fresh compare_versions() call would never produce.
+    # If it survives into the result, run_pipeline reused THIS object.
+    comparison["diff_df"] = comparison["diff_df"].copy()
+    comparison["diff_df"]["_sentinel"] = "reused"
+
+    results = _run_pipeline(comparison=comparison)
+    assert "_sentinel" in results["diff_df"].columns
+    assert (results["diff_df"]["_sentinel"] == "reused").all()
+
+
+def test_a_mismatched_comparison_is_ignored_not_trusted():
+    comparison = compare_versions(
+        os.path.join(SYNTH, "defra_2025.xlsx"),
+        os.path.join(SYNTH, "defra_2026.xlsx"),
+        "2025",
+        "2026",
+    )
+    comparison["diff_df"] = comparison["diff_df"].copy()
+    comparison["diff_df"]["_sentinel"] = "reused"
+
+    # This call asks for "2025" -> "2027", so the "2025" -> "2026" comparison
+    # above must be ignored and recomputed fresh, sentinel and all.
+    results = _run_pipeline(comparison=comparison, new_label="2027")
+    assert "_sentinel" not in results["diff_df"].columns
+    assert results["labels"] == {"old": "2025", "new": "2027"}
 
 
 # ---- Real DEFRA full-set workbook (skips if the big files aren't present) ----

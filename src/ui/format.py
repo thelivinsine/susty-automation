@@ -35,6 +35,7 @@ COLUMN_NAMES = {
     "quantity": "Quantity",
     "scope": "Scope",
     "category": "Category",
+    "status_label": "What happened",
     "factor_old": "Factor (old)",
     "factor_new": "Factor (new)",
     "kg_co2e_old": "Factor (old)",

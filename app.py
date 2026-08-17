@@ -62,8 +62,13 @@ except Exception:
     pass
 
 from paths import resolve_paths          # noqa: E402
-from pipeline import compare_versions, run_pipeline  # noqa: E402
-from diff import STATUS_LABELS, filter_changes  # noqa: E402
+from pipeline import (                     # noqa: E402
+    cited_reasons,
+    compare_versions,
+    load_snapshot,
+    run_pipeline,
+)
+from diff import STATUS_LABELS, filter_changes, with_status_label  # noqa: E402
 from explain import active_backend, NO_REASON  # noqa: E402
 from export import (                       # noqa: E402
     completeness_checklist,
@@ -100,7 +105,7 @@ from ui.components import (               # noqa: E402
     verdict_card,
     write,
 )
-from ui.format import direction, kg, plural, sig_figs, signed_pct  # noqa: E402
+from ui.format import direction, human_column, kg, plural, sig_figs, signed_pct  # noqa: E402
 
 st.set_page_config(page_title="EF Version Explainer", layout="wide")
 
@@ -113,6 +118,12 @@ inject_styles()
 # one. Stating the bar is the point: an unqualified total over 85% of a bill of
 # materials is the kind of quiet overclaim this tool exists to avoid.
 COVERAGE_BAR = 95.0
+
+# How many "why it changed" cards the front door renders before asking the
+# reader to narrow the filters. All 67 real flagged factors would be a wall of
+# disclosures on a cold visit; the biggest movers (the table is already sorted
+# by them) are what a reader actually wants first.
+REASONS_MAX = 25
 
 # Section 1 exists on every visit. The rest exist once a report has been run,
 # so the nav never offers a link to a section that is not on the page.
@@ -136,27 +147,51 @@ def _read_raw(file_bytes, file_name):
     return read_table(bio)
 
 
-def show_table(df, caption, columns=None, **kwargs):
+def show_table(df, caption, columns=None, numeric_cols=(), direction_cols=(),
+               labels=None, **kwargs):
     """Render a table, semantic by default.
 
     Below SEMANTIC_TABLE_MAX_ROWS rows a real <table> wins on every count: it can
     be read aloud, selected, searched and printed. Above it, Streamlit's
-    virtualised grid is genuinely the better tool, so it stays the default and
-    the accessible version moves behind a toggle rather than disappearing.
+    virtualised grid is genuinely the better tool, so it stays the default. But
+    it used to hand that grid the raw internal names (kg_co2e_old, pct_change)
+    with no formatting, which is not what a reader typed into the filters above
+    it. It now gets the same words and number formats as the semantic table:
+    ui.format.human_column for the headings, sig_figs' "%.4g" for the numeric
+    columns, signed_pct's "%+.1f%%" for the direction columns (every one this
+    function is asked to render today is a percent change; a future non-percent
+    direction column would need its own format rather than inheriting this one).
+
+    `labels` overrides human_column for specific internal names, so a caller
+    whose column is literally "old value" / "new value" can show "Factor
+    (2025)" / "Factor (2026)" instead of a fixed, versionless heading.
     """
     if len(df) <= SEMANTIC_TABLE_MAX_ROWS:
-        write(table(df, caption, columns=columns, **kwargs))
+        write(table(df, caption, columns=columns, numeric_cols=numeric_cols,
+                    direction_cols=direction_cols, **kwargs))
         return
 
     st.caption(caption)
     if st.toggle("Accessible, printable version", key=f"semantic:{caption}"):
-        write(table(df, caption, columns=columns, **kwargs))
-    else:
-        st.dataframe(
-            df[list(columns)] if columns else df,
-            width="stretch",
-            hide_index=True,
-        )
+        write(table(df, caption, columns=columns, numeric_cols=numeric_cols,
+                    direction_cols=direction_cols, **kwargs))
+        return
+
+    cols = list(columns) if columns else list(df.columns)
+    overrides = labels or {}
+
+    def _label(c):
+        return overrides.get(c, human_column(c))
+
+    shown_df = df[cols].rename(columns={c: _label(c) for c in cols})
+
+    config = {}
+    for c in numeric_cols:
+        config[_label(c)] = st.column_config.NumberColumn(_label(c), format="%.4g")
+    for c in direction_cols:
+        config[_label(c)] = st.column_config.NumberColumn(_label(c), format="%+.1f%%")
+
+    st.dataframe(shown_df, width="stretch", hide_index=True, column_config=config)
 
 
 def review_sentence(row):
@@ -318,18 +353,39 @@ write(section(
 ))
 
 
-@st.cache_data(show_spinner=False)
-def _compare(old_p, new_p, old_l, new_l):
+# persist="disk" so a live parse (the fallback below) is only ever paid once
+# PER CONTAINER, not once per session: without it, every visitor after a
+# redeploy or a Streamlit Cloud sleep pays the ~15s parse again.
+@st.cache_data(show_spinner=False, persist="disk")
+def _compare_full(old_p, new_p, old_l, new_l):
     return compare_versions(old_p, new_p, old_l, new_l)
 
 
+def _register(old_p, new_p, old_l, new_l):
+    """Section 1's fast path: the committed snapshot first (well under a
+    second), a disk-cached full parse if it is missing or no longer matches
+    the workbooks on disk.
+
+    Returns `diff_df` / `diff_stats` either way. Also returns `full`: the
+    complete compare_versions() dict when the fallback ran, so a later Run
+    click can reuse it instead of parsing both workbooks a second time, or
+    None when the snapshot answered, since a snapshot carries only what
+    section 1 needs, not df_old / relabels / relabel_groups.
+    """
+    snap = load_snapshot(old_p, new_p)
+    if snap is not None:
+        return {"diff_df": snap["diff_df"], "diff_stats": snap["diff_stats"], "full": None}
+    full = _compare_full(old_p, new_p, old_l, new_l)
+    return {"diff_df": full["diff_df"], "diff_stats": full["diff_stats"], "full": full}
+
+
 with st.spinner("Reading both DEFRA workbooks and diffing them..."):
-    comparison = _compare(
+    register = _register(
         defaults["defra_old"], defaults["defra_new"], old_label, new_label
     )
 
-all_changes = comparison["diff_df"]
-cstats = comparison["diff_stats"]
+all_changes = register["diff_df"]
+cstats = register["diff_stats"]
 
 write(fact_bar([
     (f"Factors in {old_label}", f"{cstats['factors_old']:,}"),
@@ -384,6 +440,10 @@ shown = filter_changes(
     min_pct=min_pct,
     material_only=material_only,
 )
+# What happened to each factor, in words. Without this, filtering to "New" or
+# "Retired" returned rows with n/a in the old/new factor column and nothing on
+# screen saying why: a filter you can set but cannot see the result of.
+shown = with_status_label(shown)
 
 filtered = len(shown) != len(all_changes)
 st.caption(
@@ -401,10 +461,14 @@ else:
         shown,
         f"DEFRA conversion factors, {old_label} against {new_label}, "
         "largest movement first",
-        columns=["activity", "unit", "scope", "kg_co2e_old", "kg_co2e_new",
-                 "pct_change"],
+        columns=["activity", "unit", "scope", "status_label", "kg_co2e_old",
+                 "kg_co2e_new", "pct_change"],
         numeric_cols=["kg_co2e_old", "kg_co2e_new"],
         direction_cols=["pct_change"],
+        labels={
+            "kg_co2e_old": f"Factor ({old_label})",
+            "kg_co2e_new": f"Factor ({new_label})",
+        },
     )
     # The filtered view IS the work product for a lot of visits ("give me every
     # scope 3 factor that moved more than 10%"), so it leaves as a file rather
@@ -415,6 +479,67 @@ else:
         file_name="ef_comparison_view.csv",
         mime="text/csv",
     )
+
+    # --- Why these changed, in DEFRA's own words ----------------------------
+    # The wedge, on the front door, before any upload. Every flagged factor in
+    # the CURRENT filtered view (so the five filters drive this too), quoted
+    # from the DEFRA changes notes with no model call: retrieve_citation only,
+    # so it costs nothing and reads identically for every visitor. This is
+    # VISION.md's "demote the AI to a labelled quoter of DEFRA's verbatim
+    # words". The AI-written prose stays in the product report below, behind
+    # the existing sign-in tier.
+    write("<div class=\"subhead\">Why these changed, in DEFRA's own words</div>"
+          "<p class=\"caption\">For every factor above that crossed DEFRA's own "
+          "materiality threshold: the DEFRA changes note it is grounded in, "
+          "quoted verbatim, or a plain statement that the notes do not cover "
+          "it. Nothing here is written by a model.</p>")
+
+    @st.cache_data(show_spinner=False)
+    def _reasons(_diff_df, pdf_p, new_p):
+        return cited_reasons(_diff_df, pdf_p, new_p)
+
+    reasons_by_key = {
+        (r["activity"], r["unit"]): r
+        for r in _reasons(all_changes, defaults["changes_pdf"], defaults["defra_new"])
+    }
+
+    flagged_shown = shown[shown["flagged"].fillna(False).astype(bool)]
+    if len(flagged_shown) == 0:
+        write(alert(
+            "No factor in this view crossed DEFRA's own materiality threshold.",
+            kind="none",
+        ))
+    else:
+        if len(flagged_shown) > REASONS_MAX:
+            st.caption(
+                f"Showing the {REASONS_MAX} largest of {len(flagged_shown):,}. "
+                "Narrow the filters above to reach the others."
+            )
+        for _, frow in flagged_shown.head(REASONS_MAX).iterrows():
+            r = reasons_by_key.get((frow["activity"], frow["unit"]))
+            if r is None:
+                continue
+            status = (
+                badge("Cited", "cited") if r["explained"]
+                else badge("Not explained", "silent")
+            )
+            if r["explained"]:
+                body = source_quote(
+                    r["quote"],
+                    f"{r['source']}, {r['heading']}. Retrieval relevance {r['score']}",
+                )
+            else:
+                body = f"<p>{esc(NO_REASON)}</p>"
+            write(disclosure(
+                f"{r['activity']} ({r['scope']})",
+                body,
+                summary_html=explanation_head(
+                    status,
+                    r["activity"],
+                    f"{r['scope']} · {sig_figs(r['kg_co2e_old'])} to "
+                    f"{sig_figs(r['kg_co2e_new'])} · {signed_pct(r['pct_change'])}",
+                ),
+            ))
 
 
 # ===========================================================================
@@ -570,8 +695,10 @@ st.caption(
 
 
 @st.cache_data(show_spinner=False)
-def _run(old_p, new_p, pdf_p, bom_df, old_l, new_l, use_ai):
-    return run_pipeline(old_p, new_p, pdf_p, bom_df, old_l, new_l, use_ai=use_ai)
+def _run(old_p, new_p, pdf_p, bom_df, old_l, new_l, use_ai, _comparison):
+    return run_pipeline(
+        old_p, new_p, pdf_p, bom_df, old_l, new_l, use_ai=use_ai, comparison=_comparison
+    )
 
 
 # Recompute when the user clicks Run, or when the explainer tier changed under
@@ -588,6 +715,15 @@ tier_changed = "results" in st.session_state and (
 )
 if (run or tier_changed) and ingest_ready:
     bom_df = clean_bom_df if clean_bom_df is not None else pd.read_csv(defaults["bom"])
+    # Reuse section 1's parse of the two workbooks when it already did the full
+    # one (df_old, relabels, relabel_groups; a snapshot alone does not carry
+    # those). Otherwise this is the first full parse this session needed, same
+    # as before. The leading underscore on _comparison in _run's signature
+    # tells Streamlit to skip hashing it: old_p/new_p/old_l/new_l already
+    # identify it completely, so trusting the cache key here is not a guess.
+    run_comparison = register["full"] or _compare_full(
+        defaults["defra_old"], defaults["defra_new"], old_label, new_label
+    )
     with st.spinner("Loading, diffing, matching, recomputing, explaining..."):
         results = _run(
             defaults["defra_old"],
@@ -597,6 +733,7 @@ if (run or tier_changed) and ingest_ready:
             old_label,
             new_label,
             use_ai,
+            run_comparison,
         )
         st.session_state["results"] = results
         st.session_state["set_aside"] = set_aside

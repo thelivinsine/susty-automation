@@ -746,3 +746,68 @@ audience ("send me every scope 3 factor that moved past threshold"). It is the
 next candidate, not part of this change: the download button already covers
 handing the view to someone, and syncing widget state to the URL in Streamlit is
 fiddly enough to deserve its own pass rather than being smuggled into this one.
+
+## D24. The front door explains, and it does not make anyone wait for it
+
+**Decision:** two changes to the comparison D23 made the front door, both aimed
+at the same gap: it showed WHAT changed and never WHY, and it took 15 to 44
+seconds (measured on the real workbooks) to show even that.
+
+**Why they changed:** `run_pipeline` only ever built explanations for factors
+that appeared in an uploaded bill of materials (`explain_flagged_only`). A cold
+visitor saw 67 material movers and not one grounded reason, which is backwards
+for a tool whose stated wedge (`VISION.md`) is the explanation, not the diff.
+Separately, `compare_versions` parsed two full-set DEFRA workbooks live on every
+cold visit and every redeploy, which is real cost paid for arithmetic on files
+that only change once a year.
+
+**Explanations: DEFRA's own words, no model call, free for everyone.**
+`pipeline.cited_reasons` calls the SAME `changes_pdf.retrieve_citation` the
+product report uses, so DECISIONS D11's wrong-note guard protects this surface
+exactly as it protects the memo. `explain_change` is never imported into it: no
+API key is read, nothing is model-written, so it costs nothing and reads
+identically for every visitor. This is `VISION.md` section 6, taken literally:
+"demote the AI to a labelled quoter of DEFRA's verbatim words." The AI-written
+prose stays in the product report, behind the existing sign-in tier. On the real
+2025/2026 workbooks: 46 of 67 flagged factors (69%) carry a genuine citation; the
+rest show the exact `NO_REASON` sentence rather than a guess. Capped at the 25
+largest movements in the current filtered view, since all 67 would be a wall of
+disclosures on a cold visit.
+
+**Cold start: a committed snapshot, hash-verified, with a live fallback that
+can never be tricked into serving stale numbers.** `data/register_snapshot/`
+holds the joined diff (`diff.parquet`) plus `meta.json`: the SHA256 of each
+workbook the snapshot was built from. `pipeline.load_snapshot` re-hashes both
+workbooks on every load (about 20ms for the pair) and returns the snapshot only
+on an exact match; anything else (a changed workbook, a missing file, a corrupt
+one) returns `None` and the caller falls back to the same live parse as before.
+There is no partial trust and no repair path: a snapshot that might be stale
+must never be served as if it were current. Rebuilt with
+`scripts/build_register_snapshot.py` whenever the workbooks change, and
+`tests/test_register_snapshot.py` fails the build if the committed snapshot
+drifts from the real workbooks in `data/`. Measured: 0.157s against 43.8s for
+the same live parse, about 280x. The disk-persisted fallback
+(`persist="disk"` on `_compare_full`) means even a snapshot-miss parse is only
+ever paid once per container, not once per session.
+
+**One parse, not two, when a visitor does upload something.** `run_pipeline`
+gained an optional `comparison=` argument: reuse a comparison already computed
+by section 1 rather than parsing both workbooks again on the Run click. Trusted
+only when its own labels match what the call was asked for; anything else is
+recomputed exactly as before, so a stale or mismatched comparison can never
+produce a silently wrong result.
+
+**Two smaller fixes that came out of running this in a browser, not asked for
+separately.** The default Streamlit grid (used above 500 rows) rendered raw
+internal column names (`kg_co2e_old`, `pct_change`); it now gets the same
+`ui.format.human_column` words and number formats as the semantic table.
+Filtering to "New" or "Retired" returned rows with no column saying what
+happened to them; `diff.with_status_label` adds one, read by the table and
+carried into the CSV download.
+
+**What was deliberately not built:** AI-written prose on the front door, even
+for signed-in approved users. `VISION.md`'s whole point is that the free,
+verbatim-quote layer is the trustworthy one; adding a paid tier to the
+comparison page would mean the front door reads differently depending on who is
+looking at it, which is a harder thing to reason about than "it is always
+DEFRA's own words here, always the model's words in the report."

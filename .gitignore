@@ -24,3 +24,7 @@ venv/
 # Real login + API secrets live here on the host — never commit them.
 # The committed template is .streamlit/secrets.toml.example (safe to share).
 .streamlit/secrets.toml
+
+# Streamlit's own disk cache (persist="disk" on _compare_full). Host-local,
+# rebuilds itself on first miss; the committed fast path is data/register_snapshot/.
+.streamlit/cache/
