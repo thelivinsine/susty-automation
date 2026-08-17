@@ -15,6 +15,10 @@ File naming, one per ISO week, matching each moved entry's own date:
 - `STATUS_2026-W28.md`: status handoffs H8, then H11 to H14 rotated out on
   2026-07-31. (H1–H7 predate this archive convention and live in git history and
   the prompt log.)
+- `PROMPT_LOG_2026-W28.md`: prompt-log entries P1 to P14 (2026-07-06 and
+  2026-07-07 sessions) rotated out on 2026-08-17 when the live file passed
+  ~1,200 lines, keeping the current session plus the last 5 (2026-07-08 through
+  2026-08-17) live.
 - `STATUS_2026-W31.md`: status handoff H16, rotated out on 2026-07-31 when H18
   landed and pushed it past the two-most-recent rule.
   Then H19 and H18 on 2026-07-31, and H20 on 2026-08-04 when H22 landed.
@@ -23,4 +27,5 @@ File naming, one per ISO week, matching each moved entry's own date:
 - `STATUS_2026-W32.md`: status handoff H22, rotated out on 2026-08-17 when H24
   landed.
 - `STATUS_2026-W34.md`: status handoff H23, rotated out on 2026-08-17 when H25
-  landed. Then H24 on 2026-08-17 when H26 landed.
+  landed. Then H24 on 2026-08-17 when H26 landed. Then H25 on 2026-08-17 when
+  H27 landed.
