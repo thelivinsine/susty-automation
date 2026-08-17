@@ -222,7 +222,9 @@ Most recent handoffs (older ones rotate into `docs/archive/`):
   Not done, deliberately: AI-written prose on the front door (VISION.md's point
   is that this layer stays free and verbatim for everyone), and the P2/P3 items
   from the same audit (copy reframe from product to register, filter state in
-  the URL, a release picker, scrolling to the result after a run).
+  the URL, a release picker, scrolling to the result after a run). Shipped as
+  [PR #29](https://github.com/thelivinsine/susty-automation/pull/29),
+  squash-merged `e6e2b90`.
 
 - H23 (2026-08-17): MADE THE COMPARISON THE FRONT DOOR (D23), on the owner's
   brief to check whether the interface really leads with an interactive EF

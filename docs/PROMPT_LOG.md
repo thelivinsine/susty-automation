@@ -1213,4 +1213,7 @@ name), `app.py` (front-door reasons block, snapshot-first `_register`, readable
 (`with_status_label`), `CLAUDE.md` (snapshot rebuild step), `docs/DECISIONS.md`
 (D24), `docs/STATUS.md` (H24), `docs/archive/STATUS_2026-W31.md` (+H21),
 `docs/archive/STATUS_2026-W32.md` (new, H22), `docs/archive/README.md`,
-`docs/PROMPT_LOG.md` (this entry).
+`docs/PROMPT_LOG.md` (this entry). Shipped as
+[PR #29](https://github.com/thelivinsine/susty-automation/pull/29),
+squash-merged `e6e2b90`. Feature branch deleted locally and on origin
+post-merge.
