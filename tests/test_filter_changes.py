@@ -26,7 +26,7 @@ import pandas as pd
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "src"))
 
-from diff import STATUS_LABELS, filter_changes  # noqa: E402
+from diff import STATUS_LABELS, filter_changes, with_status_label  # noqa: E402
 
 
 def sample():
@@ -129,6 +129,41 @@ def test_status_filter_works_without_a_renamed_column():
     """diff_versions alone does not produce `renamed`; the filter must not need it."""
     bare = sample().drop(columns=["renamed"])
     assert len(filter_changes(bare, statuses=["added"])) == 2
+
+
+# --------------------------------------------------------------------------
+# with_status_label: what a reader sees for "What happened to the factor"
+# --------------------------------------------------------------------------
+
+def test_every_status_label_key_maps_to_its_word():
+    """The filter's own keys and the column's own words must not drift apart."""
+    out = with_status_label(sample())
+    seen = dict(zip(out["activity"], out["status_label"]))
+    assert seen["UK electricity"] == "Changed"
+    assert seen["Paper"] == "Unchanged"
+    assert seen["Hydrogen, green"] == "New"
+
+
+def test_a_paired_rename_reads_as_renamed_not_added_or_removed():
+    """Renamed beats status: the same rule filter_changes already applies, so
+    the column a reader sees agrees with the filter they just set."""
+    out = with_status_label(sample())
+    seen = dict(zip(out["activity"], out["status_label"]))
+    assert seen["HGV (all diesel)"] == "Renamed"
+    assert seen["HGV (non-refrigerated, all diesel)"] == "Renamed"
+
+
+def test_works_without_a_renamed_column():
+    bare = sample().drop(columns=["renamed"])
+    out = with_status_label(bare)
+    assert (out["status_label"] == out["status"].map(STATUS_LABELS)).all()
+
+
+def test_the_original_frame_is_not_mutated():
+    original = sample()
+    before = original.columns.tolist()
+    with_status_label(original)
+    assert original.columns.tolist() == before
 
 
 # --------------------------------------------------------------------------

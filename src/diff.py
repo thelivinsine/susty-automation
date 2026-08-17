@@ -146,6 +146,28 @@ STATUS_LABELS = {
 }
 
 
+def with_status_label(diff_df):
+    """A copy of diff_df with a `status_label` column: what a reader sees when
+    they filter by "What happened to the factor".
+
+    Filtering to "New" or "Retired" and then finding no column that says so is
+    the exact gap this closes. `renamed` beats `status`, same rule
+    `filter_changes` already applies: a paired DEFRA rename is reported as a
+    rename, never also as new or retired (that double-count is the noise the
+    relabel pairing exists to remove). Display-only: nothing downstream that
+    reads `status` itself changes.
+    """
+    out = diff_df.copy()
+    renamed = (
+        out["renamed"].fillna(False).astype(bool)
+        if "renamed" in out.columns
+        else pd.Series(False, index=out.index)
+    )
+    out["status_label"] = out["status"].map(STATUS_LABELS)
+    out.loc[renamed, "status_label"] = STATUS_LABELS["renamed"]
+    return out
+
+
 def filter_changes(diff_df, query="", scopes=None, statuses=None,
                    min_pct=0.0, material_only=False):
     """Narrow a diff table to the rows a reader asked for. Pure, no UI.

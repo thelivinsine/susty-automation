@@ -62,3 +62,23 @@
   change what is RETURNED and never what is CHOSEN so D11 stays locked, and print
   a missing publication date as not stated rather than inferring it. Design only,
   no code changed.
+
+- H21 (2026-07-31): BUILT the citations (D21), so the memo now shows its work.
+  Validated the risky step first: the loader records `source_file`,
+  `source_sheet`, `source_row`, and 240 of 240 randomly sampled rows across both
+  real workbooks were checked against the actual cells with openpyxl, so the row
+  numbers survive the super-header expansion and the forward-fill. `diff.py`
+  carries provenance through the join (new workbook where the factor still
+  exists, old one where it was removed); `changes_pdf` tags each chunk with its
+  document and gains `retrieve_citation`, which shares `_best_chunk` with
+  `retrieve_passage` so the quote a reader checks is always the passage the
+  explanation was built from; `export.py` renders the quote, its section heading,
+  the source document, and the factor's workbook/sheet/row under the "Cited" tag.
+  D11 untouched: the retrieval gate still reports 0 wrong hits. The D12 golden
+  vector failed as predicted and its fixture now PINS the provenance, with every
+  expected row number verified against the fixture's cells rather than copied from
+  the loader. 149 tests (was 144), both gates clean, `scripts/check_citations.py`
+  prints the evidence on real data, and the memo was rendered in headless Chromium
+  to confirm the citation block appears and survives print media. Known wrinkle
+  logged, not hidden: in offline mode the reason already embeds the note, so it
+  reads twice. Shipped as PR #22, squash-merged `12e27f1`.

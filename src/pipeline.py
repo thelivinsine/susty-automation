@@ -6,6 +6,11 @@ run_pipeline(...) -> dict with every artifact the UI / report needs.
 
 from __future__ import annotations
 
+import hashlib
+import json
+import os
+from datetime import datetime, timezone
+
 import pandas as pd
 
 from loader import load_defra
@@ -15,6 +20,7 @@ from matching import match_bom, coverage_summary
 from recompute import recompute, top_delta_lines
 from changes_pdf import load_change_chunks, retrieve_citation, retrieve_passage
 from explain import explain_change
+from paths import DATA
 
 
 def _family_movement(pcts, n_rose: int, n_fell: int) -> str:
@@ -145,6 +151,138 @@ def compare_versions(
     }
 
 
+# ---------------------------------------------------------------------------
+# The committed register snapshot: a fast path around parsing two full-set
+# workbooks (about 15 seconds, measured) just to paint the front door.
+# ---------------------------------------------------------------------------
+
+SNAPSHOT_DIRNAME = "register_snapshot"
+
+
+def snapshot_dir() -> str:
+    """Where the committed register snapshot lives: data/register_snapshot/."""
+    return os.path.join(DATA, SNAPSHOT_DIRNAME)
+
+
+def _file_hash(path: str) -> str:
+    """SHA256 of a file's actual bytes. Proves which exact workbook a snapshot
+    was built from, rather than trusting a filename or a timestamp."""
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for block in iter(lambda: f.read(1 << 20), b""):
+            h.update(block)
+    return h.hexdigest()
+
+
+def write_snapshot(comparison: dict, old_path: str, new_path: str,
+                    out_dir: str | None = None) -> str:
+    """Write the joined diff, plus the provenance that proves it is current, to
+    disk. Returns the directory written to.
+
+    Only what the front door needs is stored (diff_df, diff_stats). The
+    product-report path still parses the workbooks live: it needs df_old,
+    relabels and relabel_groups too, and it sits behind a Run button where a
+    wait is already the expectation, so there is nothing to fix there.
+    """
+    out_dir = out_dir or snapshot_dir()
+    os.makedirs(out_dir, exist_ok=True)
+
+    diff_df = comparison["diff_df"]
+    diff_df.to_parquet(os.path.join(out_dir, "diff.parquet"), index=False)
+
+    meta = {
+        "old_file": os.path.basename(old_path),
+        "old_sha256": _file_hash(old_path),
+        "old_bytes": os.path.getsize(old_path),
+        "new_file": os.path.basename(new_path),
+        "new_sha256": _file_hash(new_path),
+        "new_bytes": os.path.getsize(new_path),
+        "built_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "diff_rows": len(diff_df),
+        "diff_stats": comparison["diff_stats"],
+    }
+    with open(os.path.join(out_dir, "meta.json"), "w", encoding="utf-8") as f:
+        json.dump(meta, f, indent=2)
+
+    return out_dir
+
+
+def load_snapshot(old_path: str, new_path: str,
+                   snap_dir: str | None = None) -> dict | None:
+    """Load the committed snapshot IF it still matches these exact workbooks.
+
+    Returns {"diff_df", "diff_stats"} on a match. Returns None on anything
+    else: a missing file, an unreadable one, or a hash mismatch. There is no
+    partial trust and no repair here on purpose: a snapshot that might be stale
+    must never be served as if it were current, so the only two outcomes are
+    "the real thing" or "the caller falls back to parsing it live". The hash
+    check costs about 20ms for the pair, which is what makes it safe to run on
+    every cold visit rather than trusting a build timestamp.
+    """
+    snap_dir = snap_dir or snapshot_dir()
+    meta_path = os.path.join(snap_dir, "meta.json")
+    diff_path = os.path.join(snap_dir, "diff.parquet")
+    if not (os.path.exists(meta_path) and os.path.exists(diff_path)):
+        return None
+    if not (os.path.exists(old_path) and os.path.exists(new_path)):
+        return None
+
+    try:
+        with open(meta_path, "r", encoding="utf-8") as f:
+            meta = json.load(f)
+        if _file_hash(old_path) != meta.get("old_sha256"):
+            return None
+        if _file_hash(new_path) != meta.get("new_sha256"):
+            return None
+        diff_df = pd.read_parquet(diff_path)
+    except Exception:
+        return None
+
+    return {"diff_df": diff_df, "diff_stats": meta["diff_stats"]}
+
+
+def cited_reasons(diff_df, changes_pdf_path, new_workbook_path) -> list[dict]:
+    """DEFRA's own words for every flagged factor, no BOM and no model call.
+
+    This is the front door's half of "explain the delta": the diff already says
+    WHAT moved, this says WHY, quoted verbatim from the DEFRA notes. It shares
+    the retrieval path the product report uses (`retrieve_citation`, which
+    shares `_best_chunk` with `retrieve_passage`), so DECISIONS D11 (the
+    wrong-note guard) protects this surface exactly as it protects the memo.
+    `explain_change` is never imported here: nothing is model-written, nothing
+    costs an API call, so every visitor sees the same thing.
+
+    Returns one record per row where `flagged` is true, largest movement first
+    (the order `diff_df` already carries). `explained=False` with an empty quote
+    means the notes do not cover this one, which is `retrieve_citation`
+    returning None, not a failure to look.
+    """
+    flagged = diff_df[diff_df["flagged"]]
+    if flagged.empty:
+        return []
+
+    chunks = load_change_chunks(changes_pdf_path, new_workbook_path)
+
+    out = []
+    for _, row in flagged.iterrows():
+        citation = retrieve_citation(chunks, row["activity"]) if chunks else None
+        out.append({
+            "activity": row["activity"],
+            "scope": row["scope"],
+            "unit": row["unit"],
+            "kg_co2e_old": row["kg_co2e_old"],
+            "kg_co2e_new": row["kg_co2e_new"],
+            "pct_change": row["pct_change"],
+            "explained": citation is not None,
+            "heading": (citation or {}).get("heading", ""),
+            "quote": (citation or {}).get("quote", ""),
+            "source": (citation or {}).get("source", ""),
+            "source_file": (citation or {}).get("source_file", ""),
+            "score": (citation or {}).get("score", 0.0),
+        })
+    return out
+
+
 def run_pipeline(
     defra_old_path: str,
     defra_new_path: str,
@@ -154,17 +292,27 @@ def run_pipeline(
     new_label: str = "new",
     explain_flagged_only: bool = True,
     use_ai: bool = True,
+    comparison: dict | None = None,
 ) -> dict:
     """Run loader -> diff -> match -> recompute -> explain and return everything.
 
     `use_ai=False` forces the free offline explainer even when an API key is set.
     The app passes this for visitors who are not a signed-in, approved user, so the
     tool is open to everyone while the paid model stays behind sign-in.
+
+    `comparison` lets a caller that already ran `compare_versions` (the app's
+    section 1, which a visitor sees before ever pressing Run) hand that work
+    straight in, rather than paying to parse both workbooks a second time.
+    Trusted only when its own labels match the ones this call was asked for;
+    anything else is treated as if nothing were passed, so a stale or
+    mismatched comparison can never produce a silently wrong result.
     """
     force_offline = not use_ai
     # Loading, diffing and pairing the renames is the same work the standalone
-    # comparison does, so it is done once, there.
-    comparison = compare_versions(defra_old_path, defra_new_path, old_label, new_label)
+    # comparison does. Reuse it when a matching one was handed in; otherwise do
+    # it here, exactly as before.
+    if comparison is None or comparison.get("labels") != {"old": old_label, "new": new_label}:
+        comparison = compare_versions(defra_old_path, defra_new_path, old_label, new_label)
     df_old = comparison["df_old"]
     diff_df = comparison["diff_df"]
     relabels_df = comparison["relabels"]

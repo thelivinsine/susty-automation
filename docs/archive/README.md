@@ -18,3 +18,7 @@ File naming, one per ISO week, matching each moved entry's own date:
 - `STATUS_2026-W31.md`: status handoff H16, rotated out on 2026-07-31 when H18
   landed and pushed it past the two-most-recent rule.
   Then H19 and H18 on 2026-07-31, and H20 on 2026-08-04 when H22 landed.
+  Then H21 on 2026-08-17 when H24 landed (both H21 and H22 fell out of the
+  two-most-recent window at once).
+- `STATUS_2026-W32.md`: status handoff H22, rotated out on 2026-08-17 when H24
+  landed.

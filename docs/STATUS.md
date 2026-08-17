@@ -29,15 +29,23 @@ The Google Cloud budget cap is set (the D17 backstop) and the owner deliberately
 deferred the sign-in gate. Turn it on when the link goes public, when the budget
 alert fires, or when anyone relies on the tool. Secrets edit, no code change.
 
-**Front door (D23):** the app now OPENS on the comparison. Section 1 is an
-interactive, filterable table of the whole factor register (2,647 joined rows on
-the real 2025/2026 workbooks), with search, scope, status, a minimum-movement
-slider and a past-DEFRA-thresholds toggle, plus a download of whatever view you
-have narrowed to. It runs on a cold visit with no upload, no sign-in and no API
-key, because `pipeline.compare_versions` is the BOM-free half of the pipeline and
-`run_pipeline` now calls it rather than repeating it. The product report is
-unchanged and sits behind the Run button, which a person now has to press: the
-app no longer runs the whole pipeline on a sample product unasked.
+**Front door (D23), and now it explains itself and does not make anyone wait
+(D24):** the app OPENS on the comparison. Section 1 is an interactive,
+filterable table of the whole factor register (2,647 joined rows on the real
+2025/2026 workbooks), with search, scope, what happened to the factor, a
+minimum-movement slider and a past-DEFRA-thresholds toggle, plus a download of
+whatever view you have narrowed to. Below it, "Why these changed, in DEFRA's own
+words": for every material mover in the current view, the verbatim DEFRA note it
+is grounded in, or a plain statement that the notes are silent, with no model
+call and no cost to any visitor. It runs on a cold visit with no upload, no
+sign-in and no API key. `pipeline.compare_versions` is the BOM-free half of the
+pipeline and `run_pipeline` now calls it (or reuses a comparison it is handed)
+rather than repeating it. The comparison itself loads from a committed,
+hash-verified snapshot (`data/register_snapshot/`) in well under a second,
+falling back to a live parse (about 15 to 44s, measured) only when the workbooks
+on disk no longer match it. The product report is unchanged and sits behind the
+Run button, which a person now has to press: the app no longer runs the whole
+pipeline on a sample product unasked.
 
 **Interface:** the app renders through an owned design layer (`src/ui/`) rather
 than Streamlit defaults, on the GOV.UK palette the owner chose (D19). As of D22
@@ -57,24 +65,43 @@ never painted as an alarm. Tables are real tables (caption, column scopes,
 printable), and one run exports four artifacts sharing a run id, each carrying
 its unresolved items in the front matter (D20).
 
-Gates: `pytest` green (177 tests, including the grounding trap, a real-workbook
+Gates: `pytest` green (195 tests, including the grounding trap, a real-workbook
 test, the microcopy gate, the relabel suite (detection + family grouping), the
 material-relabel explanation path, the retrieval-quality gold set, loader/diff
 golden vectors, the real-data ingest suite, and the access-gating suite (free
 tier never calls the model, approval rules), the design-system suite (contrast in
-both themes, escaping, table semantics, colour independence) and the export-pack
+both themes, escaping, table semantics, colour independence), the export-pack
 suite (four artifacts, one run id, unresolved items in the front matter, and the
 citation suite: evidence carried, evidence rendered, and no quote beside an
-unexplained change)). Three CI gates are live: the microcopy linter (no-em-dash house
-rule), a retrieval-quality gate that fails the build on any WRONG grounding note,
-and a dependency-audit gate (`pip-audit` on requirements); the loader/diff golden
-vectors run in the same pytest step. Streamlit app boots clean. Demo footprint on
-the sample product: 2.344 to 2.305 kg CO2e, with the UK electricity change
-explained from the real DEFRA text. On real data, relabel pairing collapses
-~500/500 added/removed to 76 genuinely new and 54 genuinely removed, and the 460
-paired renames group into 11 readable families.
+unexplained change), the front-door reasons suite (D24: the D11 wrong-note guard
+holds on the front door too) and the register-snapshot suite (a tampered or
+mismatched hash is refused, never served stale, plus a guard that the committed
+snapshot still matches the real workbooks)). Three CI gates are live: the
+microcopy linter (no-em-dash house rule), a retrieval-quality gate that fails the
+build on any WRONG grounding note, and a dependency-audit gate (`pip-audit` on
+requirements); the loader/diff golden vectors run in the same pytest step.
+Streamlit app boots clean. Demo footprint on the sample product: 2.344 to 2.305
+kg CO2e, with the UK electricity change explained from the real DEFRA text. On
+real data, relabel pairing collapses ~500/500 added/removed to 76 genuinely new
+and 54 genuinely removed, and the 460 paired renames group into 11 readable
+families. Of the 67 real factors past DEFRA's thresholds, 46 (69%) carry a
+verbatim DEFRA citation on the front door with no upload and no model call.
 
 ## What shipped
+- **The front door explains itself, and stopped making anyone wait (D24):**
+  `pipeline.cited_reasons` (no model call, shares `retrieve_citation`/D11's
+  wrong-note guard with the product report) grounds every material mover in the
+  current filtered view in DEFRA's own words, or says plainly the notes are
+  silent; rendered as a capped, disclosure-per-factor block under section 1.
+  `pipeline.write_snapshot`/`load_snapshot` plus committed, hash-verified
+  `data/register_snapshot/` (rebuilt by `scripts/build_register_snapshot.py`)
+  cut the cold-visit parse from 15 to 44 measured seconds to 0.16s, falling back
+  to a live, now disk-cached parse only on a hash mismatch. `run_pipeline` gained
+  an optional `comparison=` argument so a Run click reuses section 1's parse
+  instead of repeating it. The default (>500 row) grid now shows readable column
+  names and the same number formats as the semantic table, and a `status_label`
+  column ("New" / "Retired" / "Renamed" / ...) closes the gap where filtering to
+  a status returned no column saying what happened.
 - **The comparison as the front door (D23):** `pipeline.compare_versions` (the
   BOM-free half of the pipeline, reused by `run_pipeline` so the two can never
   disagree), `diff.filter_changes` (the pure, tested rule that decides what a
@@ -173,6 +200,30 @@ light-only, because Streamlit's own chrome is pinned light in `config.toml`.
 ## Resume here
 Most recent handoffs (older ones rotate into `docs/archive/`):
 
+- H24 (2026-08-17): A front-end audit of the running app (real 2025/2026
+  workbooks, measured in a browser) found the front door D23 built showed WHAT
+  changed and never WHY, and took 15 to 44 measured seconds to paint on a cold
+  visit. Both fixed (D24), plus three smaller P1 gaps the same audit measured.
+  `pipeline.cited_reasons` grounds every flagged factor in the current filtered
+  view in DEFRA's own words via the existing `retrieve_citation` (so D11's
+  wrong-note guard covers this surface too), with no model call: 46 of 67 real
+  flagged factors (69%) come back cited, the rest show the exact `NO_REASON`
+  sentence. `pipeline.write_snapshot`/`load_snapshot` plus a committed,
+  hash-verified `data/register_snapshot/` (built by the new
+  `scripts/build_register_snapshot.py`) cut the cold parse from 43.8s (measured,
+  same real workbooks) to 0.157s, a live parse only firing on an actual hash
+  mismatch, itself now disk-cached so a redeploy only pays it once per container.
+  `run_pipeline(comparison=...)` reuses section 1's parse on a Run click instead
+  of repeating it, proven both by a sentinel-column test and by `run_demo.py`
+  still completing end to end. The default (>500 row) grid gained readable
+  column headers and a `status_label` ("New"/"Retired"/"Renamed") column,
+  confirmed live via the grid's own column picker rather than assumed. 195 tests
+  green (was 177), both CI gates clean, zero horizontal scroll at 375/768/1440.
+  Not done, deliberately: AI-written prose on the front door (VISION.md's point
+  is that this layer stays free and verbatim for everyone), and the P2/P3 items
+  from the same audit (copy reframe from product to register, filter state in
+  the URL, a release picker, scrolling to the result after a run).
+
 - H23 (2026-08-17): MADE THE COMPARISON THE FRONT DOOR (D23), on the owner's
   brief to check whether the interface really leads with an interactive EF
   version comparison. It did not: the app opened on a setup form, ran the whole
@@ -197,54 +248,19 @@ Most recent handoffs (older ones rotate into `docs/archive/`):
   own machine. 177 tests green, both CI gates clean. Not done, deliberately:
   filter state in the URL (`st.query_params`), which is the next candidate.
 
-- H22 (2026-08-04): REWORKED the interface (D22) on the owner's brief: make it
-  look and behave like a senior product team shipped it, keep the palette. Built
-  the direction as a preview first (`docs/mockups/v2_product_ui.html`, three
-  screens plus a swatch sheet so "palette intact" is checkable by looking), then
-  implemented it. `tokens.css` gained a surface system and a type scale and no new
-  hue; `components.css` was rewritten around cards, a shell and real states;
-  `components.py` gained masthead, subnav, meter, fact_bar, step, file_chip,
-  explanation_head, source_quote and checklist, and `verdict_card` learned the
-  two-figure layout; `app.py` moved setup out of the sidebar into three numbered
-  steps. Every D20 rule still holds and is still enforced. 151 tests green (the
-  one changed assertion was a test pinning the literal "1 row(s)", now written as
-  "1 row" by `ui.format.plural`). Checked in a real browser at 375, 768 and
-  1440px: zero horizontal scroll, report renders end to end on the real 2025 and
-  2026 workbooks. Not done, and deliberately: A-07 is still open (Streamlit's
-  file input still has no programmatic accessible name), and the app remains
-  light-only because Streamlit's own chrome is pinned light in config.toml.
-  Shipped as PR #24, squash-merged `e21222b`.
-
-- H21 (2026-07-31): BUILT the citations (D21), so the memo now shows its work.
-  Validated the risky step first: the loader records `source_file`,
-  `source_sheet`, `source_row`, and 240 of 240 randomly sampled rows across both
-  real workbooks were checked against the actual cells with openpyxl, so the row
-  numbers survive the super-header expansion and the forward-fill. `diff.py`
-  carries provenance through the join (new workbook where the factor still
-  exists, old one where it was removed); `changes_pdf` tags each chunk with its
-  document and gains `retrieve_citation`, which shares `_best_chunk` with
-  `retrieve_passage` so the quote a reader checks is always the passage the
-  explanation was built from; `export.py` renders the quote, its section heading,
-  the source document, and the factor's workbook/sheet/row under the "Cited" tag.
-  D11 untouched: the retrieval gate still reports 0 wrong hits. The D12 golden
-  vector failed as predicted and its fixture now PINS the provenance, with every
-  expected row number verified against the fixture's cells rather than copied from
-  the loader. 149 tests (was 144), both gates clean, `scripts/check_citations.py`
-  prints the evidence on real data, and the memo was rendered in headless Chromium
-  to confirm the citation block appears and survives print media. Known wrinkle
-  logged, not hidden: in offline mode the reason already embeds the note, so it
-  reads twice. Shipped as PR #22, squash-merged `12e27f1`.
-
-Next likely task: **filter state in the URL** (`st.query_params`), so a narrowed
+Next likely task: the audit's own P2/P3 list, now that its P0/P1 items are
+closed (D24). **Reframe the front-door copy from product to register** (H1 reads
+"against your product"; `VISION.md` section 6 says kill the toy BOM as the
+hero), then **filter state in the URL** (`st.query_params`), so a narrowed
 comparison is a link a consultant can send ("every scope 3 factor past
 threshold"). Then: **A-07, the one defect left open.** Streamlit's file uploader
-renders an `<input type="file">` with no programmatic accessible name, and that
-cannot be fixed from CSS or from Python. It needs either a Streamlit upgrade that
-labels it, or a small custom component. Then: header-row tolerance in ingest, and
-surfacing the best-candidate name on a below-threshold match (the coverage control
-shows the score and a sentence, but `src/matching.py` discards the losing
-candidate's name, so "here is what it nearly matched" needs a one-line change
-there and was left rather than smuggled into a view-layer pass). Deferred by owner
-decision, not forgotten: the sign-in gate on the live deploy (D18). Lower
-priority: a finer within-family relabel pairing, lockfile pinning, semantic
-relabels.
+renders an `<input type="file">` with a generic `aria-label="file upload"` on
+the current Streamlit build rather than no name at all; worth re-measuring
+before assuming it still needs a custom component. Then: header-row tolerance in
+ingest, and surfacing the best-candidate name on a below-threshold match (the
+coverage control shows the score and a sentence, but `src/matching.py` discards
+the losing candidate's name, so "here is what it nearly matched" needs a
+one-line change there and was left rather than smuggled into a view-layer pass).
+Deferred by owner decision, not forgotten: the sign-in gate on the live deploy
+(D18). Lower priority: a finer within-family relabel pairing, lockfile pinning,
+semantic relabels.

@@ -1141,3 +1141,76 @@ stylesheet survival), `docs/DECISIONS.md` (D23), `docs/STATUS.md` (H23),
 [PR #28](https://github.com/thelivinsine/susty-automation/pull/28),
 squash-merged `9f604ec`. Feature branch deleted locally and on origin
 post-merge.
+
+---
+
+### 2026-08-17 · P41
+Branch: `claude/front-door-explanations-and-speed` (from `main`).
+
+**Prompt (verbatim):** "can you do the front end audit of the app and compare
+it against the goal and purpose of the app to do a gap analysis and provide a
+list of recommendations categorised from p0 to p3 or even p5 if needed."
+Mid-turn: "also read the latest session's prompt logs for more understanding."
+Then: "Create a robust P0 and P1 imlpementation plan." After the plan was
+reviewed and approved, and the work verified: "Yes, auto-ship (Recommended)"
+in answer to whether to ship it per the repo's own house rules.
+
+**Response summary:** Audited the running app on the owner's real 2025/2026
+workbooks (a fresh `streamlit run`, driven in a real browser, not eyeballed),
+scoped the pipeline and the docs first, then read back through H21 to H23 in
+this log for continuity. The design layer, the trust discipline and the
+responsive behaviour all held up under measurement. Two things did not, both on
+the surface D23 made the front door: it showed WHAT changed and never WHY
+(`explain_flagged_only` restricts explanations to an uploaded BOM), and it took
+15.3 to 43.8 measured seconds to paint (`compare_versions` parsed both full-set
+workbooks live, in-process cache only). Delivered a P0 to P4 gap analysis
+against `VISION.md`'s stated wedge (the explanation, not the diff) and offered
+to build the two P0s.
+
+Planned, then built P0-A and P0-B plus three P1s the same audit measured,
+decided in plan review: front-door reasons are DEFRA's verbatim words only, no
+model call, so every visitor sees the same thing (`VISION.md` section 6,
+"demote the AI to a labelled quoter of DEFRA's verbatim words"); cold start is
+fixed with a committed, hash-verified snapshot plus a disk-persisted live
+fallback, never a snapshot-only path that could go silently stale.
+
+`pipeline.cited_reasons` shares `changes_pdf.retrieve_citation` with the
+product report, so DECISIONS D11's wrong-note guard protects the front door
+exactly as it protects the memo; rendered under section 1 as a capped,
+disclosure-per-factor block driven by the same five filters. On the real
+workbooks: 46 of 67 flagged factors (69%) come back cited, checked as a
+mid-build gate before wiring the UI, well above the "stop and ask" floor the
+plan set. `pipeline.write_snapshot`/`load_snapshot` plus committed
+`data/register_snapshot/` (built by new `scripts/build_register_snapshot.py`,
+verified in `tests/test_register_snapshot.py` against the real workbooks) cut
+the cold parse to 0.157s, a live parse only firing on an actual SHA256
+mismatch. `run_pipeline` gained an optional `comparison=` argument, trusted
+only when its own labels match, so a Run click reuses section 1's parse rather
+than paying it twice; proved with a sentinel-column test rather than by
+inspection. The default (>500 row) grid gained readable column headers
+(`ui.format.human_column`, matching number formats) and a `status_label`
+column, both confirmed live via the grid's own "Show/hide columns" menu after
+the canvas itself proved hard to introspect by script.
+
+Verified rather than asserted throughout: 195 tests (was 177), both CI gates
+clean (0 wrong retrieval hits), zero horizontal scroll at 375/768/1440px in a
+real browser, a cited disclosure opened by script shows the real ORR/TfL rail
+quote, an uncited one shows the exact `NO_REASON` sentence, and `run_demo.py`
+completes end to end (`DEMO OK`) proving the `comparison=` change is backward
+compatible for the non-Streamlit callers. Wrote DECISIONS D24 for the "why";
+rotated H22 (into the existing `STATUS_2026-W31.md`, alongside H21 which had
+also fallen out of the two-most-recent window) into `docs/archive/`.
+
+**Artifacts:** `src/pipeline.py` (`cited_reasons`, `snapshot_dir`,
+`write_snapshot`, `load_snapshot`, `run_pipeline(comparison=...)`),
+`src/diff.py` (`with_status_label`), `src/ui/format.py` (`status_label` column
+name), `app.py` (front-door reasons block, snapshot-first `_register`, readable
+`show_table` dataframe branch, status column wired into section 1 and its CSV),
+`scripts/build_register_snapshot.py` (new), `data/register_snapshot/`
+(committed: `diff.parquet`, `meta.json`), `.gitignore` (`.streamlit/cache/`),
+`tests/test_front_door_reasons.py` (new), `tests/test_register_snapshot.py`
+(new), `tests/test_pipeline.py` (comparison reuse), `tests/test_filter_changes.py`
+(`with_status_label`), `CLAUDE.md` (snapshot rebuild step), `docs/DECISIONS.md`
+(D24), `docs/STATUS.md` (H24), `docs/archive/STATUS_2026-W31.md` (+H21),
+`docs/archive/STATUS_2026-W32.md` (new, H22), `docs/archive/README.md`,
+`docs/PROMPT_LOG.md` (this entry).
