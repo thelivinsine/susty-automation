@@ -312,9 +312,10 @@ paint_masthead(("Report ready", "done") if has_results else ("Not run yet", "neu
 # brand: it is the sentence that tells a first-time visitor what this does.
 write(
     '<div class="page-head">'
-    "<h1>Compare two DEFRA releases against your product</h1>"
-    '<p class="caption">Recompute your footprint under each annual release and '
-    "explain what changed, grounded in the official DEFRA changes notes.</p>"
+    "<h1>What changed between two DEFRA releases, and why</h1>"
+    '<p class="caption">Every factor past DEFRA\'s own thresholds, explained in '
+    "DEFRA's own words. Recompute it against your product if you want the "
+    "second act.</p>"
     "</div>"
 )
 

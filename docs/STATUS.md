@@ -93,6 +93,14 @@ families. Of the 67 real factors past DEFRA's thresholds, 46 (69%) carry a
 verbatim DEFRA citation on the front door with no upload and no model call.
 
 ## What shipped
+- **Reframed the front-door H1 from product to register (H26, audit item
+  P2-6):** `VISION.md` section 6 says kill the toy BOM as the hero; the
+  audit's G6 finding was that the H1 still read "against your product" while
+  section 1 is actually the whole register. New H1 ("What changed between two
+  DEFRA releases, and why") and caption lead with the register explanation;
+  the product recompute is now named as the second act. Verified live: no
+  test pins the exact string, so checked directly in a running app against the
+  real workbooks. 195 tests still green, microcopy gate clean.
 - **Diagnosed a live Cloud outage down to the platform, not the code (H25):**
   the owner hit a redacted `ImportError` on the deployed app. Ruled out the
   codebase first: the full import chain succeeded in a fresh venv built from
@@ -217,6 +225,19 @@ light-only, because Streamlit's own chrome is pinned light in `config.toml`.
 ## Resume here
 Most recent handoffs (older ones rotate into `docs/archive/`):
 
+- H26 (2026-08-17): Picked up the audit's own P2 list (STATUS's own "next
+  likely task" pointer, H24's note). Item 6, reframe the copy from product to
+  register: the H1 read "Compare two DEFRA releases against your product" and
+  its caption led with "Recompute your footprint," both product-first even
+  though section 1 (the register, diffed and explained with no upload) is the
+  actual front door and the whole point of `VISION.md`'s reframe. Changed the
+  H1 to "What changed between two DEFRA releases, and why" and the caption to
+  lead with the register explanation, naming the product recompute as the
+  second act rather than the headline. `app.py`'s H1/caption block only, no
+  pipeline change. 195 tests green (unchanged, nothing pinned this string),
+  microcopy gate clean, checked live in a running Streamlit app against the
+  real 2025/2026 workbooks rather than assumed from the diff.
+
 - H25 (2026-08-17): Owner reported a redacted `ImportError` on the live Cloud
   app (`from pipeline import (...)` at app.py:65). Investigated the codebase
   first, per systematic debugging: `pipeline.py` exports every name app.py
@@ -245,38 +266,11 @@ Most recent handoffs (older ones rotate into `docs/archive/`):
   `docs/DEPLOY_GUIDE.md` so a future redacted-error report goes straight to
   "reboot, don't just redeploy" rather than repeating this investigation.
 
-- H24 (2026-08-17): A front-end audit of the running app (real 2025/2026
-  workbooks, measured in a browser) found the front door D23 built showed WHAT
-  changed and never WHY, and took 15 to 44 measured seconds to paint on a cold
-  visit. Both fixed (D24), plus three smaller P1 gaps the same audit measured.
-  `pipeline.cited_reasons` grounds every flagged factor in the current filtered
-  view in DEFRA's own words via the existing `retrieve_citation` (so D11's
-  wrong-note guard covers this surface too), with no model call: 46 of 67 real
-  flagged factors (69%) come back cited, the rest show the exact `NO_REASON`
-  sentence. `pipeline.write_snapshot`/`load_snapshot` plus a committed,
-  hash-verified `data/register_snapshot/` (built by the new
-  `scripts/build_register_snapshot.py`) cut the cold parse from 43.8s (measured,
-  same real workbooks) to 0.157s, a live parse only firing on an actual hash
-  mismatch, itself now disk-cached so a redeploy only pays it once per container.
-  `run_pipeline(comparison=...)` reuses section 1's parse on a Run click instead
-  of repeating it, proven both by a sentinel-column test and by `run_demo.py`
-  still completing end to end. The default (>500 row) grid gained readable
-  column headers and a `status_label` ("New"/"Retired"/"Renamed") column,
-  confirmed live via the grid's own column picker rather than assumed. 195 tests
-  green (was 177), both CI gates clean, zero horizontal scroll at 375/768/1440.
-  Not done, deliberately: AI-written prose on the front door (VISION.md's point
-  is that this layer stays free and verbatim for everyone), and the P2/P3 items
-  from the same audit (copy reframe from product to register, filter state in
-  the URL, a release picker, scrolling to the result after a run). Shipped as
-  [PR #29](https://github.com/thelivinsine/susty-automation/pull/29),
-  squash-merged `e6e2b90`.
-
-Next likely task: the audit's own P2/P3 list, now that its P0/P1 items are
-closed (D24). **Reframe the front-door copy from product to register** (H1 reads
-"against your product"; `VISION.md` section 6 says kill the toy BOM as the
-hero), then **filter state in the URL** (`st.query_params`), so a narrowed
-comparison is a link a consultant can send ("every scope 3 factor past
-threshold"). Then: **A-07, the one defect left open.** Streamlit's file uploader
+Next likely task: the audit's own P2/P3 list, now that P0/P1 (D24) and P2
+item 6, the copy reframe (H26), are closed. **Filter state in the URL**
+(`st.query_params`), so a narrowed comparison is a link a consultant can send
+("every scope 3 factor past threshold"). Then: **A-07, the one defect left
+open.** Streamlit's file uploader
 renders an `<input type="file">` with a generic `aria-label="file upload"` on
 the current Streamlit build rather than no name at all; worth re-measuring
 before assuming it still needs a custom component. Then: header-row tolerance in
