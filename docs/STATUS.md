@@ -93,6 +93,22 @@ families. Of the 67 real factors past DEFRA's thresholds, 46 (69%) carry a
 verbatim DEFRA citation on the front door with no upload and no model call.
 
 ## What shipped
+- **A-07 closed, and a masthead-clipping regression fixed (H29):** the file
+  uploader's accessible name was re-measured live rather than trusted from
+  the D20/audit wording: a Streamlit upgrade since D20 (verified against
+  1.60.0) gave the hidden `<input type="file">` a generic `aria-label="file
+  upload"`, and the visible "Upload" button has an EMPTY `aria-label`,
+  which falls through to its own icon-plus-text content and reads as
+  "uploadUpload". `ui.components.file_uploader_label` fixes both from JS
+  (the same same-origin-iframe pattern `scrollspy` already uses; neither is
+  fixable from CSS or from `st.file_uploader`'s own arguments). Separately,
+  flagged mid-task by the owner from a screenshot: the masthead's top edge
+  was visibly clipped, live under Streamlit's own floating header, which grew
+  from the 52px this app's top padding was tuned for to 60px (also
+  1.61.1) with nothing compensating. `--space-7` (48px) replaces `--space-5`
+  (24px) as `stMainBlockContainer`'s `padding-top`, confirmed live at
+  375/768/1280px: 4px of clearance now, a 20px overlap before. 200 tests
+  green (was 197), microcopy gate clean.
 - **Filter state lives in the URL (H28, audit item P2-7):** the five section-1
   filters (search, scope, status, minimum movement, materiality toggle) now
   read `st.query_params` once on a fresh page load and write their current
@@ -241,15 +257,6 @@ light-only, because Streamlit's own chrome is pinned light in `config.toml`.
 ## Resume here
 Most recent handoffs (older ones rotate into `docs/archive/`):
 
-- H27 (2026-08-17): Rotated `docs/PROMPT_LOG.md`, flagged as overdue in H26/P44
-  (it had passed the ~1,200 line threshold). Moved the two oldest sessions
-  (2026-07-06, 2026-07-07, entries P1 to P14, both in ISO week 2026-W28) into
-  `docs/archive/PROMPT_LOG_2026-W28.md` verbatim, keeping the current session
-  plus the last 5 live (1,062 lines, down from 1,335). Also rotated H25 into
-  `docs/archive/STATUS_2026-W34.md` to keep this section at the two-most-recent
-  rule. Docs only, no code touched. Shipped as its own small PR per the
-  owner's standing convention.
-
 - H28 (2026-08-17): Next item on the audit's P2 list once the copy reframe
   (H26) closed: filter state in the URL. The five section-1 filters now read
   `st.query_params` once on a fresh visit (seeding `st.session_state`) and
@@ -263,16 +270,32 @@ Most recent handoffs (older ones rotate into `docs/archive/`):
   microcopy gate clean, checked live: the address bar updated on typing, and
   a cold visit to `?material=1&scope=Scope+3` landed pre-filtered.
 
-Next likely task: the audit's own P2/P3 list, now that P0/P1 (D24) and P2
-items 6 and 7 (the copy reframe, H26; filter state in the URL, H28) are
-closed. **A-07, the one defect left open.** Streamlit's file uploader
-renders an `<input type="file">` with a generic `aria-label="file upload"` on
-the current Streamlit build rather than no name at all; worth re-measuring
-before assuming it still needs a custom component. Then: header-row tolerance in
-ingest, and surfacing the best-candidate name on a below-threshold match (the
-coverage control shows the score and a sentence, but `src/matching.py` discards
-the losing candidate's name, so "here is what it nearly matched" needs a
-one-line change there and was left rather than smuggled into a view-layer pass).
-Deferred by owner decision, not forgotten: the sign-in gate on the live deploy
-(D18). Lower priority: a finer within-family relabel pairing, lockfile pinning,
+- H29 (2026-08-17): Two fixes, one asked for, one flagged mid-task by the
+  owner from a screenshot. **A-07 closed.** Re-measured live rather than
+  trusting the D20/audit wording: the file uploader's native `<input
+  type="file">` now carries Streamlit's own `aria-label="file upload"`
+  (a Streamlit upgrade added that since D20 was written against 1.60.0), and
+  the visible "Upload" button next to it has an EMPTY `aria-label`, which
+  falls through to its own text nodes and reads as "uploadUpload" (the
+  audit's G14, confirmed live). Neither fixable from CSS or from
+  `st.file_uploader`'s own arguments; `ui.components.file_uploader_label`
+  fixes both from JS, the same `st.components.v1.html` same-origin-iframe
+  pattern `scrollspy` already uses. **Masthead-clipping fix, not asked for
+  but shown live:** the owner's screenshot showed the masthead's top edge
+  cut off. Traced to Streamlit's own floating header growing from 52px
+  (assumed when the page's top padding was tuned) to 60px live-measured
+  against 1.61.1, with no compensating change on our side, so the header's
+  own opaque background was drawn over the masthead's top ~20px.
+  `stMainBlockContainer`'s `padding-top` raised from `--space-5` (24px) to
+  `--space-7` (48px), confirmed live at 375/768/1280px: 4px of clearance at
+  every width, was a 20px overlap. 200 tests green (was 197: three new tests
+  for the accessible-name fix), microcopy gate clean.
+
+Next likely task: header-row tolerance in ingest, and surfacing the
+best-candidate name on a below-threshold match (the coverage control shows
+the score and a sentence, but `src/matching.py` discards the losing
+candidate's name, so "here is what it nearly matched" needs a one-line change
+there and was left rather than smuggled into a view-layer pass). Deferred by
+owner decision, not forgotten: the sign-in gate on the live deploy (D18).
+Lower priority: a finer within-family relabel pairing, lockfile pinning,
 semantic relabels.

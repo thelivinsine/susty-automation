@@ -1143,4 +1143,69 @@ were known (`#33`/`aa0a601`, `#34`/`bcdffcb`).
 shipped; Resume here; H26 rotated to archive), `docs/archive/STATUS_2026-W34.md`
 (H26 appended), `docs/archive/README.md` (index entry), `docs/PROMPT_LOG.md`
 (this entry, plus the two PR-pending corrections above). Branch
-`filter-state-in-url`, PR pending.
+`filter-state-in-url`. Shipped as
+[PR #35](https://github.com/thelivinsine/susty-automation/pull/35), merged
+`9f23582`.
+
+---
+
+### 2026-08-17 · P47
+Branch: `fix-a07-and-masthead` (from `main`).
+
+**Prompt (verbatim):** "Yes, go ahead and fix A-07". Then, mid-task, a
+screenshot with: "the top part of the app is cramped and being cut off. this
+needs fixing too".
+
+**Response summary:** A-07 first. Re-measured live rather than trusting the
+D20/audit wording, per this session's own standing habit of verifying before
+recommending: `docs/DECISIONS.md` D20 said the native `<input type="file">`
+had no accessible name at all, verified against Streamlit 1.60.0; the
+2026-08-17 audit's G14 already doubted that (`aria-label="file upload"`,
+plus a garbled "uploadUpload" on the visible button), and this session's own
+live DOM inspection against the actually-installed 1.61.1 confirmed G14
+exactly: the hidden input carries Streamlit's own generic `aria-label`, and
+the visible "Upload" button has an EXPLICIT but EMPTY `aria-label`
+(`getAttribute` returns `""`, not `null`), which does not suppress the name,
+it falls through to the button's own text nodes: the Material icon ligature
+"upload" concatenated with the visible word "Upload", no separator. Neither
+is fixable from CSS (cannot set an ARIA attribute) or from
+`st.file_uploader`'s own arguments. `ui.components.file_uploader_label`
+fixes both from JavaScript, reusing the exact same-origin
+`st.components.v1.html` iframe pattern `scrollspy` already established:
+best-effort, try/catch, re-run fresh on every Streamlit rerun since
+Streamlit replaces the uploader's DOM nodes then. Three new unit tests on
+the function's string output, mirroring the existing scrollspy tests
+exactly (label embedded, try/catch present, and a new one this function
+specifically needed: the label is JSON-encoded so a quote in it cannot break
+out of the script).
+
+Mid-task, the owner sent a screenshot showing the masthead's top edge cut
+off, with "this needs fixing too". Rather than theorise from the screenshot
+alone, reproduced live: measured `stHeader` and `.masthead` bounding rects
+directly. `stHeader` (Streamlit's own floating top bar, opaque, z-index
+999990) is 60px tall; the masthead started at y=40, so the header's opaque
+background covered its top 20px. Root cause: `stMainBlockContainer`'s
+`padding-top` was `--space-5` (24px), sized against a header this app's own
+CSS comments assumed was 52px (verified against Streamlit 1.60.0), and a
+later Streamlit upgrade grew the header to 60px with nothing on this side
+compensating. Tested the fix live before touching the file: injected a
+trial stylesheet raising the padding to 48px (`--space-7`), re-measured
+(4px clearance, was -20px), confirmed the same result held at 768px and
+375px (the header's own height does not change with viewport width), THEN
+edited `components.css` for real and re-verified against the actual file.
+Hit one snag applying it: the running Streamlit dev server had `ui.components`
+already imported into `sys.modules` from before this session's edits, so it
+picked up the `app.py` change (a new import name) but not the `components.py`
+change behind it, raising `ImportError: cannot import name
+'file_uploader_label'` on the next rerun; a full server restart (not a page
+reload) cleared it, confirmed clean by re-checking `preview_logs` for errors.
+
+**Artifacts:** `app.py` (labels the uploader; imports `file_uploader_label`),
+`src/ui/components.py` (`file_uploader_label`, new), `src/ui/components.css`
+(`stMainBlockContainer` padding-top, `stHeader` comment), `tests/test_ui_components.py`
+(three new tests), `docs/DECISIONS.md` (D20's A-07 note marked closed),
+`docs/REFERENCE.md` (A-07 backlog bullet removed), `docs/STATUS.md` (H29;
+What shipped; Resume here; H27 rotated to archive), `docs/archive/STATUS_2026-W34.md`
+(H27 appended), `docs/archive/README.md` (index entry), `docs/PROMPT_LOG.md`
+(this entry, plus the P46 PR-pending correction above). Branch
+`fix-a07-and-masthead`, PR pending.

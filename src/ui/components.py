@@ -476,6 +476,51 @@ def scrollspy(items):
     ).replace("__ANCHORS__", anchors)
 
 
+def file_uploader_label(label):
+    """Give the file uploader's two hidden controls a real accessible name.
+
+    A-07 (`docs/DECISIONS.md` D20): Streamlit's native `<input type="file">`
+    inside `st.file_uploader` carries its OWN `aria-label` ("file upload"),
+    ignoring the widget's `label` argument entirely, so `label_visibility=
+    "collapsed"` leaves it with no connection to what is actually being
+    asked for. Worse, live-measured against Streamlit 1.61.1: the visible
+    "Upload" button next to it has an explicit but EMPTY `aria-label`,
+    which does not suppress the accessible name, it just makes the browser
+    fall through to the button's own text content instead: the Material
+    icon ligature "upload" run straight into the visible word "Upload",
+    with no separator, read aloud as one garbled "uploadUpload" (the
+    front-end audit's G14, confirmed live here, not the "no name at all"
+    this was first filed as in D20).
+
+    Neither is fixable from CSS, which cannot set an ARIA attribute, or
+    from `st.file_uploader`'s own arguments. Runs the same way `scrollspy`
+    does: as the body of a same-origin `st.components.v1.html` iframe,
+    best-effort behind a try/catch, re-run fresh on every Streamlit rerun
+    (never cached) since Streamlit replaces the uploader's DOM nodes then.
+    `label` is JSON-encoded, the only value interpolated into the script.
+    """
+    import json
+
+    safe_label = json.dumps(label)
+
+    return (
+        "<script>(function () {\n"
+        "  var doc, win;\n"
+        "  try { win = window.parent; doc = win.document; } catch (e) { return; }\n"
+        "  if (!doc) { return; }\n"
+        "  try {\n"
+        "    var zone = doc.querySelector('[data-testid=\"stFileUploaderDropzone\"]');\n"
+        "    if (!zone) { return; }\n"
+        "    var label = __LABEL__;\n"
+        "    var input = zone.querySelector('input[type=\"file\"]');\n"
+        "    if (input) { input.setAttribute('aria-label', label); }\n"
+        "    var btn = zone.querySelector('button');\n"
+        "    if (btn) { btn.setAttribute('aria-label', 'Upload ' + label); }\n"
+        "  } catch (e) { /* a half-built page on rerun: the next rerun retries */ }\n"
+        "}());</script>"
+    ).replace("__LABEL__", safe_label)
+
+
 def step(number, title, hint=None, state="now"):
     """One numbered step of the setup flow.
 

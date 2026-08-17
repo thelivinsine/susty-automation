@@ -46,12 +46,6 @@ How to apply it:
   matcher pairs old rows against reordered new rows. A finer within-family pairing
   (align sub-rows by their leaf/variant, or use DEFRA's own row map) would make the
   per-variant deltas trustworthy. Left rather than guessed for now.
-- **A-07, the one audit defect still open.** Streamlit's file uploader renders an
-  `<input type="file">` with no programmatic accessible name, so a screen-reader
-  user hears an unlabelled control. Neither CSS nor Python can attach a name to
-  it: it needs a Streamlit release that labels it, or a small custom component.
-  The visible label and help text are already there, which is why this is the
-  cheapest of the twelve to live with in the meantime.
 - **Surface the best candidate on a below-threshold match.** The Confidence
   section explains a held line as "Best match scored 49.3, below the 82.0
   confidence threshold, so nothing was assumed." It cannot yet add "the closest

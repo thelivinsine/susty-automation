@@ -91,3 +91,13 @@
   real 2025/2026 workbooks rather than assumed from the diff. Shipped as
   [PR #33](https://github.com/thelivinsine/susty-automation/pull/33),
   squash-merged `aa0a601`.
+
+- H27 (2026-08-17): Rotated `docs/PROMPT_LOG.md`, flagged as overdue in H26/P44
+  (it had passed the ~1,200 line threshold). Moved the two oldest sessions
+  (2026-07-06, 2026-07-07, entries P1 to P14, both in ISO week 2026-W28) into
+  `docs/archive/PROMPT_LOG_2026-W28.md` verbatim, keeping the current session
+  plus the last 5 live (1,062 lines, down from 1,335). Also rotated H25 into
+  `docs/archive/STATUS_2026-W34.md` to keep this section at the two-most-recent
+  rule. Docs only, no code touched. Shipped as
+  [PR #34](https://github.com/thelivinsine/susty-automation/pull/34), merged
+  `bcdffcb`.

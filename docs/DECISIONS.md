@@ -497,10 +497,22 @@ inventory. A generated PDF binary remains a separate dependency decision.
   threshold. Surfacing the near-miss name is a one-line change in `matching.py`
   and is on the backlog.
 
-**Still open: A-07.** Streamlit's file uploader renders an `<input type="file">`
-with no programmatic accessible name. That cannot be fixed from CSS or from
-Python, so 11 of the audit's 12 defects are closed and this one needs either a
-Streamlit upgrade or a small custom component.
+**A-07, closed (H29).** Written here as "no programmatic accessible name at
+all", verified against Streamlit 1.60.0. Re-measured live against 1.61.1
+before assuming that still held (the front-end audit's G14 already doubted
+it): the native `<input type="file">` now carries Streamlit's own hardcoded
+`aria-label="file upload"`, disconnected from the widget's actual `label`;
+and the visible "Upload" button next to it has an explicit but EMPTY
+`aria-label`, which does not suppress the name, it falls through to the
+button's own text nodes: the Material icon ligature "upload" run straight
+into the word "Upload", read as one garbled "uploadUpload". Neither is
+fixable from CSS, which cannot set an ARIA attribute, or from
+`st.file_uploader`'s own arguments, but both ARE fixable from JavaScript.
+`ui.components.file_uploader_label` runs the same way `scrollspy` already
+does: the body of a same-origin `st.components.v1.html` iframe, best-effort,
+re-run fresh on every rerun. Sets the input's `aria-label` to the widget's
+own label text and the button's to "Upload " plus that same text. 12 of 12
+audit defects now closed.
 
 **One fragility to know about.** The Streamlit widget overrides are targeted by
 `data-testid`, which is a Streamlit internal and not a public API. All four were
