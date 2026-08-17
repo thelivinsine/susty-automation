@@ -1217,3 +1217,25 @@ name), `app.py` (front-door reasons block, snapshot-first `_register`, readable
 [PR #29](https://github.com/thelivinsine/susty-automation/pull/29),
 squash-merged `e6e2b90`. Feature branch deleted locally and on origin
 post-merge.
+
+---
+
+### 2026-08-17 · P42
+Branch: `claude/save-gap-analysis-report` (from `main`).
+
+**Prompt (verbatim):** "save the analysis report to the repo and merge to main"
+
+**Response summary:** Wrote the audit and gap analysis from P41 (the chat
+report, not previously saved as a file) to
+`docs/audit/2026-08-17_frontend_gap_analysis.md`: what held up under
+measurement, the G1-G14 gap table, and the P0-P4 recommendations, verbatim from
+the chat delivery. Followed the existing audit-folder convention
+(`docs/audit/2026-07-31_frontend_ux_audit.html`) rather than inventing a new
+location. Since this audit is our own, not an external delivery received
+verbatim, widened the folder's README to say so and added a status note atop
+the new file and an entry in the README pointing out that its P0/P1 items
+already shipped the same day as D24, so a reader does not mistake a closed gap
+for an open one. Docs-only, no code touched. Microcopy lint clean.
+
+**Artifacts:** `docs/audit/2026-08-17_frontend_gap_analysis.md` (new),
+`docs/audit/README.md`, `docs/PROMPT_LOG.md` (this entry).

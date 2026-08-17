@@ -1,8 +1,22 @@
 # Audits
 
-External review documents, saved verbatim as received. These are source material,
-not our own copy, so they are kept exactly as delivered (including house-style
-violations such as em dashes).
+Point-in-time audit records. External reviews are saved verbatim as received
+(source material, not our own copy, so they keep house-style violations such as
+em dashes); audits run in-session are our own copy and follow house style, but
+are still kept as a record of what was found AT THE TIME rather than rewritten
+as findings get fixed. Where a finding has since been actioned, a short status
+note says so and points at the decision/status entry that did it, rather than
+editing the finding itself away.
+
+## `2026-08-17_frontend_gap_analysis.md`
+
+An in-session front-end audit and gap analysis of the running app against
+`CLAUDE.md`/`docs/VISION.md`'s stated goal, on the owner's real 2025/2026
+workbooks, measured in a real browser at 375/738/1440px. Found the front door
+D23 built showed WHAT changed and never WHY, and took 15 to 44 measured seconds
+to paint. Sequenced P0 to P4. **P0 and P1 shipped the same day** (DECISIONS
+D24, PR #29, squash-merged `e6e2b90`); P2 to P4 are still open and tracked in
+`STATUS.md`.
 
 ## `2026-07-31_frontend_ux_audit.html`
 
